@@ -1,11 +1,15 @@
 import {StyleSheet} from 'react-native';
-import {colors} from './theme/colors';
-import {fontSizes, fontWeights, lineHeights} from './theme/fonts';
+import {colors} from '../theme/colors';
+import {fontSizes, fontWeights, lineHeights} from '../theme/fonts';
 
 export const styles = StyleSheet.create({
   background: {
     flex: 1,
-    padding: 160,
+    flexDirection: 'row',
+  },
+  content: {
+    flex: 1,
+    padding: 100,
   },
   headerArea: {
     flex: 3,
@@ -29,13 +33,6 @@ export const styles = StyleSheet.create({
     width: 500,
     height: 350,
     marginLeft: 120,
-  },
-  focusedTitle: {
-    color: colors.textPrimary,
-    fontSize: fontSizes.focusedTitle,
-    lineHeight: lineHeights.focusedTitle,
-    fontWeight: fontWeights.bold,
-    width: 560,
   },
   focusedDescription: {
     color: colors.textPrimary,

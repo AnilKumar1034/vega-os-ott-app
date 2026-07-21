@@ -9,6 +9,9 @@ export const fontSizes = {
   focusedTitle: 130,
   focusedDescription: 60,
   tileLabel: 52,
+  sideMenuTitle: 46,
+  sideMenuOption: 34,
+  screenTitle: 120,
 } as const;
 
 export const lineHeights = {
@@ -16,4 +19,5 @@ export const lineHeights = {
   focusedTitle: 160,
   focusedDescription: 80,
   tileLabel: 52,
+  screenTitle: 144,
 } as const;
