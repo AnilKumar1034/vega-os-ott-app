@@ -1,0 +1,13 @@
+schema-version = 1
+
+[package]
+title = "Basic UI React Native Application for project vegaottapp"
+version = "0.1.0"
+id = "com.anil.vegaott"
+
+[components]
+[[components.interactive]]
+id = "com.anil.vegaott.main"
+runtime-module = "/com.amazon.kepler.keplerscript.runtime.loader_2@IKeplerScript_2_0"
+launch-type = "singleton"
+categories = ["com.amazon.category.main"]
