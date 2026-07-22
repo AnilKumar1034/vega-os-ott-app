@@ -1,36 +1,38 @@
 import React, {useState} from 'react';
-import {Image, ImageBackground, Text, View} from 'react-native';
+import {ImageBackground, View} from 'react-native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
-import {Tile} from '../components/Tile';
-import {SideMenu} from '../components/SideMenu';
+import {CommonHeader} from '../components/molecules/CommonHeader';
+import {HeroBanner} from '../components/molecules/HeroBanner';
+import {SideMenu} from '../components/molecules/SideMenu';
+import {Tile} from '../components/molecules/Tile';
 import {Routes} from '../constants/routes';
 import {AppDetails, tiles} from '../data/tiles';
 import {styles} from './HomeScreen.styles';
 
 export const HomeScreen = () => {
   const [focusedTileId, setFocusedTileId] = useState<string>(tiles[0].id);
+  const [isMenuExpanded, setIsMenuExpanded] = useState(true);
   const focusedTile = tiles.find((tile) => tile.id === focusedTileId);
   return (
     <ImageBackground
       source={require('../assets/background.png')}
       style={styles.background}
       testID="home-screen">
-      <SideMenu activeRoute={Routes.Home} />
+      <SideMenu
+        activeRoute={Routes.Home}
+        isExpanded={isMenuExpanded}
+        onMenuFocus={() => setIsMenuExpanded(true)}
+      />
       <View style={styles.content}>
-        <View style={styles.headerArea}>
-          <View style={styles.headerTextContainer}>
-            <Text style={styles.headerTitle}>{AppDetails.name}</Text>
-            <Text style={styles.headerSubtitle}>
-              {focusedTile?.description || AppDetails.commingSoonMsg}
-            </Text>
-          </View>
-          <Image
-            source={require('../assets/vega.png')}
-            style={styles.vegaLogo}
-            resizeMode="contain"
-            testID="vega-logo"
-          />
-        </View>
+        <CommonHeader
+          title={AppDetails.name}
+          logo={require('../assets/vega.png')}
+          testID="vega-logo"
+        />
+        <HeroBanner
+          title={focusedTile?.label || AppDetails.name}
+          description={focusedTile?.description || AppDetails.commingSoonMsg}
+        />
 
         <TVFocusGuideView style={styles.tileRowContent}>
           {tiles.map((tile) => (
@@ -39,7 +41,10 @@ export const HomeScreen = () => {
               label={tile.label}
               icon={tile.icon}
               isFocused={focusedTileId === tile.id}
-              onFocus={() => setFocusedTileId(tile.id)}
+              onFocus={() => {
+                setFocusedTileId(tile.id);
+                setIsMenuExpanded(false);
+              }}
               onBlur={() => {}}
               testID={`tile-${tile.id}`}
               accessibilityLabel={tile.accessibilityLabel}

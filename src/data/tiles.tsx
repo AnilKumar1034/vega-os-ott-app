@@ -10,7 +10,7 @@ export interface TileData {
 }
 
 export const AppDetails = {
-  name: 'StreamX',
+  name: 'LogiXstream',
   version: '1.0.0',
   commingSoonMsg: 'New entertainment features and content will be added soon. 🚀',
 }

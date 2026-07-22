@@ -48,6 +48,16 @@ describe('App', () => {
     expect(screen.getByTestId('movies-screen')).toBeTruthy();
   });
 
+  it('collapses the menu when screen content is focused and expands it again', () => {
+    const screen = navigateToHome();
+
+    fireEvent(screen.getByTestId('tile-featured'), 'focus');
+    expect(screen.queryByTestId('side-menu-label-Movies')).toBeNull();
+
+    fireEvent(screen.getByTestId('side-menu-Movies'), 'focus');
+    expect(screen.getByTestId('side-menu-label-Movies')).toBeTruthy();
+  });
+
   it('focuses the first tile by default', () => {
     const screen = navigateToHome();
     const featuredTile = screen.getByTestId('tile-featured');

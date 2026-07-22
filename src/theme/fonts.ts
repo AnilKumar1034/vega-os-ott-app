@@ -12,6 +12,12 @@ export const fontSizes = {
   sideMenuTitle: 46,
   sideMenuOption: 34,
   screenTitle: 120,
+  commonHeaderTitle: 58,
+  commonHeaderStatus: 22,
+  heroEyebrow: 24,
+  heroTitle: 104,
+  heroDescription: 38,
+  heroMeta: 22,
 } as const;
 
 export const lineHeights = {
@@ -20,4 +26,7 @@ export const lineHeights = {
   focusedDescription: 80,
   tileLabel: 52,
   screenTitle: 144,
+  commonHeaderTitle: 68,
+  heroTitle: 116,
+  heroDescription: 52,
 } as const;

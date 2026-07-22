@@ -2,7 +2,7 @@ import 'react-native';
 import {render, fireEvent} from '@testing-library/react-native';
 import * as React from 'react';
 
-import {Tile} from '../src/components/Tile';
+import {Tile} from '../src/components/molecules/Tile';
 
 const mockIcon = {uri: 'mock-icon'};
 
