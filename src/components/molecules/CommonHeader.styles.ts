@@ -1,14 +1,15 @@
 import {StyleSheet} from 'react-native';
 import {colors} from '../../theme/colors';
 import {fontSizes, fontWeights, lineHeights} from '../../theme/fonts';
+import {spacing} from '../../theme/sizes';
 
 export const styles = StyleSheet.create({
   container: {
     minHeight: 110,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    borderRadius: 0,
+    paddingHorizontal: spacing.xlarge,
+    borderRadius: spacing.none,
     borderBottomWidth: 1,
     borderColor: colors.headerBorder,
     backgroundColor: colors.headerBackground,
@@ -22,17 +23,17 @@ export const styles = StyleSheet.create({
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 24,
+    borderRadius: spacing.huge,
     marginLeft: 26,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: spacing.xxxl,
+    paddingVertical: spacing.md,
     backgroundColor: colors.headerBadge,
   },
   statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 10,
+    width: spacing.xl,
+    height: spacing.xl,
+    borderRadius: spacing.sm,
+    marginRight: spacing.lg,
     backgroundColor: colors.heroAccent,
   },
   statusText: {

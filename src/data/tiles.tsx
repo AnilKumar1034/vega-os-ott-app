@@ -9,13 +9,6 @@ export interface TileData {
   icon: ImageSourcePropType;
 }
 
-export const AppDetails = {
-  name: 'LogiXstream',
-  version: '1.0.0',
-  commingSoonMsg: 'New entertainment features and content will be added soon. 🚀',
-}
-
-
 export const tiles: TileData[] = [
   {
     id: 'featured',

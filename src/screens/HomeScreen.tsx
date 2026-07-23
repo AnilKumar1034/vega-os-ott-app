@@ -1,27 +1,57 @@
 import React, {useState} from 'react';
-import {ImageBackground, View} from 'react-native';
+import {FlatList, ImageBackground, View} from 'react-native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {CommonHeader} from '../components/molecules/CommonHeader';
-import {HeroBanner} from '../components/molecules/HeroBanner';
+import {ContentRow} from '../components/molecules/ContentRow';
+import {HeroCarousel} from '../components/molecules/HeroCarousel';
 import {SideMenu} from '../components/molecules/SideMenu';
-import {Tile} from '../components/molecules/Tile';
 import {Routes} from '../constants/routes';
-import {AppDetails, tiles} from '../data/tiles';
+import {homeContentRows, HomeContentRow, homeHeroSlides} from '../data/home';
+import {AppDetails} from '../constants/appDetails';
 import {styles} from './HomeScreen.styles';
 
 export const HomeScreen = () => {
-  const [focusedTileId, setFocusedTileId] = useState<string>(tiles[0].id);
   const [isMenuExpanded, setIsMenuExpanded] = useState(true);
-  const focusedTile = tiles.find((tile) => tile.id === focusedTileId);
+  const [isAnyCardFocused, setIsAnyCardFocused] = useState(false);
+
+  const handleMenuFocus = () => {
+    setIsMenuExpanded(true);
+    setIsAnyCardFocused(false);
+  };
+
+  const handleHeroFocus = () => {
+    setIsMenuExpanded(false);
+    setIsAnyCardFocused(false);
+  };
+
+  const handleCardFocus = () => {
+    setIsMenuExpanded(false);
+    setIsAnyCardFocused(true);
+  };
+
+  const renderHomeRow = ({
+    item: row,
+    index,
+  }: {
+    item: HomeContentRow;
+    index: number;
+  }) => (
+    <ContentRow
+      row={row}
+      onContentFocus={handleCardFocus}
+      shouldPreferFocus={index === 0}
+    />
+  );
+
   return (
     <ImageBackground
       source={require('../assets/background.png')}
       style={styles.background}
-      testID="home-screen">
+      testID={AppDetails.homeTestId}>
       <SideMenu
         activeRoute={Routes.Home}
         isExpanded={isMenuExpanded}
-        onMenuFocus={() => setIsMenuExpanded(true)}
+        onMenuFocus={handleMenuFocus}
       />
       <View style={styles.content}>
         <CommonHeader
@@ -29,28 +59,23 @@ export const HomeScreen = () => {
           logo={require('../assets/vega.png')}
           testID="vega-logo"
         />
-        <HeroBanner
-          title={focusedTile?.label || AppDetails.name}
-          description={focusedTile?.description || AppDetails.commingSoonMsg}
-        />
-
-        <TVFocusGuideView style={styles.tileRowContent}>
-          {tiles.map((tile) => (
-            <Tile
-              key={tile.id}
-              label={tile.label}
-              icon={tile.icon}
-              isFocused={focusedTileId === tile.id}
-              onFocus={() => {
-                setFocusedTileId(tile.id);
-                setIsMenuExpanded(false);
-              }}
-              onBlur={() => {}}
-              testID={`tile-${tile.id}`}
-              accessibilityLabel={tile.accessibilityLabel}
-              hasTVPreferredFocus={tile.id === tiles[0].id}
-            />
-          ))}
+        <TVFocusGuideView style={styles.contentGuide} autoFocus>
+          <FlatList
+            data={homeContentRows}
+            keyExtractor={(row) => row.id}
+            ListHeaderComponent={
+              <HeroCarousel
+                slides={homeHeroSlides}
+                onContentFocus={handleHeroFocus}
+                isMenuOpen={isMenuExpanded}
+                isPaused={isAnyCardFocused}
+                testID={AppDetails.heroBannerTestId}
+              />
+            }
+            renderItem={renderHomeRow}
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={styles.contentList}
+          />
         </TVFocusGuideView>
       </View>
     </ImageBackground>

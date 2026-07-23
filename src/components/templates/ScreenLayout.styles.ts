@@ -1,6 +1,7 @@
 import {StyleSheet} from 'react-native';
 import {colors} from '../../theme/colors';
 import {fontSizes, fontWeights, lineHeights} from '../../theme/fonts';
+import {spacing} from '../../theme/sizes';
 
 export const styles = StyleSheet.create({
   background: {
@@ -21,6 +22,6 @@ export const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: fontSizes.focusedDescription,
     lineHeight: lineHeights.focusedDescription,
-    marginTop: 32,
+    marginTop: spacing.colossal,
   },
 });

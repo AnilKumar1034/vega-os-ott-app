@@ -1,14 +1,15 @@
 import {StyleSheet} from 'react-native';
 import {colors} from '../../theme/colors';
 import {fontSizes, fontWeights, lineHeights} from '../../theme/fonts';
+import {spacing} from '../../theme/sizes';
 
 export const styles = StyleSheet.create({
   tile: {
     width: 320,
     height: 320,
-    borderRadius: 44,
+    borderRadius: spacing.screenPadding,
     overflow: 'hidden',
-    padding: 20,
+    padding: spacing.xlarge,
   },
   topHalf: {
     flex: 1,

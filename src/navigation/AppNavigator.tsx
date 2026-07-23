@@ -3,6 +3,7 @@ import {NavigationContainer} from '@react-navigation/native';
 import {Routes} from '../constants/routes';
 import {HomeScreen} from '../screens/HomeScreen';
 import {DetailsScreen} from '../screens/DetailsScreen';
+import {MovieDetailScreen} from '../screens/MovieDetailScreen';
 import {MoviesScreen} from '../screens/MoviesScreen';
 import {SettingsScreen} from '../screens/SettingsScreen';
 import {SplashScreen} from '../screens/SplashScreen';
@@ -14,6 +15,7 @@ export type RootStackParamList = {
   [Routes.Movies]: undefined;
   [Routes.Details]: undefined;
   [Routes.Settings]: undefined;
+  [Routes.MovieDetail]: {movie?: any};
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -28,6 +30,7 @@ export const AppNavigator = () => {
         <Stack.Screen name={Routes.Home} component={HomeScreen} />
         <Stack.Screen name={Routes.Movies} component={MoviesScreen} />
         <Stack.Screen name={Routes.Details} component={DetailsScreen} />
+        <Stack.Screen name={Routes.MovieDetail} component={MovieDetailScreen} />
         <Stack.Screen name={Routes.Settings} component={SettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>

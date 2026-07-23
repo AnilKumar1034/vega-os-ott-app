@@ -1,53 +1,69 @@
 import {StyleSheet} from 'react-native';
 import {colors} from '../../theme/colors';
 import {fontSizes, fontWeights} from '../../theme/fonts';
+import {sizes, spacing} from '../../theme/sizes';
 
 export const styles = StyleSheet.create({
   container: {
-    width: 420,
-    paddingHorizontal: 36,
-    paddingTop: 72,
+    width: sizes.menuWidthExpanded,
+    paddingHorizontal: spacing.xxxl,
+    paddingTop: spacing.topMenu,
     backgroundColor: colors.menuBackground,
   },
   collapsedContainer: {
-    width: 112,
-    paddingHorizontal: 16,
+    width: sizes.menuWidthCollapsed,
+    paddingHorizontal: spacing.xxxl,
+    paddingTop: spacing.topMenu,
   },
   menuTitle: {
     color: colors.textPrimary,
     fontSize: fontSizes.sideMenuTitle,
     fontWeight: fontWeights.semibold,
     letterSpacing: 1.5,
-    marginBottom: 52,
+    marginBottom: spacing.screenHorizontal,
+  },
+  optionList: {
+    paddingBottom: spacing.colossal,
   },
   option: {
-    height: 92,
+    height: sizes.menuItemHeight,
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: 8,
-    borderLeftWidth: 8,
+    borderRadius: spacing.md,
+    borderLeftWidth: spacing.md,
     borderLeftColor: 'transparent',
-    paddingHorizontal: 24,
-    marginBottom: 14,
+    paddingHorizontal: spacing.huge,
+    marginBottom: spacing.xxl,
   },
   collapsedOption: {
     justifyContent: 'center',
-    paddingHorizontal: 0,
+    paddingHorizontal: spacing.none,
   },
   activeOption: {
     borderLeftColor: colors.heroAccent,
   },
   focusedOption: {
     backgroundColor: colors.menuFocused,
+    borderLeftColor: colors.focusRing,
+    borderRightColor: colors.focusRing,
+    borderWidth: 2,
+    borderColor: colors.focusRing,
+  },
+  collapsedFocusedOption: {
+    backgroundColor: colors.menuFocused,
+    borderWidth: 2,
+    borderColor: colors.focusRing,
+    borderRadius: spacing.xl,
+    transform: [{scale: 1.08}],
   },
   icon: {
-    width: 42,
-    height: 42,
+    width: spacing.screenPadding,
+    height: spacing.screenPadding,
     tintColor: colors.textPrimary,
-    marginRight: 24,
+    marginRight: spacing.huge,
   },
   collapsedIcon: {
-    marginRight: 0,
+    marginRight: spacing.none,
   },
   optionTitle: {
     color: colors.textPrimary,

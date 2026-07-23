@@ -32,12 +32,13 @@ describe('App', () => {
     expect(screen.getByTestId('home-screen')).toBeTruthy();
   });
 
-  it('renders all four tiles on the home screen', () => {
+  it('renders the streaming hero and mock-data content rows', () => {
     const screen = navigateToHome();
-    expect(screen.getByTestId('tile-featured')).toBeTruthy();
-    expect(screen.getByTestId('tile-movies')).toBeTruthy();
-    expect(screen.getByTestId('tile-series')).toBeTruthy();
-    expect(screen.getByTestId('tile-my-list')).toBeTruthy();
+    expect(screen.getByTestId('hero-banner')).toBeTruthy();
+    expect(screen.getByText('Continue Watching')).toBeTruthy();
+    expect(screen.getByText('Trending Now')).toBeTruthy();
+    expect(screen.getByTestId('content-card-horizon')).toBeTruthy();
+    expect(screen.getByTestId('content-card-summit')).toBeTruthy();
   });
 
   it('navigates with the side menu', () => {
@@ -51,27 +52,17 @@ describe('App', () => {
   it('collapses the menu when screen content is focused and expands it again', () => {
     const screen = navigateToHome();
 
-    fireEvent(screen.getByTestId('tile-featured'), 'focus');
+    fireEvent(screen.getByLabelText('Play The Last Horizon'), 'focus');
     expect(screen.queryByTestId('side-menu-label-Movies')).toBeNull();
 
     fireEvent(screen.getByTestId('side-menu-Movies'), 'focus');
     expect(screen.getByTestId('side-menu-label-Movies')).toBeTruthy();
   });
 
-  it('focuses the first tile by default', () => {
+  it('sets TV preferred focus on the hero play action', () => {
     const screen = navigateToHome();
-    const featuredTile = screen.getByTestId('tile-featured');
-    const flatStyle = Object.assign({}, ...[featuredTile.props.style].flat());
-    expect(flatStyle.backgroundColor).toBe('#FF6200');
-  });
-
-  it('sets TV preferred focus on the first tile only', () => {
-    const screen = navigateToHome();
-    expect(screen.getByTestId('tile-featured').props.hasTVPreferredFocus).toBe(
-      true,
-    );
-    expect(screen.getByTestId('tile-movies').props.hasTVPreferredFocus).toBe(
-      false,
-    );
+    expect(
+      screen.getByLabelText('Play The Last Horizon').props.hasTVPreferredFocus,
+    ).toBe(true);
   });
 });

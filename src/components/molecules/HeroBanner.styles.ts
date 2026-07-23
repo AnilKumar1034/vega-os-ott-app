@@ -1,15 +1,17 @@
 import {StyleSheet} from 'react-native';
 import {colors} from '../../theme/colors';
 import {fontSizes, fontWeights, lineHeights} from '../../theme/fonts';
+import {spacing} from '../../theme/sizes';
 
 export const styles = StyleSheet.create({
   container: {
+    width: '100%',
     flex: 1,
-    minHeight: 560,
+    minHeight: 510,
     overflow: 'hidden',
-    borderRadius: 0,
+    borderRadius: spacing.none,
     justifyContent: 'flex-end',
-    marginTop: 24,
+    marginTop: spacing.huge,
   },
   backgroundImage: {
     opacity: 1,
@@ -20,8 +22,8 @@ export const styles = StyleSheet.create({
   },
   content: {
     width: '58%',
-    paddingHorizontal: 72,
-    paddingVertical: 64,
+    paddingHorizontal: spacing.topMenu,
+    paddingVertical: spacing.heroContentPadding,
     backgroundColor: colors.heroContentOverlay,
   },
   eyebrow: {
@@ -29,7 +31,7 @@ export const styles = StyleSheet.create({
     fontSize: fontSizes.heroEyebrow,
     fontWeight: fontWeights.bold,
     letterSpacing: 4,
-    marginBottom: 18,
+    marginBottom: spacing.large,
   },
   title: {
     color: colors.textPrimary,
@@ -41,12 +43,13 @@ export const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: fontSizes.heroDescription,
     lineHeight: lineHeights.heroDescription,
-    marginTop: 24,
+    marginTop: spacing.huge,
   },
   metaRow: {
-    flexDirection: 'row',
+    marginTop: spacing.contentBottom,
+  },
+  metaRowContent: {
     alignItems: 'center',
-    marginTop: 38,
   },
   metaText: {
     color: colors.textPrimary,
@@ -56,6 +59,42 @@ export const styles = StyleSheet.create({
   metaDot: {
     color: colors.heroAccent,
     fontSize: fontSizes.heroMeta,
-    marginHorizontal: 16,
+    marginHorizontal: spacing.xxxl,
+  },
+  actions: {
+    flexDirection: 'row',
+    marginTop: spacing.colossal,
+  },
+  playButton: {
+    minWidth: 176,
+    alignItems: 'center',
+    borderRadius: spacing.sm,
+    paddingHorizontal: spacing.huge,
+    paddingVertical: spacing.xxxl,
+    backgroundColor: colors.textPrimary,
+  },
+  listButton: {
+    minWidth: 190,
+    alignItems: 'center',
+    borderRadius: spacing.sm,
+    marginLeft: spacing.xxxl,
+    paddingHorizontal: spacing.huge,
+    paddingVertical: spacing.xxxl,
+    backgroundColor: colors.actionSecondary,
+  },
+  focusedAction: {
+    borderWidth: 4,
+    borderColor: colors.focusRing,
+    transform: [{scale: 1.05}],
+  },
+  playButtonText: {
+    color: colors.actionPrimaryText,
+    fontSize: fontSizes.heroAction,
+    fontWeight: fontWeights.bold,
+  },
+  listButtonText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.heroAction,
+    fontWeight: fontWeights.bold,
   },
 });

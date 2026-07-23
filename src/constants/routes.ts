@@ -4,6 +4,7 @@ export const Routes = {
   Movies: 'Movies',
   Details: 'Details',
   Settings: 'Settings',
+  MovieDetail: 'MovieDetail',
 } as const;
 
 export type RouteName = (typeof Routes)[keyof typeof Routes];
