@@ -2,6 +2,16 @@ import {ImageSourcePropType} from 'react-native';
 
 export type CardLayoutType = 'horizontal' | 'portrait' | 'grid';
 
+export const WORKING_VIDEO_URLS = [
+  'https://vjs.zencdn.net/v/oceans.mp4',
+  'https://media.w3.org/2010/05/sintel/trailer.mp4',
+  'https://media.w3.org/2010/05/bunny/trailer.mp4',
+  'https://media.w3.org/2010/05/video/movie_300.mp4',
+  'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+];
+
+export const DEFAULT_MOCK_VIDEO_URL = WORKING_VIDEO_URLS[0];
+
 export interface HomeContentItem {
   id: string;
   title: string;
@@ -14,6 +24,7 @@ export interface HomeContentItem {
   genre?: string;
   cast?: string;
   director?: string;
+  videoUrl?: string;
 }
 
 export interface HomeContentRow {
@@ -35,6 +46,7 @@ export interface HeroSlide {
   genre?: string;
   cast?: string;
   director?: string;
+  videoUrl?: string;
 }
 
 export const homeHeroSlides: HeroSlide[] = [
@@ -53,6 +65,7 @@ export const homeHeroSlides: HeroSlide[] = [
     genre: 'Action • Drama • Historical',
     director: 'S. S. Rajamouli',
     cast: 'N. T. Rama Rao Jr., Ram Charan, Ajay Devgn, Alia Bhatt',
+    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
   },
   {
     id: 'kalki',
@@ -69,6 +82,8 @@ export const homeHeroSlides: HeroSlide[] = [
     genre: 'Sci-Fi • Action • Mythology',
     director: 'Nag Ashwin',
     cast: 'Prabhas, Amitabh Bachchan, Kamal Haasan, Deepika Padukone',
+    videoUrl:
+      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
   },
   {
     id: 'kgf-2',
@@ -85,6 +100,8 @@ export const homeHeroSlides: HeroSlide[] = [
     genre: 'Action • Crime • Drama',
     director: 'Prashanth Neel',
     cast: 'Yash, Sanjay Dutt, Raveena Tandon, Srinidhi Shetty',
+    videoUrl:
+      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
   },
   {
     id: 'jawan',
@@ -101,6 +118,8 @@ export const homeHeroSlides: HeroSlide[] = [
     genre: 'Action • Thriller • Drama',
     director: 'Atlee',
     cast: 'Shah Rukh Khan, Nayanthara, Vijay Sethupathi, Deepika Padukone',
+    videoUrl:
+      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
   },
   {
     id: 'interstellar',
@@ -117,6 +136,8 @@ export const homeHeroSlides: HeroSlide[] = [
     genre: 'Sci-Fi • Adventure • Drama',
     director: 'Christopher Nolan',
     cast: 'Matthew McConaughey, Anne Hathaway, Jessica Chastain, Michael Caine',
+    videoUrl:
+      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
   },
 ];
 
@@ -1411,3 +1432,15 @@ export const homeContentRows: HomeContentRow[] = [
     ],
   },
 ];
+
+homeHeroSlides.forEach((slide, index) => {
+  slide.videoUrl = WORKING_VIDEO_URLS[index % WORKING_VIDEO_URLS.length];
+});
+
+homeContentRows.forEach((row) => {
+  row.items.forEach((item, index) => {
+    if (!item.videoUrl) {
+      item.videoUrl = WORKING_VIDEO_URLS[index % WORKING_VIDEO_URLS.length];
+    }
+  });
+});

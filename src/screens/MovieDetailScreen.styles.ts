@@ -6,7 +6,6 @@ import {sizes, spacing} from '../theme/sizes';
 export const styles = StyleSheet.create({
   background: {
     flex: 1,
-    flexDirection: 'row',
   },
   backdropImage: {
     opacity: 0.85,
@@ -17,6 +16,7 @@ export const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
+    paddingLeft: sizes.menuWidthCollapsed || 90,
     paddingBottom: spacing.section,
   },
   mainCardContainer: {

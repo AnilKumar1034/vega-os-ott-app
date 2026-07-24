@@ -87,10 +87,17 @@ export const MovieDetailBody = ({
               ]}
               onFocus={() => onFocusAction('play')}
               onBlur={onBlurAction}
+              onPress={() =>
+                navigation.navigate(Routes.VideoPlayer, {
+                  movie: selectedMovie,
+                  videoUrl: selectedMovie.videoUrl,
+                })
+              }
               hasTVPreferredFocus
               activeOpacity={1}
               accessibilityRole="button"
-              accessibilityLabel={`Play ${selectedMovie.title}`}>
+              accessibilityLabel={`Play ${selectedMovie.title}`}
+              testID="detail-play-button">
               <Text style={styles.playButtonText}>{AppDetails.watchNow}</Text>
             </TouchableOpacity>
 

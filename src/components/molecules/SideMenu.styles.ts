@@ -5,15 +5,21 @@ import {sizes, spacing} from '../../theme/sizes';
 
 export const styles = StyleSheet.create({
   container: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    zIndex: 100,
     width: sizes.menuWidthExpanded,
     paddingHorizontal: spacing.xxxl,
     paddingTop: spacing.topMenu,
-    backgroundColor: colors.menuBackground,
+    backgroundColor: colors.menuBackground || '#080808F2',
   },
   collapsedContainer: {
     width: sizes.menuWidthCollapsed,
     paddingHorizontal: spacing.xxxl,
     paddingTop: spacing.topMenu,
+    backgroundColor: colors.menuBackground || '#080808F2',
   },
   menuTitle: {
     color: colors.textPrimary,

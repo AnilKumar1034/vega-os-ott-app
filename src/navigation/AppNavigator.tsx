@@ -7,6 +7,8 @@ import {MovieDetailScreen} from '../screens/MovieDetailScreen';
 import {MoviesScreen} from '../screens/MoviesScreen';
 import {SettingsScreen} from '../screens/SettingsScreen';
 import {SplashScreen} from '../screens/SplashScreen';
+import {VideoPlayerScreen} from '../screens/VideoPlayerScreen';
+import PlayerTestScreen from '../PlayerTestScreen';
 import {createStackNavigator} from './StackNavigator';
 
 export type RootStackParamList = {
@@ -16,6 +18,8 @@ export type RootStackParamList = {
   [Routes.Details]: undefined;
   [Routes.Settings]: undefined;
   [Routes.MovieDetail]: {movie?: any};
+  [Routes.VideoPlayer]: {movie?: any; videoUrl?: string};
+  [Routes.PlayerTest]: undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -31,6 +35,8 @@ export const AppNavigator = () => {
         <Stack.Screen name={Routes.Movies} component={MoviesScreen} />
         <Stack.Screen name={Routes.Details} component={DetailsScreen} />
         <Stack.Screen name={Routes.MovieDetail} component={MovieDetailScreen} />
+        <Stack.Screen name={Routes.VideoPlayer} component={VideoPlayerScreen} />
+        <Stack.Screen name={Routes.PlayerTest} component={PlayerTestScreen} />
         <Stack.Screen name={Routes.Settings} component={SettingsScreen} />
       </Stack.Navigator>
     </NavigationContainer>

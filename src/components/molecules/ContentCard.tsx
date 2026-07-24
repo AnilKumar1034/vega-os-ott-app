@@ -25,6 +25,7 @@ export interface ContentCardProps {
   genre?: string;
   cast?: string;
   director?: string;
+  videoUrl?: string;
   layout?: CardLayoutType;
   onFocus?: () => void;
   onPress?: () => void;
@@ -44,6 +45,7 @@ export const ContentCard = ({
   genre,
   cast,
   director,
+  videoUrl,
   layout = 'horizontal',
   onFocus,
   onPress,
@@ -68,6 +70,7 @@ export const ContentCard = ({
           genre,
           cast,
           director,
+          videoUrl,
         },
       });
     }

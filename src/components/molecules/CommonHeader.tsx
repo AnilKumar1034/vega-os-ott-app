@@ -1,21 +1,45 @@
 import React from 'react';
 import {Image, ImageSourcePropType, Text, View} from 'react-native';
+import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import {CommonSearch} from './CommonSearch';
 import {styles} from './CommonHeader.styles';
 
-interface CommonHeaderProps {
+export interface CommonHeaderProps {
   title: string;
   logo?: ImageSourcePropType;
   testID?: string;
+  searchValue?: string;
+  onSearchChange?: (text: string) => void;
+  onSearchFocus?: () => void;
+  onSearchBlur?: () => void;
+  showSearch?: boolean;
 }
 
-export const CommonHeader = ({title, logo, testID}: CommonHeaderProps) => {
+export const CommonHeader = ({
+  title,
+  logo,
+  testID,
+  searchValue = '',
+  onSearchChange,
+  onSearchFocus,
+  onSearchBlur,
+  showSearch = true,
+}: CommonHeaderProps) => {
   return (
-    <View style={styles.container}>
+    <TVFocusGuideView style={styles.container} autoFocus={false}>
       <Text style={styles.title}>{title}</Text>
       <View style={styles.statusBadge}>
         <View style={styles.statusDot} />
         <Text style={styles.statusText}>PREMIUM</Text>
       </View>
+      {showSearch && onSearchChange && (
+        <CommonSearch
+          value={searchValue}
+          onChangeText={onSearchChange}
+          onFocus={onSearchFocus}
+          onBlur={onSearchBlur}
+        />
+      )}
       {logo && (
         <Image
           source={logo}
@@ -24,6 +48,6 @@ export const CommonHeader = ({title, logo, testID}: CommonHeaderProps) => {
           testID={testID}
         />
       )}
-    </View>
+    </TVFocusGuideView>
   );
 };

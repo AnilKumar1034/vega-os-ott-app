@@ -97,6 +97,15 @@ export const HeroCarousel = ({
     }
   };
 
+  const playVideo = () => {
+    if (currentSlide) {
+      navigation.navigate(Routes.VideoPlayer, {
+        movie: currentSlide,
+        videoUrl: (currentSlide as any).videoUrl,
+      });
+    }
+  };
+
   const openMovieDetails = () => {
     if (currentSlide) {
       navigation.navigate(Routes.MovieDetail, {
@@ -152,7 +161,7 @@ export const HeroCarousel = ({
               ]}
               onFocus={() => handleFocus('play')}
               onBlur={handleBlur}
-              onPress={openMovieDetails}
+              onPress={playVideo}
               activeOpacity={1}
               hasTVPreferredFocus={shouldPreferFocus && activeIndex === 0}
               accessibilityRole="button"

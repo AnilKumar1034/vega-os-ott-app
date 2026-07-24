@@ -7,10 +7,22 @@ import {SideMenu} from '../components/molecules/SideMenu';
 import {Routes} from '../constants/routes';
 import {homeContentRows, HomeContentRow} from '../data/home';
 import {AppDetails} from '../constants/appDetails';
+import {filterContentRows} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
 
 export const MoviesScreen = () => {
-  const [isMenuExpanded, setIsMenuExpanded] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isMenuExpanded, setIsMenuExpanded] = useState(false);
+
+  const filteredRows = filterContentRows(homeContentRows, searchQuery);
+
+  const handleMenuFocus = () => {
+    setIsMenuExpanded(true);
+  };
+
+  const handleMenuBlur = () => {
+    setIsMenuExpanded(false);
+  };
 
   const collapseMenu = () => setIsMenuExpanded(false);
 
@@ -36,17 +48,21 @@ export const MoviesScreen = () => {
       <SideMenu
         activeRoute={Routes.Movies}
         isExpanded={isMenuExpanded}
-        onMenuFocus={() => setIsMenuExpanded(true)}
+        onMenuFocus={handleMenuFocus}
+        onMenuBlur={handleMenuBlur}
       />
       <View style={styles.content}>
         <CommonHeader
           title={AppDetails.moviesScreenTitle}
           logo={require('../assets/vega.png')}
           testID="vega-logo"
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearchFocus={collapseMenu}
         />
         <TVFocusGuideView style={styles.contentGuide} autoFocus>
           <FlatList
-            data={homeContentRows}
+            data={filteredRows}
             keyExtractor={(row) => `movies-${row.id}`}
             ListHeaderComponent={
               <View style={styles.moviesHeader}>

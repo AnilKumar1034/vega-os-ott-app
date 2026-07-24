@@ -1,8 +1,10 @@
 import React, {ReactNode, useState} from 'react';
-import {ImageBackground, Text, TouchableOpacity} from 'react-native';
+import {ImageBackground, Text, TouchableOpacity, View} from 'react-native';
 import {RouteName} from '../../constants/routes';
-import {styles} from './ScreenLayout.styles';
+import {CommonHeader} from '../molecules/CommonHeader';
 import {SideMenu} from '../molecules/SideMenu';
+import {AppDetails} from '../../constants/appDetails';
+import {styles} from './ScreenLayout.styles';
 
 interface ScreenLayoutProps {
   activeRoute: Exclude<RouteName, 'Splash'>;
@@ -17,7 +19,18 @@ export const ScreenLayout = ({
   description,
   children,
 }: ScreenLayoutProps) => {
-  const [isMenuExpanded, setIsMenuExpanded] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isMenuExpanded, setIsMenuExpanded] = useState(false);
+
+  const handleMenuFocus = () => {
+    setIsMenuExpanded(true);
+  };
+
+  const handleMenuBlur = () => {
+    setIsMenuExpanded(false);
+  };
+
+  const collapseMenu = () => setIsMenuExpanded(false);
 
   return (
     <ImageBackground
@@ -26,17 +39,28 @@ export const ScreenLayout = ({
       <SideMenu
         activeRoute={activeRoute}
         isExpanded={isMenuExpanded}
-        onMenuFocus={() => setIsMenuExpanded(true)}
+        onMenuFocus={handleMenuFocus}
+        onMenuBlur={handleMenuBlur}
       />
-      <TouchableOpacity
-        style={styles.content}
-        testID={`${activeRoute.toLowerCase()}-screen`}
-        onFocus={() => setIsMenuExpanded(false)}
-        activeOpacity={1}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.description}>{description}</Text>
-        {children}
-      </TouchableOpacity>
+      <View style={styles.content}>
+        <CommonHeader
+          title={AppDetails.name}
+          logo={require('../../assets/vega.png')}
+          testID="vega-logo"
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearchFocus={collapseMenu}
+        />
+        <TouchableOpacity
+          style={styles.background}
+          testID={`${activeRoute.toLowerCase()}-screen`}
+          onFocus={collapseMenu}
+          activeOpacity={1}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.description}>{description}</Text>
+          {children}
+        </TouchableOpacity>
+      </View>
     </ImageBackground>
   );
 };

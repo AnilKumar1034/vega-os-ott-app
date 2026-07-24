@@ -33,18 +33,29 @@ const menuOptions: MenuOptionItem[] = [
   },
 ];
 
-interface SideMenuProps {
+export interface SideMenuProps {
   activeRoute: MenuOptionItem['route'];
   isExpanded: boolean;
   onMenuFocus: () => void;
+  onMenuBlur?: () => void;
+  destinations?: any[];
 }
 
 export const SideMenu = ({
   activeRoute,
   isExpanded,
   onMenuFocus,
+  onMenuBlur,
+  destinations,
 }: SideMenuProps) => {
   const [focusedRoute, setFocusedRoute] = useState<string | null>(null);
+
+  const handleItemBlur = (route: string) => {
+    setFocusedRoute((prev) => (prev === route ? null : prev));
+    if (onMenuBlur) {
+      onMenuBlur();
+    }
+  };
 
   const renderOptionItem = ({item: option}: {item: MenuOptionItem}) => (
     <SideMenuItem
@@ -56,9 +67,7 @@ export const SideMenu = ({
         setFocusedRoute(option.route);
         onMenuFocus();
       }}
-      onBlur={() => {
-        setFocusedRoute((prev) => (prev === option.route ? null : prev));
-      }}
+      onBlur={() => handleItemBlur(option.route)}
     />
   );
 
@@ -66,7 +75,9 @@ export const SideMenu = ({
     <TVFocusGuideView
       style={[styles.container, !isExpanded && styles.collapsedContainer]}
       accessibilityRole="menu"
-      autoFocus>
+      autoFocus
+      trapFocusLeft
+      destinations={destinations}>
       {isExpanded && <Text style={styles.menuTitle}>{AppDetails.name}</Text>}
       <FlatList
         data={menuOptions}

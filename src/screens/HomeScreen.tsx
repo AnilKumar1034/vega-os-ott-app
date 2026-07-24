@@ -8,15 +8,24 @@ import {SideMenu} from '../components/molecules/SideMenu';
 import {Routes} from '../constants/routes';
 import {homeContentRows, HomeContentRow, homeHeroSlides} from '../data/home';
 import {AppDetails} from '../constants/appDetails';
+import {filterContentRows, filterHeroSlides} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
 
 export const HomeScreen = () => {
-  const [isMenuExpanded, setIsMenuExpanded] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [isAnyCardFocused, setIsAnyCardFocused] = useState(false);
+
+  const filteredRows = filterContentRows(homeContentRows, searchQuery);
+  const filteredHeroSlides = filterHeroSlides(homeHeroSlides, searchQuery);
 
   const handleMenuFocus = () => {
     setIsMenuExpanded(true);
     setIsAnyCardFocused(false);
+  };
+
+  const handleMenuBlur = () => {
+    setIsMenuExpanded(false);
   };
 
   const handleHeroFocus = () => {
@@ -52,25 +61,31 @@ export const HomeScreen = () => {
         activeRoute={Routes.Home}
         isExpanded={isMenuExpanded}
         onMenuFocus={handleMenuFocus}
+        onMenuBlur={handleMenuBlur}
       />
       <View style={styles.content}>
         <CommonHeader
           title={AppDetails.name}
           logo={require('../assets/vega.png')}
           testID="vega-logo"
+          searchValue={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSearchFocus={handleHeroFocus}
         />
         <TVFocusGuideView style={styles.contentGuide} autoFocus>
           <FlatList
-            data={homeContentRows}
+            data={filteredRows}
             keyExtractor={(row) => row.id}
             ListHeaderComponent={
-              <HeroCarousel
-                slides={homeHeroSlides}
-                onContentFocus={handleHeroFocus}
-                isMenuOpen={isMenuExpanded}
-                isPaused={isAnyCardFocused}
-                testID={AppDetails.heroBannerTestId}
-              />
+              filteredHeroSlides.length > 0 ? (
+                <HeroCarousel
+                  slides={filteredHeroSlides}
+                  onContentFocus={handleHeroFocus}
+                  isMenuOpen={isMenuExpanded}
+                  isPaused={isAnyCardFocused}
+                  testID={AppDetails.heroBannerTestId}
+                />
+              ) : null
             }
             renderItem={renderHomeRow}
             showsVerticalScrollIndicator={false}

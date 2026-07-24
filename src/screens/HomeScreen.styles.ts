@@ -1,16 +1,16 @@
 import {StyleSheet} from 'react-native';
 import {colors} from '../theme/colors';
 import {fontSizes, fontWeights} from '../theme/fonts';
-import {spacing} from '../theme/sizes';
+import {sizes, spacing} from '../theme/sizes';
 
 export const styles = StyleSheet.create({
   background: {
     flex: 1,
-    flexDirection: 'row',
-    backgroundColor: colors.screenBackground,
+    backgroundColor: colors.screenBackground || '#090909',
   },
   content: {
     flex: 1,
+    paddingLeft: sizes.menuWidthCollapsed || 90,
     paddingBottom: spacing.contentBottom,
   },
   contentGuide: {

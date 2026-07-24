@@ -16,6 +16,7 @@ export const styles = StyleSheet.create({
   backgroundImage: {
     borderRadius: spacing.xxxl,
     opacity: 0.9,
+    // resizeMode: 'contain'
   },
   overlay: {
     ...StyleSheet.absoluteFillObject,
