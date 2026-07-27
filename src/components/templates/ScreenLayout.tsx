@@ -11,6 +11,7 @@ interface ScreenLayoutProps {
   title: string;
   description: string;
   children?: ReactNode;
+  showSearch?: boolean;
 }
 
 export const ScreenLayout = ({
@@ -18,6 +19,7 @@ export const ScreenLayout = ({
   title,
   description,
   children,
+  showSearch
 }: ScreenLayoutProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
@@ -50,6 +52,7 @@ export const ScreenLayout = ({
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
           onSearchFocus={collapseMenu}
+          showSearch={showSearch}
         />
         <TouchableOpacity
           style={styles.background}

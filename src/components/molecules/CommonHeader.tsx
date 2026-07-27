@@ -4,6 +4,8 @@ import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {CommonSearch} from './CommonSearch';
 import {styles} from './CommonHeader.styles';
 
+import {strings} from '../../constants/strings';
+
 export interface CommonHeaderProps {
   title: string;
   logo?: ImageSourcePropType;
@@ -17,7 +19,7 @@ export interface CommonHeaderProps {
 
 export const CommonHeader = ({
   title,
-  logo,
+  logo = require('../../assets/vega.png'),
   testID,
   searchValue = '',
   onSearchChange,
@@ -30,7 +32,9 @@ export const CommonHeader = ({
       <Text style={styles.title}>{title}</Text>
       <View style={styles.statusBadge}>
         <View style={styles.statusDot} />
-        <Text style={styles.statusText}>PREMIUM</Text>
+        <Text style={styles.statusText}>
+          {strings.subscriptions.premium.toUpperCase()}
+        </Text>
       </View>
       {showSearch && onSearchChange && (
         <CommonSearch

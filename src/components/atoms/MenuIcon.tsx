@@ -55,9 +55,9 @@ export const MenuIcon = ({
 
   let iconColor = color || colors.textPrimary;
   if (focused) {
-    iconColor = colors.focusedTint || '#FFFFFF';
+    iconColor = colors.focusedTint;
   } else if (active) {
-    iconColor = colors.activeTint || '#E50914';
+    iconColor = colors.activeTint;
   }
 
   return (

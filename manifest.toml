@@ -1,9 +1,10 @@
 schema-version = 1
 
 [package]
-title = "Basic UI React Native Application for project vegaottapp"
+title = "LogiXstream"
 version = "0.1.0"
 id = "com.anil.vegaott"
+icon = "@image/vega.png"
 
 [components]
 
@@ -12,6 +13,7 @@ id = "com.anil.vegaott.main"
 runtime-module = "/com.amazon.kepler.keplerscript.runtime.loader_2@IKeplerScript_2_0"
 launch-type = "singleton"
 categories = ["com.amazon.category.main"]
+icon = "@image/vega.png"
 
 [wants]
 

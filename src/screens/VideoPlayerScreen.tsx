@@ -11,6 +11,7 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {DEFAULT_MOCK_VIDEO_URL, HomeContentItem} from '../data/home';
 import {Routes} from '../constants/routes';
+import {strings} from '../constants/strings';
 import {styles} from './VideoPlayerScreen.styles';
 
 let KeplerVideoViewComponent: any = View;
@@ -30,24 +31,6 @@ try {
   KeplerVideoViewComponent = View;
   VideoPlayerClass = null;
 }
-
-const formatTime = (secs: number): string => {
-  if (isNaN(secs) || secs < 0) {
-    return '00:00';
-  }
-  const h = Math.floor(secs / 3600);
-  const m = Math.floor((secs % 3600) / 60);
-  const s = Math.floor(secs % 60);
-
-  const mStr = String(m).padStart(2, '0');
-  const sStr = String(s).padStart(2, '0');
-
-  if (h > 0) {
-    const hStr = String(h).padStart(2, '0');
-    return `${hStr}:${mStr}:${sStr}`;
-  }
-  return `${mStr}:${sStr}`;
-};
 
 export const VideoPlayerScreen = () => {
   const navigation = useNavigation<any>();
@@ -78,12 +61,9 @@ export const VideoPlayerScreen = () => {
   }
   const player = playerRef.current;
 
-  const [isPaused, setIsPaused] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(120);
-  const [focusedControl, setFocusedControl] = useState<
-    'back' | 'rewind' | 'play' | 'forward' | null
-  >('play');
+  const backButtonRef = useRef<any>(null);
+  const [backButtonNode, setBackButtonNode] = useState<any>(null);
+  const [isBackFocused, setIsBackFocused] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
 
@@ -96,7 +76,7 @@ export const VideoPlayerScreen = () => {
     }
     hideControlsTimerRef.current = setTimeout(() => {
       setShowControls(false);
-    }, 6000);
+    }, 8000);
   }, []);
 
   useEffect(() => {
@@ -121,32 +101,6 @@ export const VideoPlayerScreen = () => {
       }
     };
 
-    const onLoadedMetadata = () => {
-      if (!disposed) {
-        if (player.duration && player.duration > 0) {
-          setDuration(player.duration);
-        }
-      }
-    };
-
-    const onCanPlay = () => {
-      if (!disposed) {
-        Promise.resolve(player.play?.()).catch(() => {});
-      }
-    };
-
-    const onPlaying = () => {
-      if (!disposed) {
-        setIsPaused(false);
-      }
-    };
-
-    const onPause = () => {
-      if (!disposed) {
-        setIsPaused(true);
-      }
-    };
-
     const onError = (evt: any) => {
       if (!disposed) {
         console.log('Player error event:', evt);
@@ -157,10 +111,6 @@ export const VideoPlayerScreen = () => {
 
     if (player?.addEventListener) {
       player.addEventListener('loadstart', onLoadStart);
-      player.addEventListener('loadedmetadata', onLoadedMetadata);
-      player.addEventListener('canplay', onCanPlay);
-      player.addEventListener('playing', onPlaying);
-      player.addEventListener('pause', onPause);
       player.addEventListener('error', onError);
     }
 
@@ -186,10 +136,6 @@ export const VideoPlayerScreen = () => {
       disposed = true;
       if (player?.removeEventListener) {
         player.removeEventListener('loadstart', onLoadStart);
-        player.removeEventListener('loadedmetadata', onLoadedMetadata);
-        player.removeEventListener('canplay', onCanPlay);
-        player.removeEventListener('playing', onPlaying);
-        player.removeEventListener('pause', onPause);
         player.removeEventListener('error', onError);
       }
 
@@ -202,47 +148,10 @@ export const VideoPlayerScreen = () => {
     };
   }, [player, videoUrl]);
 
-  const togglePlayPause = () => {
+  const handleBackFocus = () => {
     resetHideTimer();
-    if (player) {
-      if (isPaused) {
-        Promise.resolve(player.play?.()).catch(() => {});
-        setIsPaused(false);
-      } else {
-        try {
-          player.pause?.();
-        } catch (e) {
-          console.log('Pause error:', e);
-        }
-        setIsPaused(true);
-      }
-    } else {
-      setIsPaused(!isPaused);
-    }
+    setIsBackFocused(true);
   };
-
-  const seekRelative = (seconds: number) => {
-    resetHideTimer();
-    const newTime = Math.max(0, Math.min(duration, currentTime + seconds));
-    if (player) {
-      try {
-        player.currentTime = newTime;
-      } catch (e) {
-        console.log('Seek error:', e);
-      }
-    }
-    setCurrentTime(newTime);
-  };
-
-  const handleControlFocus = (
-    control: 'back' | 'rewind' | 'play' | 'forward',
-  ) => {
-    resetHideTimer();
-    setFocusedControl(control);
-  };
-
-  const progressPercent =
-    duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
 
   const backdropSource =
     movie.image && typeof movie.image === 'object' && 'uri' in movie.image
@@ -250,8 +159,10 @@ export const VideoPlayerScreen = () => {
       : require('../assets/background.png');
 
   return (
-    <View
+    <TVFocusGuideView
       style={styles.container}
+      autoFocus
+      destinations={backButtonNode ? [backButtonNode] : []}
       testID="video-player-screen"
       onStartShouldSetResponderCapture={() => {
         resetHideTimer();
@@ -267,6 +178,7 @@ export const VideoPlayerScreen = () => {
       {/* Kepler Video View Surface Layer at zIndex: 1 */}
       <KeplerVideoViewComponent
         videoPlayer={player}
+        showControls={true}
         onSurfaceViewCreated={(surfaceHandle: string) => {
           if (player && player.setSurfaceHandle) {
             try {
@@ -298,6 +210,7 @@ export const VideoPlayerScreen = () => {
           <View style={styles.errorCard}>
             <Text style={styles.errorTitle}>Playback Error</Text>
             <Text style={styles.errorBody}>{videoError}</Text>
+
             <TouchableOpacity
               style={styles.retryButton}
               onPress={() => {
@@ -310,31 +223,42 @@ export const VideoPlayerScreen = () => {
               accessibilityRole="button"
               accessibilityLabel="Retry video playback"
               testID="video-retry-button">
-              <Text style={styles.retryButtonText}>Retry</Text>
+              <Text style={styles.retryButtonText}>{strings.actions.retry}</Text>
             </TouchableOpacity>
           </View>
         </View>
       )}
 
-      {/* On-Screen OTT Controls Overlay at zIndex: 10 */}
+      {/* Header Overlay at zIndex: 10 */}
       {showControls && (
-        <TVFocusGuideView style={styles.overlayContainer} autoFocus>
-          <View style={styles.topHeader}>
+        <TVFocusGuideView
+          style={styles.overlayContainer}
+          autoFocus
+          destinations={backButtonNode ? [backButtonNode] : []}>
+          <View style={styles.topHeader} pointerEvents="box-none">
             <TouchableOpacity
+              ref={(node) => {
+                backButtonRef.current = node;
+                if (node && !backButtonNode) {
+                  setBackButtonNode(node);
+                }
+              }}
               style={[
                 styles.backButton,
-                focusedControl === 'back' && styles.backButtonFocused,
+                isBackFocused && styles.backButtonFocused,
               ]}
-              onFocus={() => handleControlFocus('back')}
+              hasTVPreferredFocus
+              onFocus={handleBackFocus}
+              onBlur={() => setIsBackFocused(false)}
               onPress={() => navigation.navigate(Routes.Home)}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel="Back to Home"
               testID="player-back-button">
-              <Text style={styles.backButtonText}>‹ Back</Text>
+              <Text style={styles.backButtonText}>‹ {strings.actions.back}</Text>
             </TouchableOpacity>
 
-            <View style={styles.titleContainer}>
+            <View style={styles.titleContainer} pointerEvents="none">
               <Text style={styles.movieTitle} numberOfLines={1}>
                 {movie.title}
               </Text>
@@ -345,83 +269,12 @@ export const VideoPlayerScreen = () => {
               )}
             </View>
 
-            <View style={styles.qualityBadge}>
-              <Text style={styles.qualityBadgeText}>4K UHD • DOLBY 5.1</Text>
-            </View>
-          </View>
-
-          {isPaused && (
-            <View style={styles.centerOverlay}>
-              <Text style={styles.statusText}>❚❚ PAUSED</Text>
-            </View>
-          )}
-
-          <View style={styles.bottomControls}>
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBarTrack}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    {width: `${progressPercent}%`},
-                  ]}
-                />
-              </View>
-              <View style={styles.timeRow}>
-                <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
-                <Text style={styles.timeText}>{formatTime(duration)}</Text>
-              </View>
-            </View>
-
-            <View style={styles.controlsRow}>
-              <TouchableOpacity
-                style={[
-                  styles.controlBtn,
-                  focusedControl === 'rewind' && styles.controlBtnFocused,
-                ]}
-                onFocus={() => handleControlFocus('rewind')}
-                onPress={() => seekRelative(-10)}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="Rewind 10 seconds"
-                testID="player-rewind-button">
-                <Text style={styles.controlBtnText}>↺ -10s</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.controlBtn,
-                  styles.playPauseBtn,
-                  focusedControl === 'play' && styles.playPauseBtnFocused,
-                ]}
-                onFocus={() => handleControlFocus('play')}
-                onPress={togglePlayPause}
-                hasTVPreferredFocus
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel={isPaused ? 'Play' : 'Pause'}
-                testID="player-play-pause-button">
-                <Text style={styles.controlBtnText}>
-                  {isPaused ? '▶ Play' : '❚❚ Pause'}
-                </Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[
-                  styles.controlBtn,
-                  focusedControl === 'forward' && styles.controlBtnFocused,
-                ]}
-                onFocus={() => handleControlFocus('forward')}
-                onPress={() => seekRelative(10)}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel="Fast forward 10 seconds"
-                testID="player-forward-button">
-                <Text style={styles.controlBtnText}>↻ +10s</Text>
-              </TouchableOpacity>
+            <View style={styles.qualityBadge} pointerEvents="none">
+              <Text style={styles.qualityBadgeText}>{strings.header.uhd}</Text>
             </View>
           </View>
         </TVFocusGuideView>
       )}
-    </View>
+    </TVFocusGuideView>
   );
 };

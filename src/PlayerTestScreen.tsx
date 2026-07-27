@@ -1,5 +1,8 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {StyleSheet, Text, View} from 'react-native';
+import {colors} from './theme/colors';
+import {fontSizes} from './theme/fonts';
+import {borderRadius, spacing} from './theme/sizes';
 
 let KeplerVideoViewComponent: any = View;
 let VideoPlayerClass: any = null;
@@ -223,7 +226,7 @@ const PlayerTestScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: colors.shadowDark,
   },
 
   video: {
@@ -234,18 +237,18 @@ const styles = StyleSheet.create({
 
   statusContainer: {
     position: 'absolute',
-    left: 40,
-    right: 40,
-    bottom: 40,
-    paddingHorizontal: 20,
-    paddingVertical: 14,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    borderRadius: 6,
+    left: spacing.cardPadding,
+    right: spacing.cardPadding,
+    bottom: spacing.cardPadding,
+    paddingHorizontal: spacing.xlarge,
+    paddingVertical: spacing.xxl,
+    backgroundColor: colors.ratingBackground,
+    borderRadius: borderRadius.sm,
   },
 
   statusText: {
-    color: '#fff',
-    fontSize: 20,
+    color: colors.textPrimary,
+    fontSize: fontSizes.cardTitle,
     textAlign: 'center',
   },
 });

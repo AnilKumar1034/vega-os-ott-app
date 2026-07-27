@@ -66,16 +66,15 @@ describe('VideoPlayerScreen', () => {
     jest.clearAllMocks();
   });
 
-  it('renders VideoPlayerScreen with title, back button, and play controls', () => {
+  it('renders VideoPlayerScreen with title, back button, and video surface with default controls', () => {
     const screen = render(<VideoPlayerScreen />);
 
     expect(screen.getByTestId('video-player-screen')).toBeTruthy();
-    expect(screen.getByTestId('w3c-video-surface')).toBeTruthy();
+    const surface = screen.getByTestId('w3c-video-surface');
+    expect(surface).toBeTruthy();
+    expect(surface.props.showControls).toBe(true);
     expect(screen.getByText('Test Feature Movie')).toBeTruthy();
     expect(screen.getByTestId('player-back-button')).toBeTruthy();
-    expect(screen.getByTestId('player-play-pause-button')).toBeTruthy();
-    expect(screen.getByTestId('player-rewind-button')).toBeTruthy();
-    expect(screen.getByTestId('player-forward-button')).toBeTruthy();
   });
 
   it('attaches the surface and starts playback when the surface is created', async () => {
@@ -87,20 +86,6 @@ describe('VideoPlayerScreen', () => {
     expect(mockInitialize).toHaveBeenCalled();
     expect(mockSetSurfaceHandle).toHaveBeenCalledWith('surface-1');
     expect(mockPlay).toHaveBeenCalled();
-  });
-
-  it('toggles play/pause when play/pause button is pressed', () => {
-    const screen = render(<VideoPlayerScreen />);
-
-    const playPauseBtn = screen.getByTestId('player-play-pause-button');
-    expect(screen.getByText('❚❚ Pause')).toBeTruthy();
-
-    fireEvent.press(playPauseBtn);
-    expect(screen.getByText('▶ Play')).toBeTruthy();
-    expect(screen.getByText('❚❚ PAUSED')).toBeTruthy();
-
-    fireEvent.press(playPauseBtn);
-    expect(screen.getByText('❚❚ Pause')).toBeTruthy();
   });
 
   it('navigates back to Home when back button is pressed', () => {

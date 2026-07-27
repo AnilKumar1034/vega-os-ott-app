@@ -4,6 +4,8 @@ import {MenuIcon} from '../atoms/MenuIcon';
 import {colors} from '../../theme/colors';
 import {styles} from './CommonSearch.styles';
 
+import {strings} from '../../constants/strings';
+
 export interface CommonSearchProps {
   value: string;
   onChangeText: (text: string) => void;
@@ -17,7 +19,7 @@ export interface CommonSearchProps {
 export const CommonSearch = ({
   value,
   onChangeText,
-  placeholder = 'Search movies, shows, genre...',
+  placeholder = strings.placeholders.search,
   onFocus,
   onBlur,
   testID = 'common-search-input',
@@ -74,7 +76,7 @@ export const CommonSearch = ({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="rgba(255, 255, 255, 0.5)"
+        placeholderTextColor={colors.inputPlaceholder}
         onFocus={handleFocus}
         onBlur={handleBlur}
         accessibilityRole="search"

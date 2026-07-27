@@ -1,5 +1,6 @@
 {
   "//": "The declared app name must follow this pattern to be KRL-compatible",
   "name": "com.anil.vegaott.main",
-  "displayName": "LogiXstream"
+  "displayName": "LogiXstream",
+  "icon": "src/assets/vega.png"
 }

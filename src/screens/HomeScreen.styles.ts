@@ -6,7 +6,7 @@ import {sizes, spacing} from '../theme/sizes';
 export const styles = StyleSheet.create({
   background: {
     flex: 1,
-    backgroundColor: colors.screenBackground || '#090909',
+    backgroundColor: colors.screenBackground,
   },
   content: {
     flex: 1,

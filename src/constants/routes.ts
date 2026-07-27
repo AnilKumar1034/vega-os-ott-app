@@ -7,6 +7,8 @@ export const Routes = {
   MovieDetail: 'MovieDetail',
   VideoPlayer: 'VideoPlayer',
   PlayerTest: 'PlayerTest',
+  Login: 'Login',
+  Register: 'Register',
 } as const;
 
 export type RouteName = (typeof Routes)[keyof typeof Routes];

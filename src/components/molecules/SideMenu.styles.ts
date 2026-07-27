@@ -37,7 +37,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: spacing.md,
     borderLeftWidth: spacing.md,
-    borderLeftColor: 'transparent',
+    borderLeftColor: colors.transparent,
     paddingHorizontal: spacing.huge,
     marginBottom: spacing.xxl,
   },

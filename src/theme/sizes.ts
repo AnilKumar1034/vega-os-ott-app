@@ -15,6 +15,7 @@ export const spacing = {
   colossal: 32,
   section: 36,
   contentBottom: 38,
+  cardPadding: 40,
   screenPadding: 42,
   extraHuge: 48,
   screenHorizontal: 54,
@@ -22,8 +23,20 @@ export const spacing = {
   topMenu: 72,
 } as const;
 
+export const borderRadius = {
+  xs: 4,
+  sm: 8,
+  md: 12,
+  lg: 14,
+  xl: 16,
+  xxl: 20,
+  card: 24,
+  circle: 9999,
+} as const;
+
 export const sizes = {
   spacing,
+  borderRadius,
   cardWidthHorizontal: 270,
   cardHeightHorizontal: 170,
   cardWidthPortrait: 180,
@@ -36,4 +49,8 @@ export const sizes = {
   heroMinHeight: 520,
   posterWidth: 320,
   posterHeight: 480,
+  authCardMaxWidth: 720,
+  settingsCardMaxWidth: 820,
+  avatarSize: 80,
+  avatarRadius: 40,
 } as const;

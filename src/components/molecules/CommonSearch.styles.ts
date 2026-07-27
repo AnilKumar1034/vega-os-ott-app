@@ -7,10 +7,10 @@ export const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    backgroundColor: colors.inputBackground,
     borderRadius: spacing.xl,
     borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    borderColor: colors.cardBorder,
     paddingHorizontal: spacing.huge,
     paddingVertical: spacing.sm,
     height: 46,
@@ -20,7 +20,7 @@ export const styles = StyleSheet.create({
     marginRight: spacing.xlarge,
   },
   focusedContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.18)',
+    backgroundColor: colors.inputFocusedBackground,
     borderColor: colors.focusRing,
     borderWidth: 2,
     shadowColor: colors.focusRing,
