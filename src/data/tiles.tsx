@@ -33,8 +33,8 @@ export const tiles: TileData[] = [
   },
   {
     id: 'my-list',
-    label: 'My List',
-    accessibilityLabel: 'My List',
+    label: 'Favourites',
+    accessibilityLabel: 'Favourites',
     description: 'Your saved favorites will appear here.',
     icon: require('../assets/learn-more.png'),
   },

@@ -7,9 +7,8 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {useNavigation} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
-import {useAuth} from '../context/AuthProvider';
+import {useAuth} from '../context/authContext';
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {colors} from '../theme/colors';
@@ -23,14 +22,21 @@ const SUBSCRIPTION_OPTIONS = [
   strings.subscriptions.ultra4k,
 ];
 
-export const RegisterScreen = () => {
-  const navigation = useNavigation<any>();
+type Props = {
+  navigation: {
+    navigate: (routeName: Routes | string, params?: unknown) => void;
+  };
+};
+
+export const RegisterScreen = ({navigation}: Props) => {
   const {register} = useAuth();
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [subscription, setSubscription] = useState<string>(strings.subscriptions.premium);
+  const [subscription, setSubscription] = useState<string>(
+    strings.subscriptions.premium,
+  );
   const [city, setCity] = useState('');
   const [country, setCountry] = useState('');
 
@@ -95,9 +101,7 @@ export const RegisterScreen = () => {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled">
           <Text style={styles.title}>{strings.auth.registerTitle}</Text>
-          <Text style={styles.subtitle}>
-            {strings.auth.registerSubtitle}
-          </Text>
+          <Text style={styles.subtitle}>{strings.auth.registerSubtitle}</Text>
 
           {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
 

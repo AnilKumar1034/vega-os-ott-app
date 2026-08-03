@@ -1,5 +1,12 @@
 import {firebaseConfig} from '../config/firebaseConfig';
 
+const AsyncStorage = require('@amazon-devices/react-native-async-storage__async-storage/lib/commonjs/AsyncStorage.native')
+  .default as {
+  getItem: (key: string) => Promise<string | null>;
+  setItem: (key: string, value: string) => Promise<void>;
+  removeItem: (key: string) => Promise<void>;
+};
+
 export interface UserProfileData {
   uid: string;
   username: string;
@@ -39,11 +46,14 @@ export interface UpdateProfileParams {
 
 const AUTH_BASE = 'https://identitytoolkit.googleapis.com/v1';
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1';
-let inMemorySession: {
+const SESSION_STORAGE_KEY = '@vegaott/auth-session';
+const GOOGLE_REACHABILITY_URL = 'https://www.google.com/generate_204';
+
+type StoredSession = {
   user: AuthUser;
   idToken: string;
   refreshToken: string;
-} | null = null;
+};
 
 type AuthResponse = {
   localId: string;
@@ -105,7 +115,90 @@ const saveSession = async (session: {
   idToken: string;
   refreshToken: string;
 }) => {
-  inMemorySession = session;
+  await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+};
+
+type FetchLikeResponse = {
+  ok: boolean;
+  status: number;
+  json: () => Promise<any>;
+};
+
+const readJson = async (response: FetchLikeResponse) => {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+};
+
+const getNetworkErrorMessage = (error: unknown) => {
+  if (
+    error instanceof TypeError &&
+    /Network request failed/i.test(error.message)
+  ) {
+    return 'NETWORK_REQUEST_FAILED';
+  }
+
+  return error instanceof Error && error.message
+    ? error.message
+    : 'REQUEST_FAILED';
+};
+
+const maskEmail = (email: string) => {
+  const [name = '', domain = ''] = email.split('@');
+  if (!name || !domain) {
+    return email;
+  }
+
+  const visibleName = name.slice(0, 2);
+  return `${visibleName}${name.length > 2 ? '***' : ''}@${domain}`;
+};
+
+const summarizeBody = (body: Record<string, unknown>) => ({
+  keys: Object.keys(body),
+  hasEmail: typeof body.email === 'string',
+  hasPassword: typeof body.password === 'string',
+  returnSecureToken: body.returnSecureToken === true,
+});
+
+const describeFetchError = (error: unknown) => {
+  if (error instanceof TypeError && /Network request failed/i.test(error.message)) {
+    return {
+      message: 'NETWORK_REQUEST_FAILED',
+      kind: 'network_request_failed',
+      originalMessage: error.message,
+    };
+  }
+
+  return {
+    message: error instanceof Error && error.message ? error.message : 'REQUEST_FAILED',
+    kind: 'request_failed',
+    originalMessage:
+      error instanceof Error
+        ? error.message
+        : typeof error === 'string'
+          ? error
+          : String(error),
+  };
+};
+
+export const checkGoogleReachability = async (): Promise<{
+  ok: boolean;
+  status?: number;
+  error?: string;
+}> => {
+  try {
+    const response = await fetch(GOOGLE_REACHABILITY_URL, {
+      method: 'GET',
+      headers: {Accept: 'text/plain'},
+    });
+
+    return {ok: response.ok, status: response.status};
+  } catch (error) {
+    const details = describeFetchError(error);
+    return {ok: false, error: details.message};
+  }
 };
 
 export const getStoredSession = async (): Promise<{
@@ -113,33 +206,50 @@ export const getStoredSession = async (): Promise<{
   idToken: string;
   refreshToken: string;
 } | null> => {
-  return inMemorySession;
+  const storedValue = await AsyncStorage.getItem(SESSION_STORAGE_KEY);
+  if (!storedValue) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(storedValue) as StoredSession;
+  } catch (err) {
+    console.log('Failed to parse stored auth session:', err);
+    await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+    return null;
+  }
 };
 
 const clearSession = async () => {
-  inMemorySession = null;
+  await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
 };
 
 const authRequest = async (
   path: string,
   body: Record<string, unknown>,
 ): Promise<AuthResponse> => {
-  const response = await fetch(
-    `${AUTH_BASE}/${path}?key=${firebaseConfig.apiKey}`,
-    {
+  const url = `${AUTH_BASE}/${path}?key=${firebaseConfig.apiKey}`;
+  const urlHost = 'identitytoolkit.googleapis.com';
+
+  try {
+    const response = await fetch(url, {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({...body, returnSecureToken: true}),
-    },
-  );
+    });
 
-  const json = await response.json();
-  if (!response.ok) {
-    const message = json?.error?.message || 'AUTH_REQUEST_FAILED';
-    throw new Error(message);
+    const json = await readJson(response);
+
+    if (!response.ok) {
+      const message = json?.error?.message || 'AUTH_REQUEST_FAILED';
+      throw new Error(message);
+    }
+
+    return json as AuthResponse;
+  } catch (error) {
+    const details = describeFetchError(error);
+    throw new Error(details.message);
   }
-
-  return json as AuthResponse;
 };
 
 const firestoreWriteProfile = async (
@@ -147,18 +257,24 @@ const firestoreWriteProfile = async (
   profile: UserProfileData,
 ) => {
   const url = `${FIRESTORE_BASE}/projects/${firebaseConfig.projectId}/databases/(default)/documents/users/${profile.uid}`;
-  const response = await fetch(url, {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${idToken}`,
-    },
-    body: JSON.stringify(encodeProfile(profile)),
-  });
 
-  if (!response.ok) {
-    const json = await response.json().catch(() => ({}));
-    const message = json?.error?.message || 'FIRESTORE_WRITE_FAILED';
+  try {
+    const response = await fetch(url, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${idToken}`,
+      },
+      body: JSON.stringify(encodeProfile(profile)),
+    });
+
+    if (!response.ok) {
+      const json = await readJson(response);
+      const message = json?.error?.message || 'FIRESTORE_WRITE_FAILED';
+      throw new Error(message);
+    }
+  } catch (error) {
+    const message = getNetworkErrorMessage(error);
     throw new Error(message);
   }
 };
@@ -168,18 +284,24 @@ const firestoreReadProfile = async (
   uid: string,
 ): Promise<UserProfileData | null> => {
   const url = `${FIRESTORE_BASE}/projects/${firebaseConfig.projectId}/databases/(default)/documents/users/${uid}`;
-  const response = await fetch(url, {
-    headers: {
-      Authorization: `Bearer ${idToken}`,
-    },
-  });
 
-  if (!response.ok) {
-    return null;
+  try {
+    const response = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${idToken}`,
+      },
+    });
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const json = await readJson(response);
+    return decodeProfile(json);
+  } catch (error) {
+    const message = getNetworkErrorMessage(error);
+    throw new Error(message);
   }
-
-  const json = await response.json();
-  return decodeProfile(json);
 };
 
 export const registerUser = async (
@@ -207,11 +329,11 @@ export const registerUser = async (
   };
 
   await firestoreWriteProfile(authResult.idToken, profileData);
-  await saveSession({
+  saveSession({
     user,
     idToken: authResult.idToken,
     refreshToken: authResult.refreshToken,
-  });
+  }).catch(() => {});
 
   return {user, profile: profileData};
 };
@@ -233,11 +355,11 @@ export const loginUser = async (
     authResult.idToken,
     authResult.localId,
   );
-  await saveSession({
+  saveSession({
     user,
     idToken: authResult.idToken,
     refreshToken: authResult.refreshToken,
-  });
+  }).catch(() => {});
 
   return {user, profile};
 };
@@ -279,10 +401,10 @@ export const updateUserProfile = async (
     displayName: updates.username ?? session.user.displayName,
   };
 
-  await saveSession({
+  saveSession({
     ...session,
     user: updatedUser,
-  });
+  }).catch(() => {});
 
   return mergedProfile;
 };

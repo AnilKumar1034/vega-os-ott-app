@@ -4,25 +4,38 @@ import {useNavigation} from '@react-navigation/native';
 import {Routes} from '../../constants/routes';
 import {HomeContentItem} from '../../data/home';
 import {AppDetails} from '../../constants/appDetails';
+import {strings} from '../../constants/strings';
 import {ContentCard} from '../molecules/ContentCard';
 import {styles} from '../../screens/MovieDetailScreen.styles';
 
 interface MovieDetailBodyProps {
   selectedMovie: HomeContentItem;
   recommendations: HomeContentItem[];
-  focusedAction: 'play' | 'list' | 'back' | null;
-  onFocusAction: (action: 'play' | 'list' | 'back') => void;
+  focusedAction: 'play' | 'list' | 'back' | 'favourites' | 'continueWatch' | null;
+  continueWatchProgress: number | null;
+  isFavourite: boolean;
+  toastMessage?: string | null;
+  onFocusAction: (action: 'play' | 'list' | 'back' | 'favourites' | 'continueWatch') => void;
   onBlurAction: () => void;
   onCardFocus: () => void;
+  onAddFavourite: () => void;
+  onRemoveFavourite: () => void;
+  onRemoveContinueWatch: () => void;
 }
 
 export const MovieDetailBody = ({
   selectedMovie,
   recommendations,
   focusedAction,
+  continueWatchProgress,
+  isFavourite,
+  toastMessage,
   onFocusAction,
   onBlurAction,
   onCardFocus,
+  onAddFavourite,
+  onRemoveFavourite,
+  onRemoveContinueWatch,
 }: MovieDetailBodyProps) => {
   const navigation = useNavigation<any>();
 
@@ -60,6 +73,25 @@ export const MovieDetailBody = ({
           )}
 
           <Text style={styles.description}>{selectedMovie.description}</Text>
+
+          {continueWatchProgress !== null && continueWatchProgress > 0 && (
+            <View style={styles.progressSection}>
+              <View style={styles.progressHeader}>
+                <Text style={styles.progressLabel}>Continue Watching</Text>
+                <Text style={styles.progressValueLabel}>
+                  {Math.round(continueWatchProgress * 100)}%
+                </Text>
+              </View>
+              <View style={styles.progressTrack}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {width: `${continueWatchProgress * 100}%`},
+                  ]}
+                />
+              </View>
+            </View>
+          )}
 
           {selectedMovie.cast && (
             <View style={styles.castRow}>
@@ -101,20 +133,74 @@ export const MovieDetailBody = ({
               <Text style={styles.playButtonText}>{AppDetails.watchNow}</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.secondaryButton,
-                focusedAction === 'list' && styles.focusedAction,
-              ]}
-              onFocus={() => onFocusAction('list')}
-              onBlur={onBlurAction}
-              activeOpacity={1}
-              accessibilityRole="button"
-              accessibilityLabel={`Add ${selectedMovie.title} to My List`}>
-              <Text style={styles.secondaryButtonText}>
-                {AppDetails.myList}
-              </Text>
-            </TouchableOpacity>
+            {continueWatchProgress !== null && continueWatchProgress > 0 && (
+              <TouchableOpacity
+                style={[
+                  styles.secondaryButton,
+                  styles.removeWatchlistButton,
+                  focusedAction === 'continueWatch' && styles.focusedAction,
+                ]}
+                onFocus={() => onFocusAction('continueWatch')}
+                onBlur={onBlurAction}
+                onPress={onRemoveContinueWatch}
+                activeOpacity={1}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${selectedMovie.title} from Watchlist`}
+                testID="remove-watchlist-button">
+                <Text
+                  style={[
+                    styles.secondaryButtonText,
+                    styles.removeWatchlistText,
+                  ]}>
+                  {strings.actions.watchlist}
+                </Text>
+              </TouchableOpacity>
+            )}
+
+            {isFavourite ? (
+              <TouchableOpacity
+                style={[
+                  styles.secondaryButton,
+                  styles.removeFavouriteButton,
+                  focusedAction === 'favourites' && styles.focusedAction,
+                ]}
+                onFocus={() => onFocusAction('favourites')}
+                onBlur={onBlurAction}
+                onPress={onRemoveFavourite}
+                activeOpacity={1}
+                accessibilityRole="button"
+                accessibilityLabel={`Remove ${selectedMovie.title} from Favourites`}
+                testID="remove-favourite-button">
+                <Text
+                  style={[
+                    styles.secondaryButtonText,
+                    styles.removeFavouriteText,
+                  ]}>
+                  ♥
+                </Text>
+              </TouchableOpacity>
+            ) : (
+              <TouchableOpacity
+                style={[
+                  styles.secondaryButton,
+                  styles.addFavouriteButton,
+                  focusedAction === 'favourites' && styles.focusedAction,
+                ]}
+                onFocus={() => onFocusAction('favourites')}
+                onBlur={onBlurAction}
+                onPress={onAddFavourite}
+                activeOpacity={1}
+                accessibilityRole="button"
+                accessibilityLabel={`Add ${selectedMovie.title} to Favourites`}>
+                <Text
+                  style={[
+                    styles.secondaryButtonText,
+                    styles.addFavouriteText,
+                  ]}>
+                  ♡
+                </Text>
+              </TouchableOpacity>
+            )}
 
             <TouchableOpacity
               style={[
@@ -131,6 +217,11 @@ export const MovieDetailBody = ({
               <Text style={styles.backButtonText}>{AppDetails.back}</Text>
             </TouchableOpacity>
           </View>
+          {toastMessage ? (
+            <View style={styles.inlineToast}>
+              <Text style={styles.inlineToastText}>{toastMessage}</Text>
+            </View>
+          ) : null}
         </View>
       </View>
 

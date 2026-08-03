@@ -96,6 +96,9 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginTop: spacing.colossal,
   },
+  actionsWrap: {
+    alignItems: 'flex-start',
+  },
   actions: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -106,7 +109,7 @@ export const styles = StyleSheet.create({
     borderRadius: spacing.md,
     paddingHorizontal: spacing.giant,
     paddingVertical: spacing.xxxl,
-    backgroundColor: colors.textPrimary,
+    backgroundColor: '#FFFFFF',
   },
   listButton: {
     minWidth: 190,
@@ -115,7 +118,7 @@ export const styles = StyleSheet.create({
     marginLeft: spacing.xxxl,
     paddingHorizontal: spacing.giant,
     paddingVertical: spacing.xxxl,
-    backgroundColor: colors.actionSecondary,
+    backgroundColor: '#BFA24A',
   },
   focusedAction: {
     borderWidth: 4,
@@ -128,9 +131,24 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeights.bold,
   },
   listButtonText: {
-    color: colors.textPrimary,
+    color: '#0B0B0B',
     fontSize: fontSizes.heroAction,
     fontWeight: fontWeights.bold,
+  },
+  toast: {
+    marginTop: spacing.md,
+    maxWidth: 360,
+    paddingHorizontal: spacing.large,
+    paddingVertical: spacing.sm,
+    borderRadius: spacing.sm,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  toastText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.caption,
+    fontWeight: fontWeights.semibold,
   },
   controlsRow: {
     flexDirection: 'row',

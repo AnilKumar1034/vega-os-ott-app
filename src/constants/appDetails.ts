@@ -24,10 +24,13 @@ export const AppDetails = {
 
   // Hero & Movie Action Buttons
   play: '▶ Play',
-  myList: '＋ My List',
-  inMyList: '✓ In My List',
-  watchNow: '▶ Watch Now',
+  favourite: '♡ Add Favourite',
+  inFavourites: '♥',
+  watchNow: '▶ Watch',
   back: '‹ Back',
+  removeFavourite: '✕ Remove Favourite',
+  removeWatchlist: '✕ Remove Watchlist',
+  favouritesRow: 'Favourites',
   prevArrow: '‹',
   nextArrow: '›',
   previousSlide: 'Previous Slide',

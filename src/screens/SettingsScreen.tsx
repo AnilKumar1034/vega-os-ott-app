@@ -5,7 +5,7 @@ import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {ScreenLayout} from '../components/templates/ScreenLayout';
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
-import {useAuth} from '../context/AuthProvider';
+import {useAuth} from '../context/authContext';
 import {styles} from './SettingsScreen.styles';
 
 export const SettingsScreen = () => {
@@ -102,7 +102,9 @@ export const SettingsScreen = () => {
             </>
           ) : (
             <>
-              <Text style={styles.userName}>{strings.auth.notSignedInTitle}</Text>
+              <Text style={styles.userName}>
+                {strings.auth.notSignedInTitle}
+              </Text>
               <Text style={styles.userEmail}>
                 {strings.auth.notSignedInSubtitle}
               </Text>

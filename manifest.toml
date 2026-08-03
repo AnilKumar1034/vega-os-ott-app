@@ -44,8 +44,14 @@ id = "com.amazon.audio.control"
 [[wants.service]]
 id = "com.amazon.audio.system"
 
+[[wants.service]]
+id = "com.amazon.network.service"
+
 [[wants.privilege]]
 id = "com.amazon.devconf.privilege.accessibility"
+
+[[wants.privilege]]
+id = "com.amazon.network.privilege.net-info"
 
 [offers]
 

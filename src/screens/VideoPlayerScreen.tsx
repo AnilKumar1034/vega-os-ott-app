@@ -12,6 +12,12 @@ import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {DEFAULT_MOCK_VIDEO_URL, HomeContentItem} from '../data/home';
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
+import {useAuth} from '../context/authContext';
+import {
+  clearContinueWatchProgress,
+  fetchContinueWatchForContent,
+  saveContinueWatchProgress,
+} from '../services/watchProgressService';
 import {styles} from './VideoPlayerScreen.styles';
 
 let KeplerVideoViewComponent: any = View;
@@ -35,6 +41,7 @@ try {
 export const VideoPlayerScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const {user} = useAuth();
 
   const screenDimensions = Dimensions.get('window');
   const screenWidth = screenDimensions.width || 1920;
@@ -60,12 +67,18 @@ export const VideoPlayerScreen = () => {
     }
   }
   const player = playerRef.current;
+  const movieId = movie.id;
 
   const backButtonRef = useRef<any>(null);
   const [backButtonNode, setBackButtonNode] = useState<any>(null);
   const [isBackFocused, setIsBackFocused] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [resumeTime, setResumeTime] = useState<number>(0);
+  const lastSavedTimeRef = useRef<number>(0);
+  const progressTimerRef = useRef<any>(null);
+  const pendingSeekRef = useRef<number | null>(null);
+  const metadataReadyRef = useRef(false);
 
   const hideControlsTimerRef = useRef<any>(null);
 
@@ -89,6 +102,37 @@ export const VideoPlayerScreen = () => {
   }, [resetHideTimer]);
 
   useEffect(() => {
+    let active = true;
+
+    const loadResumeTime = async () => {
+      if (!user) {
+        if (active) {
+          setResumeTime(0);
+        }
+        return;
+      }
+
+      try {
+        const progressRecord = await fetchContinueWatchForContent(movieId);
+        if (active) {
+          setResumeTime(progressRecord?.currentTime || 0);
+        }
+      } catch (error) {
+        console.log('Resume progress load error:', error);
+        if (active) {
+          setResumeTime(0);
+        }
+      }
+    };
+
+    loadResumeTime();
+
+    return () => {
+      active = false;
+    };
+  }, [movieId, user]);
+
+  useEffect(() => {
     if (!player) {
       return;
     }
@@ -109,9 +153,22 @@ export const VideoPlayerScreen = () => {
       }
     };
 
+    const onLoadedMetadata = () => {
+      metadataReadyRef.current = true;
+      if (pendingSeekRef.current !== null) {
+        try {
+          player.currentTime = pendingSeekRef.current;
+        } catch (error) {
+          console.log('Resume seek error:', error);
+        }
+        pendingSeekRef.current = null;
+      }
+    };
+
     if (player?.addEventListener) {
       player.addEventListener('loadstart', onLoadStart);
       player.addEventListener('error', onError);
+      player.addEventListener('loadedmetadata', onLoadedMetadata);
     }
 
     const init = async () => {
@@ -122,6 +179,17 @@ export const VideoPlayerScreen = () => {
         }
         player.autoplay = true;
         player.src = videoUrl;
+        if (resumeTime > 0) {
+          pendingSeekRef.current = resumeTime;
+          if (metadataReadyRef.current) {
+            try {
+              player.currentTime = resumeTime;
+            } catch (error) {
+              console.log('Resume seek error:', error);
+            }
+            pendingSeekRef.current = null;
+          }
+        }
         Promise.resolve(player.play?.()).catch(() => {});
       } catch (err: any) {
         if (!disposed) {
@@ -137,6 +205,7 @@ export const VideoPlayerScreen = () => {
       if (player?.removeEventListener) {
         player.removeEventListener('loadstart', onLoadStart);
         player.removeEventListener('error', onError);
+        player.removeEventListener('loadedmetadata', onLoadedMetadata);
       }
 
       try {
@@ -146,7 +215,97 @@ export const VideoPlayerScreen = () => {
         console.log('Player cleanup error:', e);
       }
     };
-  }, [player, videoUrl]);
+  }, [movieId, player, videoUrl]);
+
+  useEffect(() => {
+    if (!player || resumeTime <= 0) {
+      return;
+    }
+
+    pendingSeekRef.current = resumeTime;
+    if (metadataReadyRef.current) {
+      try {
+        player.currentTime = resumeTime;
+      } catch (error) {
+        console.log('Resume seek error:', error);
+      }
+      pendingSeekRef.current = null;
+    }
+  }, [player, resumeTime]);
+
+  const persistProgress = useCallback(async () => {
+    if (!player || !movie?.id || !user) {
+      return;
+    }
+
+    const currentTime = Number(player.currentTime || 0);
+    const duration = Number(player.duration || 0);
+    if (!currentTime || currentTime <= 0) {
+      return;
+    }
+
+    if (Math.abs(currentTime - lastSavedTimeRef.current) < 5) {
+      return;
+    }
+
+    lastSavedTimeRef.current = currentTime;
+    try {
+      await saveContinueWatchProgress(movie, currentTime, duration);
+    } catch (error) {
+      console.log('Save continue watch error:', error);
+    }
+  }, [movie, player, user]);
+
+  useEffect(() => {
+    if (!player) {
+      return;
+    }
+
+    const onPause = () => {
+      void persistProgress();
+    };
+
+    const onPlaying = () => {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+      }
+      progressTimerRef.current = setInterval(() => {
+        void persistProgress();
+      }, 8000);
+    };
+
+    const onEnded = async () => {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+      }
+      try {
+        await clearContinueWatchProgress(movieId);
+      } catch (error) {
+        console.log('Clear continue watch error:', error);
+      }
+    };
+
+    if (player.addEventListener) {
+      player.addEventListener('pause', onPause);
+      player.addEventListener('playing', onPlaying);
+      player.addEventListener('ended', onEnded);
+    }
+
+    return () => {
+      if (progressTimerRef.current) {
+        clearInterval(progressTimerRef.current);
+        progressTimerRef.current = null;
+      }
+
+      if (player.removeEventListener) {
+        player.removeEventListener('pause', onPause);
+        player.removeEventListener('playing', onPlaying);
+        player.removeEventListener('ended', onEnded);
+      }
+
+      void persistProgress();
+    };
+  }, [movieId, persistProgress, player]);
 
   const handleBackFocus = () => {
     resetHideTimer();
@@ -250,7 +409,10 @@ export const VideoPlayerScreen = () => {
               hasTVPreferredFocus
               onFocus={handleBackFocus}
               onBlur={() => setIsBackFocused(false)}
-              onPress={() => navigation.navigate(Routes.Home)}
+              onPress={async () => {
+                await persistProgress();
+                navigation.navigate(Routes.Home);
+              }}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel="Back to Home"

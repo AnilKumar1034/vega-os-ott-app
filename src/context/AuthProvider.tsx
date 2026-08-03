@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  ReactNode,
-  useContext,
-  useEffect,
-  useState,
-} from 'react';
+import React, {ReactNode, useEffect, useState} from 'react';
 import {
   AuthUser,
   getUserProfile,
@@ -18,26 +12,7 @@ import {
   UserProfileData,
   getStoredSession,
 } from '../services/authService';
-
-interface AuthContextType {
-  user: AuthUser | null;
-  userProfile: UserProfileData | null;
-  loading: boolean;
-  register: (params: RegisterParams) => Promise<void>;
-  login: (params: LoginParams) => Promise<void>;
-  logout: () => Promise<void>;
-  updateProfile: (params: UpdateProfileParams) => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType>({
-  user: null,
-  userProfile: null,
-  loading: true,
-  register: async () => {},
-  login: async () => {},
-  logout: async () => {},
-  updateProfile: async () => {},
-});
+import {AuthContext} from './authContext';
 
 export const AuthProvider = ({children}: {children: ReactNode}) => {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -143,5 +118,3 @@ export const AuthProvider = ({children}: {children: ReactNode}) => {
     </AuthContext.Provider>
   );
 };
-
-export const useAuth = () => useContext(AuthContext);

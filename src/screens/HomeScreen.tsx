@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useState} from 'react';
 import {FlatList, ImageBackground, View} from 'react-native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {CommonHeader} from '../components/molecules/CommonHeader';
@@ -6,17 +6,111 @@ import {ContentRow} from '../components/molecules/ContentRow';
 import {HeroCarousel} from '../components/molecules/HeroCarousel';
 import {SideMenu} from '../components/molecules/SideMenu';
 import {Routes} from '../constants/routes';
-import {homeContentRows, HomeContentRow, homeHeroSlides} from '../data/home';
+import {
+  homeContentRows,
+  HomeContentItem,
+  HomeContentRow,
+  homeHeroSlides,
+} from '../data/home';
 import {AppDetails} from '../constants/appDetails';
+import {useAuth} from '../context/authContext';
+import {
+  fetchFavouriteItems,
+  FavouriteRecord,
+} from '../services/favouritesService';
+import {
+  ContinueWatchRecord,
+  fetchContinueWatchItems,
+} from '../services/watchProgressService';
 import {filterContentRows, filterHeroSlides} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
 
 export const HomeScreen = () => {
+  const {user} = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [isAnyCardFocused, setIsAnyCardFocused] = useState(false);
+  const [continueWatchRecords, setContinueWatchRecords] = useState<
+    ContinueWatchRecord[]
+  >([]);
+  const [favouriteRecords, setFavouriteRecords] = useState<FavouriteRecord[]>(
+    [],
+  );
 
-  const filteredRows = filterContentRows(homeContentRows, searchQuery);
+  const loadLibraryState = useCallback(async () => {
+    if (!user) {
+      setContinueWatchRecords([]);
+      setFavouriteRecords([]);
+      return;
+    }
+
+    try {
+      const continueWatch = await fetchContinueWatchItems();
+      setContinueWatchRecords(continueWatch);
+    } catch (error) {
+      console.log('Continue watch load error:', error);
+      setContinueWatchRecords([]);
+    }
+
+    try {
+      const favourites = await fetchFavouriteItems();
+      setFavouriteRecords(favourites);
+    } catch (error) {
+      console.log('Favourite load error:', error);
+      setFavouriteRecords([]);
+    }
+  }, [user]);
+
+  useEffect(() => {
+    void loadLibraryState();
+  }, [loadLibraryState]);
+
+  const continueWatchingItems = useMemo<HomeContentItem[]>(() => {
+    return continueWatchRecords.map((record) => ({
+      id: record.contentId,
+      title: record.title,
+      image: record.imageUri ? {uri: record.imageUri} : require('../assets/background.png'),
+      progress: record.progress,
+      videoUrl: record.videoUrl,
+    }));
+  }, [continueWatchRecords]);
+
+  const continueWatchingRow: HomeContentRow | null = continueWatchingItems.length
+    ? {
+        id: 'continue-watching',
+        title: 'Continue Watching',
+        layout: 'horizontal',
+        items: continueWatchingItems,
+      }
+    : null;
+
+  const favouritesItems = useMemo<HomeContentItem[]>(() => {
+    return favouriteRecords.map((record) => ({
+      id: record.contentId,
+      title: record.title,
+      image: record.imageUri ? {uri: record.imageUri} : require('../assets/background.png'),
+      videoUrl: record.videoUrl,
+    }));
+  }, [favouriteRecords]);
+
+  const favouritesRow: HomeContentRow | null = favouritesItems.length
+    ? {
+        id: 'favourites',
+        title: AppDetails.favouritesRow,
+        layout: 'horizontal',
+        items: favouritesItems,
+      }
+    : null;
+
+  const rowsToDisplay = [
+    ...(continueWatchingRow ? [continueWatchingRow] : []),
+    ...(favouritesRow ? [favouritesRow] : []),
+    ...homeContentRows.filter(
+      (row) => row.id !== 'continue-watching' && row.id !== 'favourites',
+    ),
+  ];
+
+  const filteredRows = filterContentRows(rowsToDisplay, searchQuery);
   const filteredHeroSlides = filterHeroSlides(homeHeroSlides, searchQuery);
 
   const handleMenuFocus = () => {
@@ -81,6 +175,7 @@ export const HomeScreen = () => {
                 <HeroCarousel
                   slides={filteredHeroSlides}
                   onContentFocus={handleHeroFocus}
+                  onLibraryChange={() => void loadLibraryState()}
                   isMenuOpen={isMenuExpanded}
                   isPaused={isAnyCardFocused}
                   testID={AppDetails.heroBannerTestId}

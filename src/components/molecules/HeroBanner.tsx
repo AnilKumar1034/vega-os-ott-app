@@ -85,8 +85,8 @@ export const HeroBanner = ({
             onBlur={() => setFocusedAction(null)}
             activeOpacity={1}
             accessibilityRole="button"
-            accessibilityLabel={`Add ${title} to My List`}>
-            <Text style={styles.listButtonText}>{AppDetails.myList}</Text>
+            accessibilityLabel={`Add ${title} to Favourites`}>
+            <Text style={styles.listButtonText}>♡ Add to Favourites</Text>
           </TouchableOpacity>
         </TVFocusGuideView>
       </View>

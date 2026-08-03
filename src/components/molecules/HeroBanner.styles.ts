@@ -71,7 +71,7 @@ export const styles = StyleSheet.create({
     borderRadius: spacing.sm,
     paddingHorizontal: spacing.huge,
     paddingVertical: spacing.xxxl,
-    backgroundColor: colors.textPrimary,
+    backgroundColor: '#FFFFFF',
   },
   listButton: {
     minWidth: 190,
@@ -80,7 +80,7 @@ export const styles = StyleSheet.create({
     marginLeft: spacing.xxxl,
     paddingHorizontal: spacing.huge,
     paddingVertical: spacing.xxxl,
-    backgroundColor: colors.actionSecondary,
+    backgroundColor: '#BFA24A',
   },
   focusedAction: {
     borderWidth: 4,
@@ -93,7 +93,7 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeights.bold,
   },
   listButtonText: {
-    color: colors.textPrimary,
+    color: '#0B0B0B',
     fontSize: fontSizes.heroAction,
     fontWeight: fontWeights.bold,
   },

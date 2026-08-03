@@ -1,5 +1,5 @@
 import 'react-native';
-import {fireEvent, render} from '@testing-library/react-native';
+import {fireEvent, render, waitFor} from '@testing-library/react-native';
 import * as React from 'react';
 import {VideoPlayerScreen} from '../src/screens/VideoPlayerScreen';
 
@@ -88,12 +88,14 @@ describe('VideoPlayerScreen', () => {
     expect(mockPlay).toHaveBeenCalled();
   });
 
-  it('navigates back to Home when back button is pressed', () => {
+  it('navigates back to Home when back button is pressed', async () => {
     const screen = render(<VideoPlayerScreen />);
 
     const backBtn = screen.getByTestId('player-back-button');
     fireEvent.press(backBtn);
 
-    expect(mockNavigate).toHaveBeenCalledWith('Home');
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('Home');
+    });
   });
 });

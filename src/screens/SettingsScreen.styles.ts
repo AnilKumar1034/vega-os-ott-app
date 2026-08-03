@@ -143,7 +143,7 @@ export const styles = StyleSheet.create({
   },
   authBtn: {
     flex: 1,
-    backgroundColor: colors.heroAccent,
+    backgroundColor: '#FFFFFF',
     borderRadius: borderRadius.xl,
     paddingVertical: spacing.large,
     alignItems: 'center',
@@ -152,7 +152,7 @@ export const styles = StyleSheet.create({
     borderColor: colors.transparent,
   },
   authBtnSecondary: {
-    backgroundColor: colors.subPillBackground,
+    backgroundColor: '#BFA24A',
     borderWidth: 1.5,
     borderColor: colors.borderLight,
   },
@@ -167,7 +167,7 @@ export const styles = StyleSheet.create({
     shadowRadius: spacing.xxl,
   },
   authBtnText: {
-    color: colors.textPrimary,
+    color: colors.actionPrimaryText,
     fontSize: fontSizes.button,
     fontWeight: fontWeights.bold,
     letterSpacing: 0.5,

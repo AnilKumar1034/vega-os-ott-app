@@ -21,6 +21,26 @@ export const styles = StyleSheet.create({
   contentList: {
     paddingBottom: spacing.section,
   },
+  toast: {
+    position: 'absolute',
+    top: spacing.xl,
+    left: '50%',
+    transform: [{translateX: -220 / 2}],
+    width: 220,
+    paddingHorizontal: spacing.large,
+    paddingVertical: spacing.md,
+    borderRadius: spacing.md,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+    zIndex: 50,
+  },
+  toastText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.caption,
+    fontWeight: fontWeights.semibold,
+    textAlign: 'center',
+  },
   moviesHeader: {
     marginVertical: spacing.huge,
   },

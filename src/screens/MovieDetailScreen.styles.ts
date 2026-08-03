@@ -102,6 +102,39 @@ export const styles = StyleSheet.create({
     marginBottom: spacing.huge,
     maxWidth: 900,
   },
+  progressSection: {
+    marginBottom: spacing.huge,
+    maxWidth: 900,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  progressLabel: {
+    color: colors.heroAccent,
+    fontSize: fontSizes.heroMeta,
+    fontWeight: fontWeights.bold,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  progressValueLabel: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.heroMeta,
+    fontWeight: fontWeights.semibold,
+    opacity: 0.9,
+  },
+  progressTrack: {
+    height: 8,
+    borderRadius: 999,
+    backgroundColor: colors.progressTrack,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: colors.heroAccent,
+  },
   castRow: {
     marginBottom: spacing.xl,
   },
@@ -119,6 +152,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginTop: spacing.giant,
+    flexWrap: 'wrap',
   },
   playButton: {
     minWidth: 200,
@@ -126,7 +160,7 @@ export const styles = StyleSheet.create({
     borderRadius: spacing.md,
     paddingHorizontal: spacing.colossal,
     paddingVertical: spacing.large,
-    backgroundColor: colors.textPrimary,
+    backgroundColor: '#FFFFFF',
     marginRight: spacing.xlarge,
   },
   playButtonText: {
@@ -148,6 +182,24 @@ export const styles = StyleSheet.create({
     fontSize: fontSizes.heroAction,
     fontWeight: fontWeights.bold,
   },
+  addFavouriteButton: {
+    backgroundColor: '#BFA24A',
+  },
+  removeFavouriteButton: {
+    backgroundColor: '#B73A3A',
+  },
+  removeWatchlistButton: {
+    backgroundColor: '#275A8B',
+  },
+  addFavouriteText: {
+    color: '#0B0B0B',
+  },
+  removeFavouriteText: {
+    color: '#FFFFFF',
+  },
+  removeWatchlistText: {
+    color: '#FFFFFF',
+  },
   backButton: {
     minWidth: 160,
     alignItems: 'center',
@@ -161,10 +213,26 @@ export const styles = StyleSheet.create({
     fontSize: fontSizes.heroAction,
     fontWeight: fontWeights.bold,
   },
+  inlineToast: {
+    marginTop: spacing.md,
+    alignSelf: 'flex-start',
+    maxWidth: 420,
+    paddingHorizontal: spacing.large,
+    paddingVertical: spacing.sm,
+    borderRadius: spacing.sm,
+    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+    borderWidth: 1,
+    borderColor: colors.borderLight,
+  },
+  inlineToastText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.caption,
+    fontWeight: fontWeights.semibold,
+  },
   focusedAction: {
     borderWidth: 4,
     borderColor: colors.focusRing,
-    transform: [{scale: 1.06}],
+    // transform: [{scale: 1.06}],
   },
   recommendationsSection: {
     marginTop: spacing.huge,

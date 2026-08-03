@@ -1,6 +1,6 @@
 export const strings = {
   appName: 'LogiXstream',
-  
+
   // Navigation & Screen Headers
   nav: {
     homeTitle: 'Discover Movies',
@@ -56,6 +56,12 @@ export const strings = {
     backToDetails: 'Back to Details',
   },
 
+  // Toasts
+  toasts: {
+    signInToAddFavourites: 'Please sign in to add favourites.',
+    signInToRemoveFavourites: 'Please sign in to remove favourites.',
+  },
+
   // Auth & Settings
   auth: {
     loginTitle: 'Sign In',
@@ -71,7 +77,8 @@ export const strings = {
     accountUidLabel: 'Account UID',
     subscriptionTierLabel: 'Subscription Tier',
     notSignedInTitle: 'Not Signed In',
-    notSignedInSubtitle: 'Please sign in or create an account to access premium features.',
+    notSignedInSubtitle:
+      'Please sign in or create an account to access premium features.',
     defaultUser: 'LogiXstream User',
     defaultSub: 'Standard',
     notSpecified: 'Not specified',
@@ -106,6 +113,14 @@ export const strings = {
     enterCity: 'Please enter your city.',
     enterCountry: 'Please enter your country.',
     invalidLogin: 'Invalid email or password. Please try again.',
+    networkUnavailable:
+      'No Wi-Fi or network connection detected. Please check your connection and try again.',
+    noInternetToast:
+      'Wi-Fi is connected, but the internet is not reachable right now.',
+    googleBlocked:
+      'Internet is available, but Google sign-in cannot be reached from this device. Please check the network or try again later.',
+    networkProbeTimeout:
+      'The network check timed out. Please try again or check the connection.',
     failedRegister: 'Failed to create account. Please try again.',
   },
 
@@ -120,6 +135,17 @@ export const strings = {
     genre: 'Genre',
     director: 'Director',
     seasons: 'Seasons',
+  },
+
+  hero: {
+    continueWatching: 'Continue Watching',
+    addToFavourites: 'Add to Favourites',
+    removeFromFavourites: 'Remove from Favourites',
+    signInToAddFavourites: 'Please sign in to add favourites.',
+  },
+
+  library: {
+    favourites: 'Favourites',
   },
 
   // Search Screen
