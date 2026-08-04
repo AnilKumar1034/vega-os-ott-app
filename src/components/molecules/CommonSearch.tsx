@@ -1,5 +1,5 @@
 import React, {useRef, useState} from 'react';
-import {TextInput, TouchableOpacity} from 'react-native';
+import {Text, TextInput, TouchableOpacity, View} from 'react-native';
 import {MenuIcon} from '../atoms/MenuIcon';
 import {colors} from '../../theme/colors';
 import {styles} from './CommonSearch.styles';
@@ -25,18 +25,21 @@ export const CommonSearch = ({
   testID = 'common-search-input',
   hasTVPreferredFocus,
 }: CommonSearchProps) => {
-  const [isFocused, setIsFocused] = useState(false);
+  const [focusedTarget, setFocusedTarget] = useState<'input' | 'clear' | null>(
+    null,
+  );
   const inputRef = useRef<TextInput>(null);
+  const isFocused = focusedTarget !== null;
 
-  const handleFocus = () => {
-    setIsFocused(true);
+  const handleFocus = (target: 'input' | 'clear') => {
+    setFocusedTarget(target);
     if (onFocus) {
       onFocus();
     }
   };
 
   const handleBlur = () => {
-    setIsFocused(false);
+    setFocusedTarget(null);
     if (onBlur) {
       onBlur();
     }
@@ -47,29 +50,21 @@ export const CommonSearch = ({
     inputRef.current?.focus();
   };
 
-  const handleContainerPress = () => {
-    inputRef.current?.focus();
-  };
-
   return (
-    <TouchableOpacity
-      activeOpacity={0.9}
-      onPress={handleContainerPress}
-      onFocus={handleFocus}
-      onBlur={handleBlur}
-      hasTVPreferredFocus={hasTVPreferredFocus}
+    <View
       style={[styles.container, isFocused && styles.focusedContainer]}
-      accessibilityRole="search"
-      accessibilityLabel="Search movies, shows, and genres"
+      focusable={false}
+      accessible={false}
       testID="common-search-container">
-      <MenuIcon
-        name="Search"
-        size={22}
-        color={isFocused ? colors.focusedTint : colors.textPrimary}
-        style={styles.searchIcon}
-        focused={isFocused}
-        testID="search-icon"
-      />
+      <View style={styles.searchIconContainer} focusable={false}>
+        <MenuIcon
+          name="Search"
+          size={26}
+          color={isFocused ? colors.textPrimary : colors.textSecondary}
+          style={styles.searchIcon}
+          testID="search-icon"
+        />
+      </View>
       <TextInput
         ref={inputRef}
         style={styles.input}
@@ -77,28 +72,44 @@ export const CommonSearch = ({
         onChangeText={onChangeText}
         placeholder={placeholder}
         placeholderTextColor={colors.inputPlaceholder}
-        onFocus={handleFocus}
+        onFocus={() => handleFocus('input')}
         onBlur={handleBlur}
+        hasTVPreferredFocus={hasTVPreferredFocus}
+        returnKeyType="search"
+        autoCorrect={false}
+        selectionColor={colors.heroAccent}
         accessibilityRole="search"
-        accessibilityLabel="Search input field"
+        accessibilityLabel={strings.search.moviesShowsGenres}
         testID={testID}
       />
       {value.length > 0 && (
         <TouchableOpacity
           onPress={handleClear}
-          style={styles.clearButton}
+          onFocus={() => handleFocus('clear')}
+          onBlur={handleBlur}
+          activeOpacity={1}
+          style={[
+            styles.clearButton,
+            focusedTarget === 'clear' && styles.clearButtonFocused,
+          ]}
           accessibilityRole="button"
-          accessibilityLabel="Clear search text"
+          accessibilityLabel={strings.search.clearText}
           testID="clear-search-button">
           <MenuIcon
             name="Close"
-            size={20}
-            color={colors.heroAccent}
-            focused={isFocused}
+            size={18}
+            color={
+              focusedTarget === 'clear'
+                ? colors.textPrimary
+                : colors.textSecondary
+            }
             testID="clear-icon"
           />
         </TouchableOpacity>
       )}
-    </TouchableOpacity>
+      {value.length === 0 && (
+        <Text style={styles.inputHint}>{strings.search.pressOk}</Text>
+      )}
+    </View>
   );
 };

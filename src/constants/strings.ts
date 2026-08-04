@@ -14,9 +14,19 @@ export const strings = {
     searchTitle: 'Search Catalog',
     searchDesc: 'Search by title, genre, cast, or director.',
     settingsTitle: 'Account & Settings',
-    settingsDesc: 'Manage your profile and subscription tier.',
+    settingsDesc: 'Manage your profile, avatar, and viewing preferences.',
+    profileTitle: 'Profile',
+    profileDesc: 'Review your account details and avatar.',
+    editProfileTitle: 'Edit Profile',
+    editProfileDesc: 'Update your profile, avatar, and preferences.',
     videoPlayerTitle: 'Now Playing',
     videoPlayerDesc: 'Playing selected video stream.',
+    videoSampleTitle: 'LogiXstream Feature Movie',
+    videoSampleGenre: 'Action • Sci-Fi',
+    videoSampleRating: '⭐ 8.5 / 10',
+    moviesHeaderTitle: 'Blockbuster Movies',
+    moviesHeaderSubtitle:
+      'Browse handpicked hit films, trending titles, and critically acclaimed masterpieces.',
   },
 
   // Side Menu Options
@@ -42,9 +52,11 @@ export const strings = {
   actions: {
     watchNow: 'Watch Now',
     play: 'Play',
+    favourite: '♡ Add to Favourites',
+    inFavourites: '♥ Remove from Favourites',
     pause: 'Pause',
     addWatchlist: '+ Add to Watchlist',
-    watchlist: 'Watchlist',
+    watchlist: 'x Remove from Watchlist',
     trailer: 'Trailer',
     signIn: 'Sign In',
     register: 'Create Account',
@@ -54,6 +66,10 @@ export const strings = {
     retry: 'Retry',
     back: 'Back',
     backToDetails: 'Back to Details',
+    goBack: 'Go Back',
+    removeFavourite: '✕ Remove Favourite',
+    removeWatchlist: '✕ Remove Watchlist',
+    backChevron: '‹',
   },
 
   // Toasts
@@ -76,13 +92,55 @@ export const strings = {
     countryLabel: 'Country',
     accountUidLabel: 'Account UID',
     subscriptionTierLabel: 'Subscription Tier',
+    profileSection: 'Profile',
+    preferencesSection: 'User Preferences',
+    avatarLabel: 'Avatar',
+    themeLabel: 'Theme',
+    notificationsLabel: 'Notifications',
+    autoplayLabel: 'Autoplay',
+    profileSummary: 'Profile Summary',
+    accountInformation: 'Account Information',
+    accountInformationHint: 'Your membership and location details',
+    viewingPreferences: 'Viewing Preferences',
+    viewingPreferencesHint: 'Personalize playback and appearance',
+    activeMembership: 'Active Membership',
+    profileReady: 'Profile Ready',
+    chooseAvatar: 'Choose your avatar',
+    chooseAvatarHint: 'Use Left and Right to choose a style',
+    saveChanges: 'Save Changes',
+    cancelChanges: 'Cancel',
+    editProfile: 'Edit Profile',
+    viewProfile: 'View Profile',
+    notificationsHint: 'Receive new release alerts',
+    autoplayHint: 'Play the next episode automatically',
+    themeHint: 'Interface highlight color',
+    preferenceUpdateFailed: 'Unable to update this preference. Try again.',
     notSignedInTitle: 'Not Signed In',
     notSignedInSubtitle:
       'Please sign in or create an account to access premium features.',
     defaultUser: 'LogiXstream User',
     defaultSub: 'Standard',
+    avatarInitial: 'initial',
+    avatarBadge: 'Avatar',
     notSpecified: 'Not specified',
     notAvailable: 'N/A',
+  },
+
+  common: {
+    on: 'On',
+    off: 'Off',
+    locked: 'Locked',
+    primaryViewer: 'Primary viewer',
+    saving: 'Saving...',
+    autoSaved: 'Auto-saved',
+    selected: 'Selected',
+    select: 'Select',
+    playbackAndAlerts: 'Playback and alerts',
+    remoteHint: 'Use the remote arrows to move. Press OK to select.',
+    accountOverview: 'Account overview',
+    avatarAndDetails: 'Avatar and personal details',
+    signOutOfThisTV: 'Sign out of this TV',
+    yourPublicProfile: 'Your public profile and location',
   },
 
   // Placeholders
@@ -94,6 +152,7 @@ export const strings = {
     city: 'e.g. Bangalore',
     country: 'e.g. India',
     search: 'Search movies, series, cast...',
+    searchAccessibility: 'Search input field',
   },
 
   // Subscription Tiers
@@ -122,6 +181,8 @@ export const strings = {
     networkProbeTimeout:
       'The network check timed out. Please try again or check the connection.',
     failedRegister: 'Failed to create account. Please try again.',
+    playbackError: 'Playback Error',
+    videoPlaybackUnavailable: 'Unable to play video stream.',
   },
 
   // Movie Detail & Categories
@@ -142,6 +203,13 @@ export const strings = {
     addToFavourites: 'Add to Favourites',
     removeFromFavourites: 'Remove from Favourites',
     signInToAddFavourites: 'Please sign in to add favourites.',
+    original: 'LOGIXSTREAM ORIGINAL',
+    newRelease: 'NEW RELEASE',
+    uhd: '4K UHD',
+    playAccessibility: (title: string) => `Play ${title}`,
+    addToListAccessibility: (title: string) => `Add ${title} to Favourites`,
+    slideAccessibility: (index: number, total: number, title: string) =>
+      `Slide ${index} of ${total}: ${title}`,
   },
 
   library: {
@@ -152,5 +220,13 @@ export const strings = {
   search: {
     noResults: 'No results found for',
     trySearchingElse: 'Try searching for something else.',
+    moviesShowsGenres: 'Search movies, shows, and genres',
+    clearText: 'Clear search text',
+    pressOk: 'Press OK',
+  },
+
+  accessibility: {
+    retryVideoPlayback: 'Retry video playback',
+    backToHome: 'Back to Home',
   },
 } as const;

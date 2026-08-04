@@ -13,6 +13,7 @@ import {
   homeHeroSlides,
 } from '../data/home';
 import {AppDetails} from '../constants/appDetails';
+import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
 import {
   fetchFavouriteItems,
@@ -78,7 +79,7 @@ export const HomeScreen = () => {
   const continueWatchingRow: HomeContentRow | null = continueWatchingItems.length
     ? {
         id: 'continue-watching',
-        title: 'Continue Watching',
+        title: strings.hero.continueWatching,
         layout: 'horizontal',
         items: continueWatchingItems,
       }

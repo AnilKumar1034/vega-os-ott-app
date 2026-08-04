@@ -29,29 +29,33 @@ export const CommonHeader = ({
 }: CommonHeaderProps) => {
   return (
     <TVFocusGuideView style={styles.container} autoFocus={false}>
-      <Text style={styles.title}>{title}</Text>
+      <Text style={styles.title} numberOfLines={1}>
+        {title}
+      </Text>
       <View style={styles.statusBadge}>
         <View style={styles.statusDot} />
         <Text style={styles.statusText}>
           {strings.subscriptions.premium.toUpperCase()}
         </Text>
       </View>
-      {showSearch && onSearchChange && (
-        <CommonSearch
-          value={searchValue}
-          onChangeText={onSearchChange}
-          onFocus={onSearchFocus}
-          onBlur={onSearchBlur}
-        />
-      )}
-      {logo && (
-        <Image
-          source={logo}
-          style={styles.logo}
-          resizeMode="contain"
-          testID={testID}
-        />
-      )}
+      <View style={styles.actions} focusable={false}>
+        {showSearch && onSearchChange && (
+          <CommonSearch
+            value={searchValue}
+            onChangeText={onSearchChange}
+            onFocus={onSearchFocus}
+            onBlur={onSearchBlur}
+          />
+        )}
+        {logo && (
+          <Image
+            source={logo}
+            style={styles.logo}
+            resizeMode="contain"
+            testID={testID}
+          />
+        )}
+      </View>
     </TVFocusGuideView>
   );
 };

@@ -1,6 +1,7 @@
 import {StyleSheet} from 'react-native';
 import {colors} from '../theme/colors';
 import {fontSizes, fontWeights, lineHeights} from '../theme/fonts';
+import {sizes} from '../theme/sizes';
 
 export const styles = StyleSheet.create({
   background: {
@@ -12,8 +13,8 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   logo: {
-    width: 500,
-    height: 350,
+    width: sizes.splashLogoWidth,
+    height: sizes.splashLogoHeight,
   },
   title: {
     color: colors.textPrimary,

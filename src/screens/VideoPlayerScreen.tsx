@@ -49,9 +49,9 @@ export const VideoPlayerScreen = () => {
 
   const movie: HomeContentItem = route.params?.movie || {
     id: 'sample-video',
-    title: 'LogiXstream Feature Movie',
-    genre: 'Action • Sci-Fi',
-    rating: '⭐ 8.5 / 10',
+    title: strings.nav.videoSampleTitle,
+    genre: strings.nav.videoSampleGenre,
+    rating: strings.nav.videoSampleRating,
     image: require('../assets/background.png'),
   };
 
@@ -149,7 +149,9 @@ export const VideoPlayerScreen = () => {
       if (!disposed) {
         console.log('Player error event:', evt);
         const playerErr = player.error;
-        setVideoError(playerErr?.message || 'Unable to play video stream.');
+        setVideoError(
+          playerErr?.message || strings.errors.videoPlaybackUnavailable,
+        );
       }
     };
 
@@ -367,7 +369,7 @@ export const VideoPlayerScreen = () => {
       {videoError && (
         <View style={styles.errorOverlay} testID="video-error-state">
           <View style={styles.errorCard}>
-            <Text style={styles.errorTitle}>Playback Error</Text>
+            <Text style={styles.errorTitle}>{strings.errors.playbackError}</Text>
             <Text style={styles.errorBody}>{videoError}</Text>
 
             <TouchableOpacity
@@ -380,7 +382,7 @@ export const VideoPlayerScreen = () => {
                 }
               }}
               accessibilityRole="button"
-              accessibilityLabel="Retry video playback"
+              accessibilityLabel={strings.accessibility.retryVideoPlayback}
               testID="video-retry-button">
               <Text style={styles.retryButtonText}>{strings.actions.retry}</Text>
             </TouchableOpacity>
@@ -415,9 +417,11 @@ export const VideoPlayerScreen = () => {
               }}
               activeOpacity={0.8}
               accessibilityRole="button"
-              accessibilityLabel="Back to Home"
+              accessibilityLabel={strings.accessibility.backToHome}
               testID="player-back-button">
-              <Text style={styles.backButtonText}>‹ {strings.actions.back}</Text>
+              <Text style={styles.backButtonText}>
+                {strings.actions.backChevron} {strings.actions.back}
+              </Text>
             </TouchableOpacity>
 
             <View style={styles.titleContainer} pointerEvents="none">

@@ -17,6 +17,7 @@ interface SideMenuItemProps {
   isActive: boolean;
   isFocused: boolean;
   isExpanded: boolean;
+  preferActiveFocus: boolean;
   onFocus: () => void;
   onBlur: () => void;
 }
@@ -26,6 +27,7 @@ export const SideMenuItem = ({
   isActive,
   isFocused,
   isExpanded,
+  preferActiveFocus,
   onFocus,
   onBlur,
 }: SideMenuItemProps) => {
@@ -45,7 +47,7 @@ export const SideMenuItem = ({
       onPress={() =>
         navigation.dispatch(CommonActions.navigate({name: option.route}))
       }
-      hasTVPreferredFocus={isActive}
+      hasTVPreferredFocus={preferActiveFocus && isActive}
       accessibilityRole="button"
       accessibilityLabel={option.title}
       testID={`side-menu-${option.route}`}>

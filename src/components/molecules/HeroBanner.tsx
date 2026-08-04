@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {AppDetails} from '../../constants/appDetails';
+import {strings} from '../../constants/strings';
 import {HeroMetaTag} from '../atoms/HeroMetaTag';
 import {styles} from './HeroBanner.styles';
 
@@ -26,8 +27,8 @@ interface HeroBannerProps {
 export const HeroBanner = ({
   title,
   description,
-  eyebrow = 'LOGIXSTREAM ORIGINAL',
-  meta = ['4K UHD', 'NEW RELEASE'],
+  eyebrow = strings.hero.original,
+  meta = [strings.hero.uhd, strings.hero.newRelease],
   image = require('../../assets/background.png'),
   onContentFocus,
 }: HeroBannerProps) => {
@@ -70,7 +71,7 @@ export const HeroBanner = ({
             activeOpacity={1}
             hasTVPreferredFocus
             accessibilityRole="button"
-            accessibilityLabel={`Play ${title}`}>
+            accessibilityLabel={strings.hero.playAccessibility(title)}>
             <Text style={styles.playButtonText}>{AppDetails.play}</Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -85,8 +86,10 @@ export const HeroBanner = ({
             onBlur={() => setFocusedAction(null)}
             activeOpacity={1}
             accessibilityRole="button"
-            accessibilityLabel={`Add ${title} to Favourites`}>
-            <Text style={styles.listButtonText}>♡ Add to Favourites</Text>
+            accessibilityLabel={strings.hero.addToListAccessibility(title)}>
+            <Text style={styles.listButtonText}>
+              {strings.actions.favourite}
+            </Text>
           </TouchableOpacity>
         </TVFocusGuideView>
       </View>

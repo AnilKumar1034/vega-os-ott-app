@@ -27,7 +27,7 @@ const menuOptions: MenuOptionItem[] = [
   },
   {
     route: Routes.Details,
-    title: 'Details',
+    title: AppDetails.details,
     name: 'Details',
     icon: require('../../assets/learn-more.png'),
   },
@@ -45,6 +45,7 @@ export interface SideMenuProps {
   onMenuFocus: () => void;
   onMenuBlur?: () => void;
   destinations?: any[];
+  preferActiveFocus?: boolean;
 }
 
 declare const process: any;
@@ -55,6 +56,7 @@ export const SideMenu = ({
   onMenuFocus,
   onMenuBlur,
   destinations,
+  preferActiveFocus = true,
 }: SideMenuProps) => {
   const [focusedRoute, setFocusedRoute] = useState<string | null>(null);
 
@@ -103,6 +105,7 @@ export const SideMenu = ({
       isActive={option.route === activeRoute}
       isFocused={option.route === focusedRoute}
       isExpanded={isExpanded}
+      preferActiveFocus={preferActiveFocus}
       onFocus={() => {
         setFocusedRoute(option.route);
         onMenuFocus();

@@ -14,6 +14,10 @@ export interface UserProfileData {
   subscription: string;
   city: string;
   country: string;
+  avatar?: string;
+  themePreference?: string;
+  notificationsEnabled?: boolean;
+  autoplayEnabled?: boolean;
   createdAt?: string;
 }
 
@@ -42,6 +46,10 @@ export interface UpdateProfileParams {
   city?: string;
   country?: string;
   subscription?: string;
+  avatar?: string;
+  themePreference?: string;
+  notificationsEnabled?: boolean;
+  autoplayEnabled?: boolean;
 }
 
 const AUTH_BASE = 'https://identitytoolkit.googleapis.com/v1';
@@ -72,6 +80,10 @@ const encodeProfile = (profile: UserProfileData) => ({
     subscription: encodeString(profile.subscription),
     city: encodeString(profile.city),
     country: encodeString(profile.country),
+    avatar: encodeString(profile.avatar || 'initial'),
+    themePreference: encodeString(profile.themePreference || 'cinematic'),
+    notificationsEnabled: {booleanValue: profile.notificationsEnabled ?? true},
+    autoplayEnabled: {booleanValue: profile.autoplayEnabled ?? true},
     createdAt: encodeString(profile.createdAt || new Date().toISOString()),
   },
 });
@@ -91,6 +103,11 @@ const decodeProfile = (doc: any): UserProfileData | null => {
     subscription: decodeString(fields.subscription),
     city: decodeString(fields.city),
     country: decodeString(fields.country),
+    avatar: decodeString(fields.avatar) || 'initial',
+    themePreference: decodeString(fields.themePreference) || 'cinematic',
+    notificationsEnabled:
+      fields.notificationsEnabled?.booleanValue ?? true,
+    autoplayEnabled: fields.autoplayEnabled?.booleanValue ?? true,
     createdAt: decodeString(fields.createdAt) || undefined,
   };
 };
@@ -107,6 +124,12 @@ const mergeProfile = (
   subscription: updates.subscription ?? existing?.subscription ?? 'Standard',
   city: updates.city ?? existing?.city ?? '',
   country: updates.country ?? existing?.country ?? '',
+  avatar: updates.avatar ?? existing?.avatar ?? 'initial',
+  themePreference: updates.themePreference ?? existing?.themePreference ?? 'cinematic',
+  notificationsEnabled:
+    updates.notificationsEnabled ?? existing?.notificationsEnabled ?? true,
+  autoplayEnabled:
+    updates.autoplayEnabled ?? existing?.autoplayEnabled ?? true,
   createdAt: existing?.createdAt ?? new Date().toISOString(),
 });
 

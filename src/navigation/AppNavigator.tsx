@@ -6,6 +6,8 @@ import {DetailsScreen} from '../screens/DetailsScreen';
 import {MovieDetailScreen} from '../screens/MovieDetailScreen';
 import {MoviesScreen} from '../screens/MoviesScreen';
 import {SettingsScreen} from '../screens/SettingsScreen';
+import {ProfileScreen} from '../screens/ProfileScreen';
+import {EditProfileScreen} from '../screens/EditProfileScreen';
 import {SplashScreen} from '../screens/SplashScreen';
 import {VideoPlayerScreen} from '../screens/VideoPlayerScreen';
 import {LoginScreen} from '../screens/LoginScreen';
@@ -20,6 +22,8 @@ export type RootStackParamList = {
   [Routes.Movies]: undefined;
   [Routes.Details]: undefined;
   [Routes.Settings]: undefined;
+  [Routes.Profile]: undefined;
+  [Routes.EditProfile]: undefined;
   [Routes.MovieDetail]: {movie?: any};
   [Routes.VideoPlayer]: {movie?: any; videoUrl?: string};
   [Routes.PlayerTest]: undefined;
@@ -50,6 +54,11 @@ export const AppNavigator = () => {
           />
           <Stack.Screen name={Routes.PlayerTest} component={PlayerTestScreen} />
           <Stack.Screen name={Routes.Settings} component={SettingsScreen} />
+          <Stack.Screen name={Routes.Profile} component={ProfileScreen} />
+          <Stack.Screen
+            name={Routes.EditProfile}
+            component={EditProfileScreen}
+          />
           <Stack.Screen name={Routes.Login} component={LoginScreen} />
           <Stack.Screen name={Routes.Register} component={RegisterScreen} />
         </Stack.Navigator>

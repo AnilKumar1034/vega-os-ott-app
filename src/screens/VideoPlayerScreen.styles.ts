@@ -1,7 +1,7 @@
 import {StyleSheet} from 'react-native';
 import {colors} from '../theme/colors';
 import {fontSizes, fontWeights} from '../theme/fonts';
-import {borderRadius, spacing} from '../theme/sizes';
+import {borderRadius, sizes, spacing} from '../theme/sizes';
 
 export const styles = StyleSheet.create({
   container: {
@@ -41,14 +41,14 @@ export const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     paddingHorizontal: spacing.xxxl,
     paddingVertical: spacing.lg,
-    borderWidth: 1.5,
+    borderWidth: spacing.borderMedium,
     borderColor: colors.borderLight,
     marginRight: spacing.huge,
   },
   backButtonFocused: {
     backgroundColor: colors.heroAccent,
     borderColor: colors.focusRing,
-    borderWidth: 2.5,
+    borderWidth: spacing.borderExtraUltra,
     transform: [{scale: 1.05}],
   },
   backButtonText: {
@@ -98,8 +98,8 @@ export const styles = StyleSheet.create({
     borderRadius: borderRadius.xl,
     padding: spacing.colossal,
     alignItems: 'center',
-    maxWidth: 500,
-    borderWidth: 1.5,
+    maxWidth: sizes.playerErrorMaxWidth,
+    borderWidth: spacing.borderMedium,
     borderColor: colors.borderLight,
   },
   errorTitle: {

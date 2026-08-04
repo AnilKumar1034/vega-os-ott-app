@@ -1,13 +1,13 @@
 import {StyleSheet} from 'react-native';
 import {colors} from '../../theme/colors';
 import {fontSizes, fontWeights, lineHeights} from '../../theme/fonts';
-import {spacing} from '../../theme/sizes';
+import {sizes, spacing} from '../../theme/sizes';
 
 export const styles = StyleSheet.create({
   container: {
     width: '100%',
     flex: 1,
-    minHeight: 510,
+    minHeight: sizes.heroMinHeight,
     overflow: 'hidden',
     borderRadius: spacing.none,
     justifyContent: 'flex-end',
@@ -66,24 +66,24 @@ export const styles = StyleSheet.create({
     marginTop: spacing.colossal,
   },
   playButton: {
-    minWidth: 176,
+    minWidth: spacing.heroActionMinWidth,
     alignItems: 'center',
     borderRadius: spacing.sm,
     paddingHorizontal: spacing.huge,
     paddingVertical: spacing.xxxl,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
   },
   listButton: {
-    minWidth: 190,
+    minWidth: spacing.heroActionAltMinWidth,
     alignItems: 'center',
     borderRadius: spacing.sm,
     marginLeft: spacing.xxxl,
     paddingHorizontal: spacing.huge,
     paddingVertical: spacing.xxxl,
-    backgroundColor: '#BFA24A',
+    backgroundColor: colors.gold,
   },
   focusedAction: {
-    borderWidth: 4,
+    borderWidth: spacing.borderUltra,
     borderColor: colors.focusRing,
     transform: [{scale: 1.05}],
   },
@@ -93,7 +93,7 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeights.bold,
   },
   listButtonText: {
-    color: '#0B0B0B',
+    color: colors.actionPrimaryTextOnLight,
     fontSize: fontSizes.heroAction,
     fontWeight: fontWeights.bold,
   },

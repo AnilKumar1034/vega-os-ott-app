@@ -7,6 +7,7 @@ import {SideMenu} from '../components/molecules/SideMenu';
 import {Routes} from '../constants/routes';
 import {homeContentRows, HomeContentRow} from '../data/home';
 import {AppDetails} from '../constants/appDetails';
+import {strings} from '../constants/strings';
 import {filterContentRows} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
 
@@ -67,10 +68,10 @@ export const MoviesScreen = () => {
             ListHeaderComponent={
               <View style={styles.moviesHeader}>
                 <Text style={styles.moviesTitle}>
-                  {AppDetails.moviesHeaderTitle}
+                  {strings.nav.moviesHeaderTitle}
                 </Text>
                 <Text style={styles.moviesSubtitle}>
-                  {AppDetails.moviesHeaderSubtitle}
+                  {strings.nav.moviesHeaderSubtitle}
                 </Text>
               </View>
             }

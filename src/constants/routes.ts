@@ -7,6 +7,8 @@ export const Routes = {
   MovieDetail: 'MovieDetail',
   VideoPlayer: 'VideoPlayer',
   PlayerTest: 'PlayerTest',
+  Profile: 'Profile',
+  EditProfile: 'EditProfile',
   Login: 'Login',
   Register: 'Register',
 } as const;

@@ -3,6 +3,7 @@ import {render, fireEvent} from '@testing-library/react-native';
 import * as React from 'react';
 
 import {Tile} from '../src/components/molecules/Tile';
+import {colors} from '../src/theme/colors';
 
 const mockIcon = {uri: 'mock-icon'};
 
@@ -28,14 +29,14 @@ describe('Tile component', () => {
     const screen = render(<Tile {...defaultProps} isFocused={false} />);
     const touchable = screen.getByTestId('test-tile');
     const flatStyle = Object.assign({}, ...[touchable.props.style].flat());
-    expect(flatStyle.backgroundColor).toBe('#0074B8');
+    expect(flatStyle.backgroundColor).toBe(colors.tileDefault);
   });
 
   it('applies focused style when focused', () => {
     const screen = render(<Tile {...defaultProps} isFocused={true} />);
     const touchable = screen.getByTestId('test-tile');
     const flatStyle = Object.assign({}, ...[touchable.props.style].flat());
-    expect(flatStyle.backgroundColor).toBe('#FF6200');
+    expect(flatStyle.backgroundColor).toBe(colors.tileFocused);
     expect(flatStyle.transform).toEqual([{scale: 1.1}]);
   });
 

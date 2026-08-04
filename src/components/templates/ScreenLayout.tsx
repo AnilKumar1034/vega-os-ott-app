@@ -1,5 +1,5 @@
 import React, {ReactNode, useState} from 'react';
-import {ImageBackground, Text, TouchableOpacity, View} from 'react-native';
+import {ImageBackground, Text, View} from 'react-native';
 import {RouteName} from '../../constants/routes';
 import {CommonHeader} from '../molecules/CommonHeader';
 import {SideMenu} from '../molecules/SideMenu';
@@ -8,18 +8,24 @@ import {styles} from './ScreenLayout.styles';
 
 interface ScreenLayoutProps {
   activeRoute: Exclude<RouteName, 'Splash'>;
+  menuActiveRoute?: Exclude<RouteName, 'Splash'>;
   title: string;
   description: string;
   children?: ReactNode;
   showSearch?: boolean;
+  compactHeader?: boolean;
+  preferContentFocus?: boolean;
 }
 
 export const ScreenLayout = ({
   activeRoute,
+  menuActiveRoute,
   title,
   description,
   children,
-  showSearch
+  showSearch,
+  compactHeader = false,
+  preferContentFocus = false,
 }: ScreenLayoutProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
@@ -39,10 +45,11 @@ export const ScreenLayout = ({
       source={require('../../assets/background.png')}
       style={styles.background}>
       <SideMenu
-        activeRoute={activeRoute}
+        activeRoute={menuActiveRoute || activeRoute}
         isExpanded={isMenuExpanded}
         onMenuFocus={handleMenuFocus}
         onMenuBlur={handleMenuBlur}
+        preferActiveFocus={!preferContentFocus}
       />
       <View style={styles.content}>
         <CommonHeader
@@ -54,15 +61,26 @@ export const ScreenLayout = ({
           onSearchFocus={collapseMenu}
           showSearch={showSearch}
         />
-        <TouchableOpacity
-          style={styles.background}
+        <View
+          style={styles.body}
           testID={`${activeRoute.toLowerCase()}-screen`}
-          onFocus={collapseMenu}
-          activeOpacity={1}>
-          <Text style={styles.title}>{title}</Text>
-          <Text style={styles.description}>{description}</Text>
+          focusable={false}>
+          <View
+            style={[styles.heading, compactHeader && styles.headingCompact]}
+            focusable={false}>
+            <Text style={[styles.title, compactHeader && styles.titleCompact]}>
+              {title}
+            </Text>
+            <Text
+              style={[
+                styles.description,
+                compactHeader && styles.descriptionCompact,
+              ]}>
+              {description}
+            </Text>
+          </View>
           {children}
-        </TouchableOpacity>
+        </View>
       </View>
     </ImageBackground>
   );

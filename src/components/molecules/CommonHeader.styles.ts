@@ -5,16 +5,17 @@ import {spacing} from '../../theme/sizes';
 
 export const styles = StyleSheet.create({
   container: {
-    minHeight: 110,
+    minHeight: spacing.headerMinHeight,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.xlarge,
     borderRadius: spacing.none,
-    borderBottomWidth: 1,
+    borderBottomWidth: spacing.borderThin,
     borderColor: colors.headerBorder,
     backgroundColor: colors.headerBackground,
   },
   title: {
+    flexShrink: 1,
     color: colors.heroAccent,
     fontSize: fontSizes.commonHeaderTitle,
     lineHeight: lineHeights.commonHeaderTitle,
@@ -24,10 +25,15 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     borderRadius: spacing.huge,
-    marginLeft: 26,
+    marginLeft: spacing.giant,
     paddingHorizontal: spacing.xxxl,
     paddingVertical: spacing.md,
     backgroundColor: colors.headerBadge,
+  },
+  actions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 'auto',
   },
   statusDot: {
     width: spacing.xl,
@@ -43,8 +49,8 @@ export const styles = StyleSheet.create({
     letterSpacing: 1,
   },
   logo: {
-    width: 150,
-    height: 84,
-    marginLeft: 'auto',
+    width: spacing.headerLogoWidth,
+    height: spacing.headerLogoHeight,
+    marginLeft: spacing.xlarge,
   },
 });

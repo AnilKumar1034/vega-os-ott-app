@@ -275,10 +275,10 @@ export const RegisterScreen = ({navigation}: Props) => {
             activeOpacity={0.85}
             accessibilityRole="button"
             testID="switch-to-login-button">
-            <Text style={styles.switchButtonText}>
-              {strings.actions.alreadyHaveAccount}
-            </Text>
-          </TouchableOpacity>
+              <Text style={styles.switchButtonText}>
+                {strings.actions.alreadyHaveAccount}
+              </Text>
+            </TouchableOpacity>
         </ScrollView>
       </TVFocusGuideView>
     </View>

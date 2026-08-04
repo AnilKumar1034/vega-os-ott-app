@@ -1,7 +1,7 @@
 import {StyleSheet} from 'react-native';
 import {colors} from '../theme/colors';
 import {fontSizes, fontWeights, lineHeights} from '../theme/fonts';
-import {sizes, spacing} from '../theme/sizes';
+import {borderRadius, sizes, spacing} from '../theme/sizes';
 
 export const styles = StyleSheet.create({
   background: {
@@ -16,7 +16,7 @@ export const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
-    paddingLeft: sizes.menuWidthCollapsed || 90,
+    paddingLeft: sizes.menuWidthCollapsed,
     paddingBottom: spacing.section,
   },
   mainCardContainer: {
@@ -34,7 +34,7 @@ export const styles = StyleSheet.create({
     width: sizes.posterWidth,
     height: sizes.posterHeight,
     borderRadius: spacing.xxxl,
-    borderWidth: 2,
+    borderWidth: spacing.borderThick,
     borderColor: colors.borderLight,
   },
   detailsColumn: {
@@ -97,14 +97,14 @@ export const styles = StyleSheet.create({
   description: {
     color: colors.textPrimary,
     fontSize: fontSizes.synopsis,
-    lineHeight: 42,
+    lineHeight: lineHeights.movieDetailTitle,
     opacity: 0.9,
     marginBottom: spacing.huge,
-    maxWidth: 900,
+    maxWidth: sizes.movieDetailDescriptionMaxWidth,
   },
   progressSection: {
     marginBottom: spacing.huge,
-    maxWidth: 900,
+    maxWidth: sizes.movieDetailDescriptionMaxWidth,
   },
   progressHeader: {
     flexDirection: 'row',
@@ -126,8 +126,8 @@ export const styles = StyleSheet.create({
     opacity: 0.9,
   },
   progressTrack: {
-    height: 8,
-    borderRadius: 999,
+    height: sizes.movieDetailProgressTrackHeight,
+    borderRadius: borderRadius.circle,
     backgroundColor: colors.progressTrack,
     overflow: 'hidden',
   },
@@ -155,12 +155,12 @@ export const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   playButton: {
-    minWidth: 200,
+    minWidth: sizes.movieDetailPlayMinWidth,
     alignItems: 'center',
     borderRadius: spacing.md,
     paddingHorizontal: spacing.colossal,
     paddingVertical: spacing.large,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.white,
     marginRight: spacing.xlarge,
   },
   playButtonText: {
@@ -169,7 +169,7 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeights.bold,
   },
   secondaryButton: {
-    minWidth: 180,
+    minWidth: sizes.movieDetailSecondaryMinWidth,
     alignItems: 'center',
     borderRadius: spacing.md,
     paddingHorizontal: spacing.giant,
@@ -183,25 +183,25 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeights.bold,
   },
   addFavouriteButton: {
-    backgroundColor: '#BFA24A',
+    backgroundColor: colors.gold,
   },
   removeFavouriteButton: {
-    backgroundColor: '#B73A3A',
+    backgroundColor: colors.goldDeep,
   },
   removeWatchlistButton: {
-    backgroundColor: '#275A8B',
+    backgroundColor: colors.blueDeep,
   },
   addFavouriteText: {
-    color: '#0B0B0B',
+    color: colors.actionPrimaryTextOnLight,
   },
   removeFavouriteText: {
-    color: '#FFFFFF',
+    color: colors.white,
   },
   removeWatchlistText: {
-    color: '#FFFFFF',
+    color: colors.white,
   },
   backButton: {
-    minWidth: 160,
+    minWidth: sizes.movieDetailBackMinWidth,
     alignItems: 'center',
     borderRadius: spacing.md,
     paddingHorizontal: spacing.huge,
@@ -216,12 +216,12 @@ export const styles = StyleSheet.create({
   inlineToast: {
     marginTop: spacing.md,
     alignSelf: 'flex-start',
-    maxWidth: 420,
+    maxWidth: sizes.detailToastMaxWidth,
     paddingHorizontal: spacing.large,
     paddingVertical: spacing.sm,
     borderRadius: spacing.sm,
-    backgroundColor: 'rgba(0, 0, 0, 0.75)',
-    borderWidth: 1,
+    backgroundColor: colors.ratingBackground,
+    borderWidth: spacing.borderThin,
     borderColor: colors.borderLight,
   },
   inlineToastText: {
@@ -230,7 +230,7 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeights.semibold,
   },
   focusedAction: {
-    borderWidth: 4,
+    borderWidth: spacing.borderUltra,
     borderColor: colors.focusRing,
     // transform: [{scale: 1.06}],
   },

@@ -17,7 +17,7 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.darkCardBackground,
     borderRadius: borderRadius.card,
     padding: spacing.cardPadding,
-    borderWidth: 1.5,
+    borderWidth: spacing.borderMedium,
     borderColor: colors.cardBorder,
   },
   title: {
@@ -38,7 +38,7 @@ export const styles = StyleSheet.create({
     color: colors.errorText,
     backgroundColor: colors.errorBackground,
     borderColor: colors.errorText,
-    borderWidth: 1,
+    borderWidth: spacing.borderThin,
     borderRadius: borderRadius.md,
     padding: spacing.lg,
     fontSize: fontSizes.error,
@@ -65,7 +65,7 @@ export const styles = StyleSheet.create({
   input: {
     backgroundColor: colors.inputBackground,
     borderRadius: borderRadius.md,
-    borderWidth: 1.5,
+    borderWidth: spacing.borderMedium,
     borderColor: colors.borderLight,
     color: colors.textPrimary,
     fontSize: fontSizes.input,
@@ -75,7 +75,7 @@ export const styles = StyleSheet.create({
   inputFocused: {
     borderColor: colors.focusRing,
     backgroundColor: colors.inputFocusedBackground,
-    borderWidth: 2.5,
+    borderWidth: spacing.borderExtraUltra,
   },
   subscriptionRow: {
     flexDirection: 'row',
@@ -87,7 +87,7 @@ export const styles = StyleSheet.create({
     marginHorizontal: spacing.xxs,
     backgroundColor: colors.subPillBackground,
     borderRadius: borderRadius.md,
-    borderWidth: 1.5,
+    borderWidth: spacing.borderMedium,
     borderColor: colors.borderLight,
     paddingVertical: spacing.md,
     alignItems: 'center',
@@ -98,7 +98,7 @@ export const styles = StyleSheet.create({
   },
   subPillFocused: {
     borderColor: colors.focusRing,
-    borderWidth: 2.5,
+    borderWidth: spacing.borderExtraUltra,
   },
   subPillText: {
     color: colors.textPrimary,
@@ -114,12 +114,12 @@ export const styles = StyleSheet.create({
     paddingVertical: spacing.huge,
     alignItems: 'center',
     marginTop: spacing.huge,
-    borderWidth: 2,
+    borderWidth: spacing.borderThick,
     borderColor: colors.transparent,
   },
   submitButtonFocused: {
     borderColor: colors.focusRing,
-    borderWidth: 2.5,
+    borderWidth: spacing.borderExtraUltra,
     backgroundColor: colors.logoutButtonFocused,
   },
   submitButtonText: {

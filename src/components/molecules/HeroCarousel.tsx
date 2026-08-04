@@ -233,7 +233,9 @@ export const HeroCarousel = ({
               activeOpacity={1}
               hasTVPreferredFocus={shouldPreferFocus && activeIndex === 0}
               accessibilityRole="button"
-              accessibilityLabel={`Play ${currentSlide.title}`}
+              accessibilityLabel={strings.hero.playAccessibility(
+                currentSlide.title,
+              )}
               testID="hero-play-button">
               <Text style={styles.playButtonText}>{AppDetails.play}</Text>
             </TouchableOpacity>
@@ -255,7 +257,9 @@ export const HeroCarousel = ({
               }
               testID="hero-mylist-button">
               <Text style={styles.listButtonText}>
-                {isFavourite ? '♥' : '♡'}
+                {isFavourite
+                  ? strings.actions.inFavourites
+                  : strings.actions.favourite}
               </Text>
             </TouchableOpacity>
           </View>
@@ -307,9 +311,11 @@ export const HeroCarousel = ({
                       onPress={() => setActiveIndex(index)}
                       activeOpacity={1}
                       accessibilityRole="button"
-                      accessibilityLabel={`Slide ${
-                        index + 1
-                      } of ${totalSlides}: ${slide.title}`}
+                      accessibilityLabel={strings.hero.slideAccessibility(
+                        index + 1,
+                        totalSlides,
+                        slide.title,
+                      )}
                       testID={`hero-slide-dot-${index}`}
                     />
                   );

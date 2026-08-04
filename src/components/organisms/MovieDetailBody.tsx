@@ -77,7 +77,9 @@ export const MovieDetailBody = ({
           {continueWatchProgress !== null && continueWatchProgress > 0 && (
             <View style={styles.progressSection}>
               <View style={styles.progressHeader}>
-                <Text style={styles.progressLabel}>Continue Watching</Text>
+                <Text style={styles.progressLabel}>
+                  {strings.hero.continueWatching}
+                </Text>
                 <Text style={styles.progressValueLabel}>
                   {Math.round(continueWatchProgress * 100)}%
                 </Text>
@@ -123,12 +125,14 @@ export const MovieDetailBody = ({
                 navigation.navigate(Routes.VideoPlayer, {
                   movie: selectedMovie,
                   videoUrl: selectedMovie.videoUrl,
-                })
+              })
               }
               hasTVPreferredFocus
               activeOpacity={1}
               accessibilityRole="button"
-              accessibilityLabel={`Play ${selectedMovie.title}`}
+              accessibilityLabel={strings.hero.playAccessibility(
+                selectedMovie.title,
+              )}
               testID="detail-play-button">
               <Text style={styles.playButtonText}>{AppDetails.watchNow}</Text>
             </TouchableOpacity>
@@ -145,7 +149,7 @@ export const MovieDetailBody = ({
                 onPress={onRemoveContinueWatch}
                 activeOpacity={1}
                 accessibilityRole="button"
-                accessibilityLabel={`Remove ${selectedMovie.title} from Watchlist`}
+                accessibilityLabel={`${strings.actions.removeWatchlist} ${selectedMovie.title}`}
                 testID="remove-watchlist-button">
                 <Text
                   style={[
@@ -169,14 +173,14 @@ export const MovieDetailBody = ({
                 onPress={onRemoveFavourite}
                 activeOpacity={1}
                 accessibilityRole="button"
-                accessibilityLabel={`Remove ${selectedMovie.title} from Favourites`}
+                accessibilityLabel={`${strings.actions.removeFavourite} ${selectedMovie.title}`}
                 testID="remove-favourite-button">
                 <Text
                   style={[
                     styles.secondaryButtonText,
                     styles.removeFavouriteText,
                   ]}>
-                  ♥
+                  {strings.actions.inFavourites}
                 </Text>
               </TouchableOpacity>
             ) : (
@@ -191,13 +195,15 @@ export const MovieDetailBody = ({
                 onPress={onAddFavourite}
                 activeOpacity={1}
                 accessibilityRole="button"
-                accessibilityLabel={`Add ${selectedMovie.title} to Favourites`}>
+                accessibilityLabel={strings.hero.addToListAccessibility(
+                  selectedMovie.title,
+                )}>
                 <Text
                   style={[
                     styles.secondaryButtonText,
                     styles.addFavouriteText,
                   ]}>
-                  ♡
+                  {strings.actions.favourite}
                 </Text>
               </TouchableOpacity>
             )}
@@ -212,7 +218,7 @@ export const MovieDetailBody = ({
               onPress={() => navigation.navigate(Routes.Home)}
               activeOpacity={1}
               accessibilityRole="button"
-              accessibilityLabel="Go Back"
+              accessibilityLabel={strings.actions.goBack}
               testID="detail-back-button">
               <Text style={styles.backButtonText}>{AppDetails.back}</Text>
             </TouchableOpacity>

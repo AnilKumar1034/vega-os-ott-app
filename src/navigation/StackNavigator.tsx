@@ -15,7 +15,7 @@ interface StackNavigatorProps {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: colors.screenBackground || '#090909',
+    backgroundColor: colors.screenBackground,
   },
 });
 
