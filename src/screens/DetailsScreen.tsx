@@ -1,13 +1,6 @@
 import React from 'react';
-import {ScreenLayout} from '../components/ScreenLayout';
-import {Routes} from '../constants/routes';
+import {MovieDetailScreen} from './MovieDetailScreen';
 
 export const DetailsScreen = () => {
-  return (
-    <ScreenLayout
-      activeRoute={Routes.Details}
-      title="Details"
-      description="Find information about your selected content."
-    />
-  );
+  return <MovieDetailScreen />;
 };

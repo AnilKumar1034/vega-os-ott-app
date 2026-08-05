@@ -1,13 +1,59 @@
 schema-version = 1
 
 [package]
-title = "Basic UI React Native Application for project vegaottapp"
+title = "LogiXstream"
 version = "0.1.0"
 id = "com.anil.vegaott"
+icon = "@image/vega.png"
 
 [components]
+
 [[components.interactive]]
 id = "com.anil.vegaott.main"
 runtime-module = "/com.amazon.kepler.keplerscript.runtime.loader_2@IKeplerScript_2_0"
 launch-type = "singleton"
 categories = ["com.amazon.category.main"]
+icon = "@image/vega.png"
+
+[wants]
+
+[[wants.service]]
+id = "com.amazon.mediametrics.service"
+
+[[wants.service]]
+id = "com.amazon.media.server"
+
+[[wants.service]]
+id = "com.amazon.gipc.uuid.*"
+
+[[wants.service]]
+id = "com.amazon.media.playersession.service"
+
+[[wants.service]]
+id = "com.amazon.mediabuffer.service"
+
+[[wants.service]]
+id = "com.amazon.mediatransform.service"
+
+[[wants.service]]
+id = "com.amazon.audio.stream"
+
+[[wants.service]]
+id = "com.amazon.audio.control"
+
+[[wants.service]]
+id = "com.amazon.audio.system"
+
+[[wants.service]]
+id = "com.amazon.network.service"
+
+[[wants.privilege]]
+id = "com.amazon.devconf.privilege.accessibility"
+
+[[wants.privilege]]
+id = "com.amazon.network.privilege.net-info"
+
+[offers]
+
+[[offers.service]]
+id = "com.amazon.gipc.uuid.*"

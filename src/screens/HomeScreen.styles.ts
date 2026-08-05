@@ -1,51 +1,58 @@
 import {StyleSheet} from 'react-native';
 import {colors} from '../theme/colors';
-import {fontSizes, fontWeights, lineHeights} from '../theme/fonts';
+import {fontSizes, fontWeights} from '../theme/fonts';
+import {sizes, spacing} from '../theme/sizes';
 
 export const styles = StyleSheet.create({
   background: {
     flex: 1,
-    flexDirection: 'row',
+    backgroundColor: colors.screenBackground,
   },
   content: {
     flex: 1,
-    padding: 100,
+    paddingLeft: sizes.menuWidthCollapsed || 90,
+    paddingBottom: spacing.contentBottom,
   },
-  headerArea: {
-    flex: 3,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  headerTextContainer: {
+  contentGuide: {
     flex: 1,
+    paddingLeft: spacing.screenPadding,
+    paddingRight: spacing.screenHorizontal,
   },
-  headerTitle: {
+  contentList: {
+    paddingBottom: spacing.section,
+  },
+  toast: {
+    position: 'absolute',
+    top: spacing.xl,
+    left: '50%',
+    transform: [{translateX: -220 / 2}],
+    width: sizes.searchToastWidth,
+    paddingHorizontal: spacing.large,
+    paddingVertical: spacing.md,
+    borderRadius: spacing.md,
+    backgroundColor: colors.ratingBackground,
+    borderWidth: spacing.borderThin,
+    borderColor: colors.borderLight,
+    zIndex: 50,
+  },
+  toastText: {
     color: colors.textPrimary,
-    fontSize: fontSizes.headerTitle,
-    lineHeight: lineHeights.headerTitle,
+    fontSize: fontSizes.caption,
     fontWeight: fontWeights.semibold,
+    textAlign: 'center',
   },
-  headerSubtitle: {
+  moviesHeader: {
+    marginVertical: spacing.huge,
+  },
+  moviesTitle: {
     color: colors.textPrimary,
-    fontSize: fontSizes.headerSubtitle,
+    fontSize: fontSizes.moviesTitle,
+    fontWeight: fontWeights.bold,
   },
-  vegaLogo: {
-    width: 500,
-    height: 350,
-    marginLeft: 120,
-  },
-  focusedDescription: {
+  moviesSubtitle: {
     color: colors.textPrimary,
-    fontSize: fontSizes.focusedDescription,
-    lineHeight: lineHeights.focusedDescription,
-    flex: 1,
-    marginLeft: 50,
-    paddingTop: 20,
-  },
-  tileRowContent: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
+    fontSize: fontSizes.subheading,
+    opacity: 0.8,
+    marginTop: spacing.md,
   },
 });

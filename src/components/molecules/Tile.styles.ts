@@ -1,14 +1,15 @@
 import {StyleSheet} from 'react-native';
-import {colors} from '../theme/colors';
-import {fontSizes, fontWeights, lineHeights} from '../theme/fonts';
+import {colors} from '../../theme/colors';
+import {fontSizes, fontWeights, lineHeights} from '../../theme/fonts';
+import {sizes, spacing} from '../../theme/sizes';
 
 export const styles = StyleSheet.create({
   tile: {
-    width: 320,
-    height: 320,
-    borderRadius: 44,
+    width: sizes.tileSize,
+    height: sizes.tileSize,
+    borderRadius: spacing.screenPadding,
     overflow: 'hidden',
-    padding: 20,
+    padding: spacing.xlarge,
   },
   topHalf: {
     flex: 1,
@@ -29,8 +30,8 @@ export const styles = StyleSheet.create({
     opacity: 1,
   },
   icon: {
-    width: 80,
-    height: 80,
+    width: sizes.tileIconSize,
+    height: sizes.tileIconSize,
     tintColor: colors.textPrimary,
   },
   label: {

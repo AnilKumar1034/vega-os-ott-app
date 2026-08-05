@@ -4,7 +4,7 @@ import {NavigationProp, StackActions} from '@react-navigation/native';
 import {Routes} from '../constants/routes';
 import type {RootStackParamList} from '../navigation/AppNavigator';
 import {styles} from './SplashScreen.styles';
-import {AppDetails} from '../data/tiles';
+import {AppDetails} from '../constants/appDetails';
 
 export const SPLASH_DURATION = 2000;
 
