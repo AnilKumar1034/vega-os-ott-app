@@ -119,7 +119,12 @@ export const fetchFavouriteForContent = async (
   return decodeRecord(json);
 };
 
-export const addFavourite = async (movie: HomeContentItem) => {
+type FavouriteSource = Pick<
+  HomeContentItem,
+  'id' | 'title' | 'image' | 'videoUrl'
+>;
+
+export const addFavourite = async (movie: FavouriteSource) => {
   const session = await getSession();
   if (!session?.user?.uid) {
     return;

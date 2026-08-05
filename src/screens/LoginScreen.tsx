@@ -96,7 +96,9 @@ const checkRuntimeNetwork = async (): Promise<RuntimeNetworkCheckResult> => {
     return {
       ok: false,
       reason: 'no_network' as const,
-      details: networkState,
+      details: {
+        networkState,
+      },
     };
   }
 
@@ -159,8 +161,14 @@ const checkRuntimeNetwork = async (): Promise<RuntimeNetworkCheckResult> => {
     reason: 'online',
     details: {
       networkState,
-      internetProbe,
-      googleProbe,
+      internetProbe: {
+        ok: true,
+        status: internetProbe.status,
+      },
+      googleProbe: {
+        ok: true,
+        status: googleProbe.status,
+      },
     },
   };
 };
@@ -168,6 +176,7 @@ const checkRuntimeNetwork = async (): Promise<RuntimeNetworkCheckResult> => {
 type Props = {
   navigation: {
     navigate: (routeName: string, params?: unknown) => void;
+    dispatch: (action: any) => void;
   };
 };
 

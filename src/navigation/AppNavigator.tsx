@@ -1,5 +1,5 @@
 import React from 'react';
-import {NavigationContainer} from '@react-navigation/native';
+import {LinkingOptions, NavigationContainer} from '@react-navigation/native';
 import {Routes} from '../constants/routes';
 import {HomeScreen} from '../screens/HomeScreen';
 import {DetailsScreen} from '../screens/DetailsScreen';
@@ -15,6 +15,7 @@ import {RegisterScreen} from '../screens/RegisterScreen';
 import PlayerTestScreen from '../PlayerTestScreen';
 import {createStackNavigator} from './StackNavigator';
 import {AuthProvider} from '../context/AuthProvider';
+import {DEEPLINK_PREFIX, DeeplinkRoutes} from '../utils/deeplink';
 
 export type RootStackParamList = {
   [Routes.Splash]: undefined;
@@ -33,10 +34,34 @@ export type RootStackParamList = {
 
 const Stack = createStackNavigator<RootStackParamList>();
 
+const linking: LinkingOptions<RootStackParamList> = {
+  prefixes: [DEEPLINK_PREFIX],
+  config: {
+    screens: {
+      [Routes.Splash]: 'splash',
+      [Routes.Home]: DeeplinkRoutes.Home,
+      [Routes.Movies]: DeeplinkRoutes.Movies,
+      [Routes.Details]: 'details',
+      [Routes.MovieDetail]: {
+        path: `${DeeplinkRoutes.Details}/:movieId`,
+      },
+      [Routes.VideoPlayer]: {
+        path: `${DeeplinkRoutes.Player}/:movieId`,
+      },
+      [Routes.PlayerTest]: 'player-test',
+      [Routes.Settings]: DeeplinkRoutes.Settings,
+      [Routes.Profile]: DeeplinkRoutes.Profile,
+      [Routes.EditProfile]: 'edit-profile',
+      [Routes.Login]: 'login',
+      [Routes.Register]: 'register',
+    },
+  },
+};
+
 export const AppNavigator = () => {
   return (
     <AuthProvider>
-      <NavigationContainer>
+      <NavigationContainer linking={linking}>
         <Stack.Navigator
           initialRouteName={Routes.Splash}
           screenOptions={{headerShown: false}}>

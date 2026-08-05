@@ -13,6 +13,7 @@ import {DEFAULT_MOCK_VIDEO_URL, HomeContentItem} from '../data/home';
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
+import {findContentById} from '../utils/deeplink';
 import {
   clearContinueWatchProgress,
   fetchContinueWatchForContent,
@@ -47,7 +48,8 @@ export const VideoPlayerScreen = () => {
   const screenWidth = screenDimensions.width || 1920;
   const screenHeight = screenDimensions.height || 1080;
 
-  const movie: HomeContentItem = route.params?.movie || {
+  const deeplinkMovie = findContentById(route.params?.movieId);
+  const movie: HomeContentItem = route.params?.movie || deeplinkMovie || {
     id: 'sample-video',
     title: strings.nav.videoSampleTitle,
     genre: strings.nav.videoSampleGenre,

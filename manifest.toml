@@ -15,6 +15,46 @@ launch-type = "singleton"
 categories = ["com.amazon.category.main"]
 icon = "@image/vega.png"
 
+[[message]]
+uri = "logixstream://home"
+sender-privileges = ["*"]
+receiver-privileges = ["self"]
+
+[[message]]
+uri = "logixstream://movies"
+sender-privileges = ["*"]
+receiver-privileges = ["self"]
+
+[[message]]
+uri = "logixstream://movie"
+sender-privileges = ["*"]
+receiver-privileges = ["self"]
+
+[[message]]
+uri = "logixstream://play"
+sender-privileges = ["*"]
+receiver-privileges = ["self"]
+
+[[message]]
+uri = "logixstream://settings"
+sender-privileges = ["*"]
+receiver-privileges = ["self"]
+
+[[message]]
+uri = "logixstream://profile"
+sender-privileges = ["*"]
+receiver-privileges = ["self"]
+
+[[message]]
+uri = "logixstream://movie/jawan"
+sender-privileges = ["*"]
+receiver-privileges = ["self"]
+
+[[message]]
+uri = "logixstream://play/jawan"
+sender-privileges = ["*"]
+receiver-privileges = ["self"]
+
 [wants]
 
 [[wants.service]]
@@ -54,6 +94,43 @@ id = "com.amazon.devconf.privilege.accessibility"
 id = "com.amazon.network.privilege.net-info"
 
 [offers]
+
+[[offers.module]]
+id = "/com.anil.vegaott.deeplinks@IDeeplinks"
+includes-messages = [
+  "logixstream://home",
+  "logixstream://movies",
+  "logixstream://movie",
+  "logixstream://play",
+  "logixstream://settings",
+  "logixstream://profile",
+  "logixstream://movie/jawan",
+  "logixstream://play/jawan",
+]
+
+[[offers.interaction]]
+id = "com.anil.vegaott.main"
+launch-uris = [
+  "logixstream://home",
+  "logixstream://movies",
+  "logixstream://movie/jawan",
+  "logixstream://play/jawan",
+  "logixstream://settings",
+  "logixstream://profile",
+]
+
+[[offers.message-target]]
+uris = [
+  "logixstream://home",
+  "logixstream://movies",
+  "logixstream://movie",
+  "logixstream://play",
+  "logixstream://settings",
+  "logixstream://profile",
+  "logixstream://movie/jawan",
+  "logixstream://play/jawan",
+]
+uses-component = "com.anil.vegaott.main"
 
 [[offers.service]]
 id = "com.amazon.gipc.uuid.*"

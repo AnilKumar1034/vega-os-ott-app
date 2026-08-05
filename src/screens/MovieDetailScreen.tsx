@@ -21,6 +21,7 @@ import {
   fetchFavouriteForContent,
   removeFavourite,
 } from '../services/favouritesService';
+import {findContentById} from '../utils/deeplink';
 
 export const MovieDetailScreen = () => {
   const route = useRoute<any>();
@@ -37,7 +38,9 @@ export const MovieDetailScreen = () => {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const selectedMovie: HomeContentItem =
-    route.params?.movie || homeContentRows[0].items[0];
+    route.params?.movie ||
+    findContentById(route.params?.movieId) ||
+    homeContentRows[0].items[0];
   const allRecommendations =
     homeContentRows[1]?.items || homeContentRows[0].items;
 
