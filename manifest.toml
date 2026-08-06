@@ -46,6 +46,16 @@ sender-privileges = ["*"]
 receiver-privileges = ["self"]
 
 [[message]]
+uri = "logixstream://edit-profile"
+sender-privileges = ["*"]
+receiver-privileges = ["self"]
+
+[[message]]
+uri = "logixstream://search"
+sender-privileges = ["*"]
+receiver-privileges = ["self"]
+
+[[message]]
 uri = "logixstream://movie/jawan"
 sender-privileges = ["*"]
 receiver-privileges = ["self"]
@@ -104,6 +114,8 @@ includes-messages = [
   "logixstream://play",
   "logixstream://settings",
   "logixstream://profile",
+  "logixstream://edit-profile",
+  "logixstream://search",
   "logixstream://movie/jawan",
   "logixstream://play/jawan",
 ]
@@ -113,6 +125,7 @@ id = "com.anil.vegaott.main"
 launch-uris = [
   "logixstream://home",
   "logixstream://movies",
+  "logixstream://search",
   "logixstream://movie/jawan",
   "logixstream://play/jawan",
   "logixstream://settings",
@@ -127,6 +140,8 @@ uris = [
   "logixstream://play",
   "logixstream://settings",
   "logixstream://profile",
+  "logixstream://edit-profile",
+  "logixstream://search",
   "logixstream://movie/jawan",
   "logixstream://play/jawan",
 ]

@@ -14,6 +14,7 @@ export interface CommonHeaderProps {
   onSearchChange?: (text: string) => void;
   onSearchFocus?: () => void;
   onSearchBlur?: () => void;
+  searchHasTVPreferredFocus?: boolean;
   showSearch?: boolean;
 }
 
@@ -25,6 +26,7 @@ export const CommonHeader = ({
   onSearchChange,
   onSearchFocus,
   onSearchBlur,
+  searchHasTVPreferredFocus,
   showSearch = true,
 }: CommonHeaderProps) => {
   return (
@@ -45,6 +47,7 @@ export const CommonHeader = ({
             onChangeText={onSearchChange}
             onFocus={onSearchFocus}
             onBlur={onSearchBlur}
+            hasTVPreferredFocus={searchHasTVPreferredFocus}
           />
         )}
         {logo && (

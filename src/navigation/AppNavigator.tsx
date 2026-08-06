@@ -5,6 +5,7 @@ import {HomeScreen} from '../screens/HomeScreen';
 import {DetailsScreen} from '../screens/DetailsScreen';
 import {MovieDetailScreen} from '../screens/MovieDetailScreen';
 import {MoviesScreen} from '../screens/MoviesScreen';
+import {SearchScreen} from '../screens/SearchScreen';
 import {SettingsScreen} from '../screens/SettingsScreen';
 import {ProfileScreen} from '../screens/ProfileScreen';
 import {EditProfileScreen} from '../screens/EditProfileScreen';
@@ -21,6 +22,7 @@ export type RootStackParamList = {
   [Routes.Splash]: undefined;
   [Routes.Home]: undefined;
   [Routes.Movies]: undefined;
+  [Routes.Search]: {q?: string};
   [Routes.Details]: undefined;
   [Routes.Settings]: undefined;
   [Routes.Profile]: undefined;
@@ -28,7 +30,12 @@ export type RootStackParamList = {
   [Routes.MovieDetail]: {movie?: any};
   [Routes.VideoPlayer]: {movie?: any; videoUrl?: string};
   [Routes.PlayerTest]: undefined;
-  [Routes.Login]: undefined;
+  [Routes.Login]: {
+    redirectTo?: {
+      routeName: keyof RootStackParamList;
+      params?: Record<string, unknown>;
+    };
+  };
   [Routes.Register]: undefined;
 };
 
@@ -41,6 +48,12 @@ const linking: LinkingOptions<RootStackParamList> = {
       [Routes.Splash]: 'splash',
       [Routes.Home]: DeeplinkRoutes.Home,
       [Routes.Movies]: DeeplinkRoutes.Movies,
+      [Routes.Search]: {
+        path: DeeplinkRoutes.Search,
+        parse: {
+          q: (q: string) => q,
+        },
+      },
       [Routes.Details]: 'details',
       [Routes.MovieDetail]: {
         path: `${DeeplinkRoutes.Details}/:movieId`,
@@ -68,6 +81,7 @@ export const AppNavigator = () => {
           <Stack.Screen name={Routes.Splash} component={SplashScreen} />
           <Stack.Screen name={Routes.Home} component={HomeScreen} />
           <Stack.Screen name={Routes.Movies} component={MoviesScreen} />
+          <Stack.Screen name={Routes.Search} component={SearchScreen} />
           <Stack.Screen name={Routes.Details} component={DetailsScreen} />
           <Stack.Screen
             name={Routes.MovieDetail}

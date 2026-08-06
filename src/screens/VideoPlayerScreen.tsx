@@ -42,7 +42,7 @@ try {
 export const VideoPlayerScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const {user} = useAuth();
+  const {user, loading} = useAuth();
 
   const screenDimensions = Dimensions.get('window');
   const screenWidth = screenDimensions.width || 1920;
@@ -59,6 +59,24 @@ export const VideoPlayerScreen = () => {
 
   const videoUrl =
     route.params?.videoUrl || movie.videoUrl || DEFAULT_MOCK_VIDEO_URL;
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    if (!user) {
+      navigation.replace(Routes.Login, {
+        redirectTo: {
+          routeName: Routes.VideoPlayer,
+          params: {
+            movieId: route.params?.movieId || movie.id,
+            videoUrl: route.params?.videoUrl || movie.videoUrl,
+          },
+        },
+      });
+    }
+  }, [loading, movie.id, movie.videoUrl, navigation, route.params, user]);
 
   const playerRef = useRef<any>(null);
   if (playerRef.current === null && VideoPlayerClass) {

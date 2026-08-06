@@ -28,6 +28,7 @@ export const ScreenLayout = ({
   preferContentFocus = false,
 }: ScreenLayoutProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
 
   const handleMenuFocus = () => {
@@ -58,7 +59,12 @@ export const ScreenLayout = ({
           testID="vega-logo"
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
-          onSearchFocus={collapseMenu}
+          onSearchFocus={() => {
+            setIsSearchFocused(true);
+            collapseMenu();
+          }}
+          onSearchBlur={() => setIsSearchFocused(false)}
+          searchHasTVPreferredFocus={isSearchFocused}
           showSearch={showSearch}
         />
         <View
