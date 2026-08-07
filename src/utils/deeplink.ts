@@ -41,3 +41,17 @@ export const findContentById = (contentId?: string): HomeContentItem | null => {
 
 export const buildDeeplinkUrl = (path: string) =>
   `${DEEPLINK_PREFIX}${path.replace(/^\/+/, '')}`;
+
+export const buildVideoDeeplinkUrl = ({
+  movieId,
+  seek,
+}: {
+  movieId: string;
+  seek?: number;
+}) => {
+  const searchParams =
+    typeof seek === 'number' && Number.isFinite(seek) && seek > 0
+      ? `?seek=${Math.floor(seek)}`
+      : '';
+  return buildDeeplinkUrl(`${DeeplinkRoutes.Player}/${movieId}${searchParams}`);
+};

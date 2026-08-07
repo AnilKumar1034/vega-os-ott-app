@@ -27,6 +27,7 @@ export const MovieDetailScreen = () => {
   const route = useRoute<any>();
   const {user} = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [focusedAction, setFocusedAction] = useState<
     'play' | 'list' | 'back' | 'favourites' | 'continueWatch' | null
@@ -176,11 +177,16 @@ export const MovieDetailScreen = () => {
             testID="vega-logo"
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
-            onSearchFocus={collapseMenu}
+            onSearchFocus={() => {
+             setIsSearchFocused(true);
+             collapseMenu();
+            }}
+            onSearchBlur={() => setIsSearchFocused(false)}
+            searchHasTVPreferredFocus={isSearchFocused}
           />
         </View>
 
-        <TVFocusGuideView autoFocus style={styles.background}>
+        <TVFocusGuideView autoFocus={!isSearchFocused} style={styles.background}>
           <FlatList
             data={[selectedMovie]}
             keyExtractor={(item) => item.id || item.title}

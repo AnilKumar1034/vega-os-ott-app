@@ -26,6 +26,7 @@ Example shell commands:
 
 - `vmsgr send logixstream://search?q=rrr`
 - `vmsgr send logixstream://movie/jawan`
+- `vmsgr send logixstream://play/jawan?seek=120`
 
 Protected routes:
 

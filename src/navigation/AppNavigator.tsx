@@ -28,7 +28,7 @@ export type RootStackParamList = {
   [Routes.Profile]: undefined;
   [Routes.EditProfile]: undefined;
   [Routes.MovieDetail]: {movie?: any};
-  [Routes.VideoPlayer]: {movie?: any; videoUrl?: string};
+  [Routes.VideoPlayer]: {movie?: any; videoUrl?: string; seek?: number};
   [Routes.PlayerTest]: undefined;
   [Routes.Login]: {
     redirectTo?: {

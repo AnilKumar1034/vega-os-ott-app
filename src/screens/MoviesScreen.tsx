@@ -67,7 +67,9 @@ export const MoviesScreen = () => {
           onSearchBlur={() => setIsSearchFocused(false)}
           searchHasTVPreferredFocus={isSearchFocused}
         />
-        <TVFocusGuideView style={styles.contentGuide} autoFocus>
+        <TVFocusGuideView
+          style={styles.contentGuide}
+          autoFocus={!isSearchFocused}>
           <FlatList
             data={filteredRows}
             keyExtractor={(row) => `movies-${row.id}`}

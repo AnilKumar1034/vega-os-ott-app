@@ -59,6 +59,9 @@ export const VideoPlayerScreen = () => {
 
   const videoUrl =
     route.params?.videoUrl || movie.videoUrl || DEFAULT_MOCK_VIDEO_URL;
+  const deeplinkSeek = Number(route.params?.seek);
+  const hasExplicitSeek =
+    Number.isFinite(deeplinkSeek) && deeplinkSeek >= 0 ? deeplinkSeek : null;
 
   useEffect(() => {
     if (loading) {
@@ -67,11 +70,12 @@ export const VideoPlayerScreen = () => {
 
     if (!user) {
       navigation.replace(Routes.Login, {
-        redirectTo: {
+          redirectTo: {
           routeName: Routes.VideoPlayer,
           params: {
             movieId: route.params?.movieId || movie.id,
             videoUrl: route.params?.videoUrl || movie.videoUrl,
+            seek: route.params?.seek,
           },
         },
       });
@@ -99,6 +103,7 @@ export const VideoPlayerScreen = () => {
   const progressTimerRef = useRef<any>(null);
   const pendingSeekRef = useRef<number | null>(null);
   const metadataReadyRef = useRef(false);
+  const shouldApplySeekRef = useRef(false);
 
   const hideControlsTimerRef = useRef<any>(null);
 
@@ -201,15 +206,23 @@ export const VideoPlayerScreen = () => {
         }
         player.autoplay = true;
         player.src = videoUrl;
-        if (resumeTime > 0) {
-          pendingSeekRef.current = resumeTime;
+        const initialSeek =
+          hasExplicitSeek !== null
+            ? hasExplicitSeek
+            : resumeTime > 0
+              ? resumeTime
+              : null;
+        if (initialSeek !== null) {
+          shouldApplySeekRef.current = true;
+          pendingSeekRef.current = initialSeek;
           if (metadataReadyRef.current) {
             try {
-              player.currentTime = resumeTime;
+              player.currentTime = initialSeek;
             } catch (error) {
               console.log('Resume seek error:', error);
             }
             pendingSeekRef.current = null;
+            shouldApplySeekRef.current = false;
           }
         }
         Promise.resolve(player.play?.()).catch(() => {});
@@ -237,7 +250,7 @@ export const VideoPlayerScreen = () => {
         console.log('Player cleanup error:', e);
       }
     };
-  }, [movieId, player, videoUrl]);
+  }, [hasExplicitSeek, movieId, player, resumeTime, videoUrl]);
 
   useEffect(() => {
     if (!player || resumeTime <= 0) {
@@ -245,6 +258,7 @@ export const VideoPlayerScreen = () => {
     }
 
     pendingSeekRef.current = resumeTime;
+    shouldApplySeekRef.current = true;
     if (metadataReadyRef.current) {
       try {
         player.currentTime = resumeTime;
@@ -252,6 +266,7 @@ export const VideoPlayerScreen = () => {
         console.log('Resume seek error:', error);
       }
       pendingSeekRef.current = null;
+      shouldApplySeekRef.current = false;
     }
   }, [player, resumeTime]);
 
