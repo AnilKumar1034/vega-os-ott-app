@@ -62,6 +62,16 @@ export const VideoPlayerScreen = () => {
   const deeplinkSeek = Number(route.params?.seek);
   const hasExplicitSeek =
     Number.isFinite(deeplinkSeek) && deeplinkSeek >= 0 ? deeplinkSeek : null;
+  const hasResolvedMovie =
+    Boolean(route.params?.movie) || Boolean(deeplinkMovie);
+
+  useEffect(() => {
+    if (!route.params?.movieId || hasResolvedMovie) {
+      return;
+    }
+
+    navigation.replace(Routes.Home);
+  }, [hasResolvedMovie, navigation, route.params?.movieId]);
 
   useEffect(() => {
     if (loading) {

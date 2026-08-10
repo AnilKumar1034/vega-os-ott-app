@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {FlatList, ImageBackground, View} from 'react-native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {CommonHeader} from '../components/molecules/CommonHeader';
 import {MovieDetailBody} from '../components/organisms/MovieDetailBody';
@@ -8,7 +9,6 @@ import {Routes} from '../constants/routes';
 import {homeContentRows, HomeContentItem} from '../data/home';
 import {AppDetails} from '../constants/appDetails';
 import {styles} from './MovieDetailScreen.styles';
-import {useRoute} from '@react-navigation/native';
 import {filterContentItem} from '../utils/searchUtils';
 import {useAuth} from '../context/authContext';
 import {strings as appStrings} from '../constants/strings';
@@ -24,6 +24,7 @@ import {
 import {findContentById} from '../utils/deeplink';
 
 export const MovieDetailScreen = () => {
+  const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const {user} = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,12 +43,22 @@ export const MovieDetailScreen = () => {
     route.params?.movie ||
     findContentById(route.params?.movieId) ||
     homeContentRows[0].items[0];
+  const resolvedMovie =
+    route.params?.movie || findContentById(route.params?.movieId);
   const allRecommendations =
     homeContentRows[1]?.items || homeContentRows[0].items;
 
   const recommendations = allRecommendations.filter((item) =>
     filterContentItem(item, searchQuery),
   );
+
+  useEffect(() => {
+    if (!route.params?.movieId || resolvedMovie) {
+      return;
+    }
+
+    navigation.replace(Routes.Home);
+  }, [navigation, resolvedMovie, route.params?.movieId]);
 
   useEffect(() => {
     let active = true;

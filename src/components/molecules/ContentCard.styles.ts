@@ -29,7 +29,6 @@ export const styles = StyleSheet.create({
   focused: {
     borderWidth: spacing.borderUltra,
     borderColor: colors.focusRing,
-    transform: [{scale: 1.08}],
     zIndex: 2,
   },
   image: {
