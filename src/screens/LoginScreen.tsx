@@ -7,7 +7,7 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {StackActions} from '@react-navigation/native';
+import {StackActions, useRoute} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {useAuth} from '../context/authContext';
 import {Routes} from '../constants/routes';
@@ -96,7 +96,9 @@ const checkRuntimeNetwork = async (): Promise<RuntimeNetworkCheckResult> => {
     return {
       ok: false,
       reason: 'no_network' as const,
-      details: networkState,
+      details: {
+        networkState,
+      },
     };
   }
 
@@ -159,8 +161,14 @@ const checkRuntimeNetwork = async (): Promise<RuntimeNetworkCheckResult> => {
     reason: 'online',
     details: {
       networkState,
-      internetProbe,
-      googleProbe,
+      internetProbe: {
+        ok: true,
+        status: internetProbe.status,
+      },
+      googleProbe: {
+        ok: true,
+        status: googleProbe.status,
+      },
     },
   };
 };
@@ -168,11 +176,14 @@ const checkRuntimeNetwork = async (): Promise<RuntimeNetworkCheckResult> => {
 type Props = {
   navigation: {
     navigate: (routeName: string, params?: unknown) => void;
+    dispatch: (action: any) => void;
+    replace: (routeName: string, params?: unknown) => void;
   };
 };
 
 export const LoginScreen = ({navigation}: Props) => {
   const {login} = useAuth();
+  const route = useRoute<any>();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -226,7 +237,12 @@ export const LoginScreen = ({navigation}: Props) => {
         email: cleanEmail,
         password,
       });
-      navigation.dispatch(StackActions.replace(Routes.Settings));
+      const redirectTo = route.params?.redirectTo;
+      if (redirectTo?.routeName) {
+        navigation.replace(redirectTo.routeName, redirectTo.params);
+      } else {
+        navigation.replace(Routes.Settings);
+      }
     } catch (err: any) {
       console.log('Login error:', err);
       setErrorMsg(err.message || strings.errors.invalidLogin);

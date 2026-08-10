@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   ActivityIndicator,
   Text,
@@ -59,7 +59,7 @@ const PreferenceToggle = ({
 
 export const EditProfileScreen = () => {
   const navigation = useNavigation<any>();
-  const {user, userProfile, updateProfile} = useAuth();
+  const {user, userProfile, updateProfile, loading: authLoading} = useAuth();
 
   const [username, setUsername] = useState(
     userProfile?.username || user?.displayName || '',
@@ -78,8 +78,20 @@ export const EditProfileScreen = () => {
     userProfile?.autoplayEnabled ?? true,
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [focusedId, setFocusedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+
+    if (!user) {
+      navigation.replace(Routes.Login, {
+        redirectTo: {routeName: Routes.EditProfile},
+      });
+    }
+  }, [authLoading, navigation, user]);
 
   const leaveEditor = () => {
     if (navigation.canGoBack()) {
@@ -104,7 +116,7 @@ export const EditProfileScreen = () => {
     }
 
     setErrorMsg(null);
-    setLoading(true);
+    setSaving(true);
     try {
       await updateProfile({
         username: username.trim(),
@@ -120,7 +132,7 @@ export const EditProfileScreen = () => {
       console.log('Update profile error:', err);
       setErrorMsg(err.message || strings.auth.preferenceUpdateFailed);
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
 
@@ -339,7 +351,7 @@ export const EditProfileScreen = () => {
                 onFocus={() => setFocusedId('cancel')}
                 onBlur={() => setFocusedId(null)}
                 onPress={leaveEditor}
-                disabled={loading}
+                disabled={saving}
                 activeOpacity={1}
                 accessibilityRole="button"
                 testID="cancel-profile-button">
@@ -351,16 +363,16 @@ export const EditProfileScreen = () => {
                 style={[
                   styles.saveButton,
                   focusedId === 'save' && styles.controlFocused,
-                  loading && styles.controlDisabled,
+                  saving && styles.controlDisabled,
                 ]}
                 onFocus={() => setFocusedId('save')}
                 onBlur={() => setFocusedId(null)}
                 onPress={handleSave}
-                disabled={loading}
+                disabled={saving}
                 activeOpacity={1}
                 accessibilityRole="button"
                 testID="save-profile-button">
-                {loading ? (
+                {saving ? (
                   <ActivityIndicator color={colors.textPrimary} />
                 ) : (
                   <Text style={styles.saveButtonText}>

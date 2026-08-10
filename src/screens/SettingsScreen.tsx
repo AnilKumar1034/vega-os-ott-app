@@ -103,7 +103,7 @@ const ToggleCard = ({
 
 export const SettingsScreen = () => {
   const navigation = useNavigation<any>();
-  const {user, userProfile, logout, updateProfile} = useAuth();
+  const {user, userProfile, logout, updateProfile, loading} = useAuth();
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [themePreference, setThemePreference] = useState(
     userProfile?.themePreference || 'cinematic',
@@ -126,6 +126,18 @@ export const SettingsScreen = () => {
     userProfile?.notificationsEnabled,
     userProfile?.themePreference,
   ]);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    if (!user) {
+      navigation.replace(Routes.Login, {
+        redirectTo: {routeName: Routes.Settings},
+      });
+    }
+  }, [loading, navigation, user]);
 
   const displayName =
     userProfile?.username || user?.displayName || strings.auth.defaultUser;

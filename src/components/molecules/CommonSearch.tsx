@@ -1,5 +1,5 @@
 import React, {useRef, useState} from 'react';
-import {Text, TextInput, TouchableOpacity, View} from 'react-native';
+import {NativeSyntheticEvent, Text, TextInput, TextInputChangeEventData, TouchableOpacity, View} from 'react-native';
 import {MenuIcon} from '../atoms/MenuIcon';
 import {colors} from '../../theme/colors';
 import {styles} from './CommonSearch.styles';
@@ -30,6 +30,10 @@ export const CommonSearch = ({
   );
   const inputRef = useRef<TextInput>(null);
   const isFocused = focusedTarget !== null;
+
+  const handleTextChange = (text: string) => {
+    onChangeText(text);
+  };
 
   const handleFocus = (target: 'input' | 'clear') => {
     setFocusedTarget(target);
@@ -69,7 +73,12 @@ export const CommonSearch = ({
         ref={inputRef}
         style={styles.input}
         value={value}
-        onChangeText={onChangeText}
+        onChangeText={handleTextChange}
+        onChange={(
+          event: NativeSyntheticEvent<TextInputChangeEventData>,
+        ) => {
+          handleTextChange(event.nativeEvent.text);
+        }}
         placeholder={placeholder}
         placeholderTextColor={colors.inputPlaceholder}
         onFocus={() => handleFocus('input')}

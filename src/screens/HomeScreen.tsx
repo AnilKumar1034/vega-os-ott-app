@@ -29,6 +29,7 @@ import {styles} from './HomeScreen.styles';
 export const HomeScreen = () => {
   const {user} = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [isAnyCardFocused, setIsAnyCardFocused] = useState(false);
   const [continueWatchRecords, setContinueWatchRecords] = useState<
@@ -165,7 +166,12 @@ export const HomeScreen = () => {
           testID="vega-logo"
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
-          onSearchFocus={handleHeroFocus}
+          onSearchFocus={() => {
+            setIsSearchFocused(true);
+            handleHeroFocus();
+          }}
+          onSearchBlur={() => setIsSearchFocused(false)}
+          searchHasTVPreferredFocus={isSearchFocused}
         />
         <TVFocusGuideView style={styles.contentGuide} autoFocus>
           <FlatList

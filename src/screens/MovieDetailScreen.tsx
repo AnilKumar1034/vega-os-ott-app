@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {FlatList, ImageBackground, View} from 'react-native';
+import {useNavigation, useRoute} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {CommonHeader} from '../components/molecules/CommonHeader';
 import {MovieDetailBody} from '../components/organisms/MovieDetailBody';
@@ -8,7 +9,6 @@ import {Routes} from '../constants/routes';
 import {homeContentRows, HomeContentItem} from '../data/home';
 import {AppDetails} from '../constants/appDetails';
 import {styles} from './MovieDetailScreen.styles';
-import {useRoute} from '@react-navigation/native';
 import {filterContentItem} from '../utils/searchUtils';
 import {useAuth} from '../context/authContext';
 import {strings as appStrings} from '../constants/strings';
@@ -21,11 +21,14 @@ import {
   fetchFavouriteForContent,
   removeFavourite,
 } from '../services/favouritesService';
+import {findContentById} from '../utils/deeplink';
 
 export const MovieDetailScreen = () => {
+  const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const {user} = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [focusedAction, setFocusedAction] = useState<
     'play' | 'list' | 'back' | 'favourites' | 'continueWatch' | null
@@ -37,13 +40,25 @@ export const MovieDetailScreen = () => {
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   const selectedMovie: HomeContentItem =
-    route.params?.movie || homeContentRows[0].items[0];
+    route.params?.movie ||
+    findContentById(route.params?.movieId) ||
+    homeContentRows[0].items[0];
+  const resolvedMovie =
+    route.params?.movie || findContentById(route.params?.movieId);
   const allRecommendations =
     homeContentRows[1]?.items || homeContentRows[0].items;
 
   const recommendations = allRecommendations.filter((item) =>
     filterContentItem(item, searchQuery),
   );
+
+  useEffect(() => {
+    if (!route.params?.movieId || resolvedMovie) {
+      return;
+    }
+
+    navigation.replace(Routes.Home);
+  }, [navigation, resolvedMovie, route.params?.movieId]);
 
   useEffect(() => {
     let active = true;
@@ -173,11 +188,16 @@ export const MovieDetailScreen = () => {
             testID="vega-logo"
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
-            onSearchFocus={collapseMenu}
+            onSearchFocus={() => {
+             setIsSearchFocused(true);
+             collapseMenu();
+            }}
+            onSearchBlur={() => setIsSearchFocused(false)}
+            searchHasTVPreferredFocus={isSearchFocused}
           />
         </View>
 
-        <TVFocusGuideView autoFocus style={styles.background}>
+        <TVFocusGuideView autoFocus={!isSearchFocused} style={styles.background}>
           <FlatList
             data={[selectedMovie]}
             keyExtractor={(item) => item.id || item.title}

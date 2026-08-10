@@ -24,7 +24,7 @@ const SUBSCRIPTION_OPTIONS = [
 
 type Props = {
   navigation: {
-    navigate: (routeName: Routes | string, params?: unknown) => void;
+    navigate: (routeName: (typeof Routes)[keyof typeof Routes] | string, params?: unknown) => void;
   };
 };
 

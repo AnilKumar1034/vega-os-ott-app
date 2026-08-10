@@ -1,5 +1,6 @@
 import React, {useState} from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
+import {useEffect} from 'react';
 import {useNavigation} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {ProfileAvatar} from '../components/molecules/ProfileAvatar';
@@ -66,7 +67,7 @@ const PreferenceRow = ({
 
 export const ProfileScreen = () => {
   const navigation = useNavigation<any>();
-  const {user, userProfile} = useAuth();
+  const {user, userProfile, loading} = useAuth();
   const [isEditFocused, setIsEditFocused] = useState(false);
 
   const displayName =
@@ -80,6 +81,18 @@ export const ProfileScreen = () => {
   const theme = getProfileTheme(userProfile?.themePreference);
   const notificationsEnabled = userProfile?.notificationsEnabled ?? true;
   const autoplayEnabled = userProfile?.autoplayEnabled ?? true;
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    if (!user) {
+      navigation.replace(Routes.Login, {
+        redirectTo: {routeName: Routes.Profile},
+      });
+    }
+  }, [loading, navigation, user]);
 
   return (
     <ScreenLayout

@@ -42,7 +42,7 @@ export const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: fontSizes.cardTitle,
     fontWeight: fontWeights.medium,
-    paddingVertical: spacing.none,
+    paddingVertical: spacing.xxxl,
     paddingHorizontal: spacing.large,
   },
   clearButton: {

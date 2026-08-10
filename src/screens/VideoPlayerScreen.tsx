@@ -13,6 +13,7 @@ import {DEFAULT_MOCK_VIDEO_URL, HomeContentItem} from '../data/home';
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
+import {findContentById} from '../utils/deeplink';
 import {
   clearContinueWatchProgress,
   fetchContinueWatchForContent,
@@ -41,13 +42,14 @@ try {
 export const VideoPlayerScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const {user} = useAuth();
+  const {user, loading} = useAuth();
 
   const screenDimensions = Dimensions.get('window');
   const screenWidth = screenDimensions.width || 1920;
   const screenHeight = screenDimensions.height || 1080;
 
-  const movie: HomeContentItem = route.params?.movie || {
+  const deeplinkMovie = findContentById(route.params?.movieId);
+  const movie: HomeContentItem = route.params?.movie || deeplinkMovie || {
     id: 'sample-video',
     title: strings.nav.videoSampleTitle,
     genre: strings.nav.videoSampleGenre,
@@ -57,6 +59,38 @@ export const VideoPlayerScreen = () => {
 
   const videoUrl =
     route.params?.videoUrl || movie.videoUrl || DEFAULT_MOCK_VIDEO_URL;
+  const deeplinkSeek = Number(route.params?.seek);
+  const hasExplicitSeek =
+    Number.isFinite(deeplinkSeek) && deeplinkSeek >= 0 ? deeplinkSeek : null;
+  const hasResolvedMovie =
+    Boolean(route.params?.movie) || Boolean(deeplinkMovie);
+
+  useEffect(() => {
+    if (!route.params?.movieId || hasResolvedMovie) {
+      return;
+    }
+
+    navigation.replace(Routes.Home);
+  }, [hasResolvedMovie, navigation, route.params?.movieId]);
+
+  useEffect(() => {
+    if (loading) {
+      return;
+    }
+
+    if (!user) {
+      navigation.replace(Routes.Login, {
+          redirectTo: {
+          routeName: Routes.VideoPlayer,
+          params: {
+            movieId: route.params?.movieId || movie.id,
+            videoUrl: route.params?.videoUrl || movie.videoUrl,
+            seek: route.params?.seek,
+          },
+        },
+      });
+    }
+  }, [loading, movie.id, movie.videoUrl, navigation, route.params, user]);
 
   const playerRef = useRef<any>(null);
   if (playerRef.current === null && VideoPlayerClass) {
@@ -79,6 +113,7 @@ export const VideoPlayerScreen = () => {
   const progressTimerRef = useRef<any>(null);
   const pendingSeekRef = useRef<number | null>(null);
   const metadataReadyRef = useRef(false);
+  const shouldApplySeekRef = useRef(false);
 
   const hideControlsTimerRef = useRef<any>(null);
 
@@ -181,15 +216,23 @@ export const VideoPlayerScreen = () => {
         }
         player.autoplay = true;
         player.src = videoUrl;
-        if (resumeTime > 0) {
-          pendingSeekRef.current = resumeTime;
+        const initialSeek =
+          hasExplicitSeek !== null
+            ? hasExplicitSeek
+            : resumeTime > 0
+              ? resumeTime
+              : null;
+        if (initialSeek !== null) {
+          shouldApplySeekRef.current = true;
+          pendingSeekRef.current = initialSeek;
           if (metadataReadyRef.current) {
             try {
-              player.currentTime = resumeTime;
+              player.currentTime = initialSeek;
             } catch (error) {
               console.log('Resume seek error:', error);
             }
             pendingSeekRef.current = null;
+            shouldApplySeekRef.current = false;
           }
         }
         Promise.resolve(player.play?.()).catch(() => {});
@@ -217,7 +260,7 @@ export const VideoPlayerScreen = () => {
         console.log('Player cleanup error:', e);
       }
     };
-  }, [movieId, player, videoUrl]);
+  }, [hasExplicitSeek, movieId, player, resumeTime, videoUrl]);
 
   useEffect(() => {
     if (!player || resumeTime <= 0) {
@@ -225,6 +268,7 @@ export const VideoPlayerScreen = () => {
     }
 
     pendingSeekRef.current = resumeTime;
+    shouldApplySeekRef.current = true;
     if (metadataReadyRef.current) {
       try {
         player.currentTime = resumeTime;
@@ -232,6 +276,7 @@ export const VideoPlayerScreen = () => {
         console.log('Resume seek error:', error);
       }
       pendingSeekRef.current = null;
+      shouldApplySeekRef.current = false;
     }
   }, [player, resumeTime]);
 
