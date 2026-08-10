@@ -29,10 +29,20 @@ export const strings = {
       'Browse handpicked hit films, trending titles, and critically acclaimed masterpieces.',
   },
 
+  liveTV: {
+    headerTitle: 'LogiXstream • Live TV',
+    screenTitle: 'LIVE TV',
+    screenSubtitle: 'Browse what is on now and coming up next.',
+    loadingSchedule: 'Loading schedule…',
+    unavailableProgramme: 'Programme information unavailable.',
+    focusProgramme: 'Focus a programme to see its details.',
+  },
+
   // Side Menu Options
   sideMenu: {
     home: 'Home',
     movies: 'Movies',
+    liveTV: 'Live TV',
     series: 'Series',
     categories: 'Categories',
     search: 'Search',

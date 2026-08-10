@@ -13,6 +13,7 @@ import {SplashScreen} from '../screens/SplashScreen';
 import {VideoPlayerScreen} from '../screens/VideoPlayerScreen';
 import {LoginScreen} from '../screens/LoginScreen';
 import {RegisterScreen} from '../screens/RegisterScreen';
+import {LiveTVScreen} from '../features/live-tv/screens/LiveTVScreen';
 import PlayerTestScreen from '../PlayerTestScreen';
 import {createStackNavigator} from './StackNavigator';
 import {AuthProvider} from '../context/AuthProvider';
@@ -22,6 +23,7 @@ export type RootStackParamList = {
   [Routes.Splash]: undefined;
   [Routes.Home]: undefined;
   [Routes.Movies]: undefined;
+  [Routes.LiveTV]: undefined;
   [Routes.Search]: {q?: string};
   [Routes.Details]: undefined;
   [Routes.Settings]: undefined;
@@ -48,6 +50,7 @@ const linking: LinkingOptions<RootStackParamList> = {
       [Routes.Splash]: 'splash',
       [Routes.Home]: DeeplinkRoutes.Home,
       [Routes.Movies]: DeeplinkRoutes.Movies,
+      [Routes.LiveTV]: DeeplinkRoutes.LiveTV,
       [Routes.Search]: {
         path: DeeplinkRoutes.Search,
         parse: {
@@ -81,6 +84,7 @@ export const AppNavigator = () => {
           <Stack.Screen name={Routes.Splash} component={SplashScreen} />
           <Stack.Screen name={Routes.Home} component={HomeScreen} />
           <Stack.Screen name={Routes.Movies} component={MoviesScreen} />
+          <Stack.Screen name={Routes.LiveTV} component={LiveTVScreen} />
           <Stack.Screen name={Routes.Search} component={SearchScreen} />
           <Stack.Screen name={Routes.Details} component={DetailsScreen} />
           <Stack.Screen

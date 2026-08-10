@@ -8,7 +8,7 @@ import {styles} from './SideMenu.styles';
 export interface MenuOptionItem {
   route: Exclude<RouteName, 'Splash'>;
   title: string;
-  name: 'Home' | 'Movies' | 'Details' | 'Settings';
+  name: 'Home' | 'Movies' | 'LiveTV' | 'Details' | 'Settings';
   icon: ImageSourcePropType;
 }
 

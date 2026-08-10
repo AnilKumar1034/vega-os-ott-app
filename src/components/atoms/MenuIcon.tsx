@@ -11,6 +11,7 @@ import {colors} from '../../theme/colors';
 export type MenuIconName =
   | 'Home'
   | 'Movies'
+  | 'LiveTV'
   | 'Details'
   | 'Settings'
   | 'Search'
@@ -29,6 +30,7 @@ export interface MenuIconProps {
 const iconSources: Record<string, ImageSourcePropType> = {
   Home: require('../../assets/home.png'),
   Movies: require('../../assets/get-started.png'),
+  LiveTV: require('../../assets/get-started.png'),
   Details: require('../../assets/learn-more.png'),
   Settings: require('../../assets/debug.png'),
   Search: require('../../assets/search.png'),

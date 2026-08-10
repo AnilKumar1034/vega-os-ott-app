@@ -5,6 +5,7 @@ export const DEEPLINK_PREFIX = 'logixstream://';
 export const DeeplinkRoutes = {
   Home: 'home',
   Movies: 'movies',
+  LiveTV: 'live-tv',
   Search: 'search',
   Details: 'movie',
   Player: 'play',

@@ -2,6 +2,7 @@ export const Routes = {
   Splash: 'Splash',
   Home: 'Home',
   Movies: 'Movies',
+  LiveTV: 'LiveTV',
   Search: 'Search',
   Details: 'Details',
   Settings: 'Settings',
