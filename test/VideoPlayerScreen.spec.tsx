@@ -66,26 +66,27 @@ describe('VideoPlayerScreen', () => {
     jest.clearAllMocks();
   });
 
-  it('renders VideoPlayerScreen with title, back button, and video surface with default controls', () => {
+  it('renders VideoPlayerScreen with title, back button, and video surface', async () => {
     const screen = render(<VideoPlayerScreen />);
 
     expect(screen.getByTestId('video-player-screen')).toBeTruthy();
-    const surface = screen.getByTestId('w3c-video-surface');
-    expect(surface).toBeTruthy();
-    expect(surface.props.showControls).toBe(true);
+    await waitFor(() => {
+      const surface = screen.getByTestId('w3c-video-surface');
+      expect(surface.props.videoPlayer).toBeTruthy();
+    });
     expect(screen.getByText('Test Feature Movie')).toBeTruthy();
     expect(screen.getByTestId('player-back-button')).toBeTruthy();
   });
 
-  it('attaches the surface and starts playback when the surface is created', async () => {
+  it('enables the native TV controls after player initialization', async () => {
     const screen = render(<VideoPlayerScreen />);
 
-    const surface = screen.getByTestId('w3c-video-surface');
-    fireEvent(surface, 'onSurfaceViewCreated', 'surface-1');
-
-    expect(mockInitialize).toHaveBeenCalled();
-    expect(mockSetSurfaceHandle).toHaveBeenCalledWith('surface-1');
-    expect(mockPlay).toHaveBeenCalled();
+    await waitFor(() => {
+      const surface = screen.getByTestId('w3c-video-surface');
+      expect(surface.props.showControls).toBe(true);
+      expect(mockInitialize).toHaveBeenCalled();
+      expect(mockPlay).toHaveBeenCalled();
+    });
   });
 
   it('navigates back to Home when back button is pressed', async () => {

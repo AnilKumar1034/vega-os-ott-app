@@ -49,13 +49,14 @@ export const VideoPlayerScreen = () => {
   const screenHeight = screenDimensions.height || 1080;
 
   const deeplinkMovie = findContentById(route.params?.movieId);
-  const movie: HomeContentItem = route.params?.movie || deeplinkMovie || {
-    id: 'sample-video',
-    title: strings.nav.videoSampleTitle,
-    genre: strings.nav.videoSampleGenre,
-    rating: strings.nav.videoSampleRating,
-    image: require('../assets/background.png'),
-  };
+  const movie: HomeContentItem = route.params?.movie ||
+    deeplinkMovie || {
+      id: 'sample-video',
+      title: strings.nav.videoSampleTitle,
+      genre: strings.nav.videoSampleGenre,
+      rating: strings.nav.videoSampleRating,
+      image: require('../assets/background.png'),
+    };
 
   const videoUrl =
     route.params?.videoUrl || movie.videoUrl || DEFAULT_MOCK_VIDEO_URL;
@@ -80,7 +81,7 @@ export const VideoPlayerScreen = () => {
 
     if (!user) {
       navigation.replace(Routes.Login, {
-          redirectTo: {
+        redirectTo: {
           routeName: Routes.VideoPlayer,
           params: {
             movieId: route.params?.movieId || movie.id,
@@ -108,6 +109,7 @@ export const VideoPlayerScreen = () => {
   const [isBackFocused, setIsBackFocused] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
+  const [isPlayerInitialized, setIsPlayerInitialized] = useState(false);
   const [resumeTime, setResumeTime] = useState<number>(0);
   const lastSavedTimeRef = useRef<number>(0);
   const progressTimerRef = useRef<any>(null);
@@ -214,14 +216,18 @@ export const VideoPlayerScreen = () => {
         if (disposed) {
           return;
         }
-        player.autoplay = true;
+
+        // Mount the native video view only after initialization. KeplerVideoView
+        // then creates and attaches its surface, and provides the native TV
+        // transport controls.
+        setIsPlayerInitialized(true);
         player.src = videoUrl;
         const initialSeek =
           hasExplicitSeek !== null
             ? hasExplicitSeek
             : resumeTime > 0
-              ? resumeTime
-              : null;
+            ? resumeTime
+            : null;
         if (initialSeek !== null) {
           shouldApplySeekRef.current = true;
           pendingSeekRef.current = initialSeek;
@@ -235,10 +241,20 @@ export const VideoPlayerScreen = () => {
             shouldApplySeekRef.current = false;
           }
         }
-        Promise.resolve(player.play?.()).catch(() => {});
+        Promise.resolve(player.play?.()).catch((error) => {
+          if (!disposed) {
+            console.log('Initial playback error:', error);
+            setVideoError(
+              error?.message || strings.errors.videoPlaybackUnavailable,
+            );
+          }
+        });
       } catch (err: any) {
         if (!disposed) {
           console.log('Init error:', err);
+          setVideoError(
+            err?.message || strings.errors.videoPlaybackUnavailable,
+          );
         }
       }
     };
@@ -247,6 +263,7 @@ export const VideoPlayerScreen = () => {
 
     return () => {
       disposed = true;
+      setIsPlayerInitialized(false);
       if (player?.removeEventListener) {
         player.removeEventListener('loadstart', onLoadStart);
         player.removeEventListener('error', onError);
@@ -381,40 +398,27 @@ export const VideoPlayerScreen = () => {
         imageStyle={styles.backdropImageStyle}
       />
 
-      {/* Kepler Video View Surface Layer at zIndex: 1 */}
-      <KeplerVideoViewComponent
-        videoPlayer={player}
-        showControls={true}
-        onSurfaceViewCreated={(surfaceHandle: string) => {
-          if (player && player.setSurfaceHandle) {
-            try {
-              player.setSurfaceHandle(surfaceHandle);
-              Promise.resolve(player.play?.()).catch(() => {});
-            } catch (e) {
-              console.log('Set surface error:', e);
-            }
-          }
-        }}
-        onSurfaceViewDestroyed={(surfaceHandle: string) => {
-          if (player && player.clearSurfaceHandle) {
-            try {
-              player.clearSurfaceHandle(surfaceHandle);
-            } catch (e) {
-              console.log('Clear surface error:', e);
-            }
-          }
-        }}
+      {/* KeplerVideoView owns the native surface and TV transport controls. */}
+      <View
         style={StyleSheet.flatten([
           styles.videoSurface,
           {width: screenWidth, height: screenHeight},
-        ])}
-        testID="w3c-video-surface"
-      />
+        ])}>
+        {isPlayerInitialized && (
+          <KeplerVideoViewComponent
+            videoPlayer={player}
+            showControls
+            testID="w3c-video-surface"
+          />
+        )}
+      </View>
 
       {videoError && (
         <View style={styles.errorOverlay} testID="video-error-state">
           <View style={styles.errorCard}>
-            <Text style={styles.errorTitle}>{strings.errors.playbackError}</Text>
+            <Text style={styles.errorTitle}>
+              {strings.errors.playbackError}
+            </Text>
             <Text style={styles.errorBody}>{videoError}</Text>
 
             <TouchableOpacity
@@ -429,7 +433,9 @@ export const VideoPlayerScreen = () => {
               accessibilityRole="button"
               accessibilityLabel={strings.accessibility.retryVideoPlayback}
               testID="video-retry-button">
-              <Text style={styles.retryButtonText}>{strings.actions.retry}</Text>
+              <Text style={styles.retryButtonText}>
+                {strings.actions.retry}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>

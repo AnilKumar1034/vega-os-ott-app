@@ -1,6 +1,6 @@
 import {Channel} from '../models/Channel';
 import {EPGProgram} from '../models/EPGProgram';
-import {SLOT_MINUTES} from '../utils/epgTimeUtils';
+import {getCurrentEPGSlotTimeMs} from '../utils/epgTimeUtils';
 
 export const channels: Channel[] = [
   {
@@ -35,12 +35,7 @@ export const channels: Channel[] = [
   },
 ];
 
-const scheduleStart = new Date();
-scheduleStart.setMinutes(
-  Math.floor(scheduleStart.getMinutes() / SLOT_MINUTES) * SLOT_MINUTES - 120,
-  0,
-  0,
-);
+const scheduleStart = new Date(getCurrentEPGSlotTimeMs() - 120 * 60000);
 
 export const EPG_START_TIME = scheduleStart.toISOString();
 export const EPG_TIMELINE_SLOT_COUNT = 12;

@@ -27,9 +27,12 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeights.semibold,
     letterSpacing: 1.5,
     marginBottom: spacing.screenHorizontal,
+    paddingLeft: spacing.large,
+    //hdfc-9390041057
   },
   optionList: {
     paddingBottom: spacing.colossal,
+    paddingLeft: spacing.md,
   },
   option: {
     height: sizes.menuItemHeight,

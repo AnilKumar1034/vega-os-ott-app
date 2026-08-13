@@ -36,6 +36,9 @@ export const strings = {
     loadingSchedule: 'Loading schedule…',
     unavailableProgramme: 'Programme information unavailable.',
     focusProgramme: 'Focus a programme to see its details.',
+    futureProgrammeTitle: 'Programme not available',
+    futureProgrammeMessage: 'This programme has not started yet.',
+    futureProgrammeDismiss: 'OK',
   },
 
   // Side Menu Options

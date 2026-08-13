@@ -3,6 +3,16 @@ import {EPGProgram} from '../models/EPGProgram';
 export const SLOT_MINUTES = 30;
 export const SLOT_WIDTH = 150;
 
+export const getCurrentEPGSlotTimeMs = (now = new Date()) => {
+  const nowTime = now.getTime();
+  if (!Number.isFinite(nowTime)) {
+    return Date.now();
+  }
+
+  const slotDurationMs = SLOT_MINUTES * 60000;
+  return Math.floor(nowTime / slotDurationMs) * slotDurationMs;
+};
+
 const getTimestamp = (value: string) => {
   const timestamp = new Date(value).getTime();
   return Number.isFinite(timestamp) ? timestamp : null;
@@ -34,6 +44,13 @@ export const isProgramLive = (program: EPGProgram, now = new Date()) => {
     nowTime >= start &&
     nowTime < end
   );
+};
+
+export const isProgramFuture = (program: EPGProgram, now = new Date()) => {
+  const start = getTimestamp(program.startTime);
+  const nowTime = now.getTime();
+
+  return start !== null && Number.isFinite(nowTime) && start > nowTime;
 };
 
 export const formatEPGTime = (value: string) => {
