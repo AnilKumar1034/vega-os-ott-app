@@ -1,5 +1,5 @@
-import React from 'react';
-import {Image, ImageSourcePropType, Text, View} from 'react-native';
+import React, {useState} from 'react';
+import {Image, ImageSourcePropType, Pressable, Text, View} from 'react-native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {CommonSearch} from './CommonSearch';
 import {styles} from './CommonHeader.styles';
@@ -16,6 +16,10 @@ export interface CommonHeaderProps {
   onSearchBlur?: () => void;
   searchHasTVPreferredFocus?: boolean;
   showSearch?: boolean;
+  filterLabel?: string;
+  onFilterPress?: () => void;
+  filterFocusGuideRef?: React.Ref<React.ElementRef<typeof TVFocusGuideView>>;
+  filterHasTVPreferredFocus?: boolean;
 }
 
 export const CommonHeader = ({
@@ -28,9 +32,20 @@ export const CommonHeader = ({
   onSearchBlur,
   searchHasTVPreferredFocus,
   showSearch = true,
+  filterLabel,
+  onFilterPress,
+  filterFocusGuideRef,
+  filterHasTVPreferredFocus,
 }: CommonHeaderProps) => {
+  const [isFilterFocused, setIsFilterFocused] = useState(false);
+  const [filterButton, setFilterButton] = useState<React.ElementRef<
+    typeof Pressable
+  > | null>(null);
+
   return (
-    <TVFocusGuideView style={styles.container} autoFocus={false}>
+    <TVFocusGuideView
+      style={styles.container}
+      autoFocus={Boolean(filterLabel && onFilterPress)}>
       <Text style={styles.title} numberOfLines={1}>
         {title}
       </Text>
@@ -49,6 +64,27 @@ export const CommonHeader = ({
             onBlur={onSearchBlur}
             hasTVPreferredFocus={searchHasTVPreferredFocus}
           />
+        )}
+        {filterLabel && onFilterPress && (
+          <TVFocusGuideView
+            ref={filterFocusGuideRef}
+            autoFocus
+            destinations={filterButton ? [filterButton] : []}>
+            <Pressable
+              ref={setFilterButton}
+              style={[
+                styles.filterButton,
+                isFilterFocused && styles.filterButtonFocused,
+              ]}
+              onPress={onFilterPress}
+              onFocus={() => setIsFilterFocused(true)}
+              onBlur={() => setIsFilterFocused(false)}
+              hasTVPreferredFocus={filterHasTVPreferredFocus}
+              accessibilityRole="button"
+              accessibilityLabel={filterLabel}>
+              <Text style={styles.filterButtonText}>{filterLabel} ▾</Text>
+            </Pressable>
+          </TVFocusGuideView>
         )}
         {logo && (
           <Image

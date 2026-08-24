@@ -155,7 +155,6 @@ const PlayerTestScreen = () => {
 
         console.log('[PlayerTestScreen] player initialized');
 
-        player.autoplay = true;
         if (player.defaultSeekIntervalInSec !== undefined) {
           player.defaultSeekIntervalInSec = 10;
         }

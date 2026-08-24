@@ -21,6 +21,14 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.transparent,
     zIndex: 1,
   },
+  shakaSurfaceContainer: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shakaVideoSurface: {
+    backgroundColor: colors.shadowDark,
+  },
   overlayContainer: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: colors.darkOverlay,
@@ -85,6 +93,31 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeights.bold,
     fontSize: fontSizes.small,
     letterSpacing: 1,
+  },
+  bottomControls: {
+    alignItems: 'center',
+    paddingBottom: spacing.xl,
+  },
+  playbackControl: {
+    backgroundColor: colors.chipBackground,
+    borderColor: colors.borderLight,
+    borderRadius: borderRadius.xl,
+    borderWidth: spacing.borderMedium,
+    minWidth: sizes.playerErrorMaxWidth / 3,
+    paddingHorizontal: spacing.colossal,
+    paddingVertical: spacing.xl,
+    alignItems: 'center',
+  },
+  playbackControlFocused: {
+    backgroundColor: colors.heroAccent,
+    borderColor: colors.focusRing,
+    borderWidth: spacing.borderExtraUltra,
+    transform: [{scale: 1.05}],
+  },
+  playbackControlText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.body,
+    fontWeight: fontWeights.bold,
   },
   errorOverlay: {
     ...StyleSheet.absoluteFillObject,

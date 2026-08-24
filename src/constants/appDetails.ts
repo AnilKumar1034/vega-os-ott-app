@@ -7,6 +7,7 @@ export const AppDetails = {
   // Navigation & Menu Titles
   home: 'Home',
   movies: 'Movies',
+  liveTV: 'Live TV',
   details: 'Details',
   settings: 'Settings',
 

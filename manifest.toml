@@ -86,6 +86,12 @@ id = "com.amazon.mediabuffer.service"
 id = "com.amazon.mediatransform.service"
 
 [[wants.service]]
+id = "com.amazon.drm.key"
+
+[[wants.service]]
+id = "com.amazon.drm.crypto"
+
+[[wants.service]]
 id = "com.amazon.audio.stream"
 
 [[wants.service]]
@@ -97,11 +103,24 @@ id = "com.amazon.audio.system"
 [[wants.service]]
 id = "com.amazon.network.service"
 
+# Required for the Vega OS on-screen keyboard used by TextInput controls.
+[[wants.service]]
+id = "com.amazon.inputmethod.service"
+
+[[wants.service]]
+id = "com.amazon.inputd.service"
+
 [[wants.privilege]]
 id = "com.amazon.devconf.privilege.accessibility"
 
 [[wants.privilege]]
 id = "com.amazon.network.privilege.net-info"
+
+[[needs.privilege]]
+id = "com.amazon.privilege.security.file-sharing"
+
+[[needs.privilege]]
+id = "com.amazon.media.secureplayback"
 
 [offers]
 

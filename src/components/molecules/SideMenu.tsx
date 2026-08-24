@@ -26,6 +26,12 @@ const menuOptions: MenuOptionItem[] = [
     icon: require('../../assets/get-started.png'),
   },
   {
+    route: Routes.LiveTV,
+    title: strings.sideMenu.liveTV,
+    name: 'LiveTV',
+    icon: require('../../assets/get-started.png'),
+  },
+  {
     route: Routes.Details,
     title: AppDetails.details,
     name: 'Details',
