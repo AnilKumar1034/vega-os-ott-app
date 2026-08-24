@@ -86,6 +86,12 @@ id = "com.amazon.mediabuffer.service"
 id = "com.amazon.mediatransform.service"
 
 [[wants.service]]
+id = "com.amazon.drm.key"
+
+[[wants.service]]
+id = "com.amazon.drm.crypto"
+
+[[wants.service]]
 id = "com.amazon.audio.stream"
 
 [[wants.service]]
@@ -109,6 +115,12 @@ id = "com.amazon.devconf.privilege.accessibility"
 
 [[wants.privilege]]
 id = "com.amazon.network.privilege.net-info"
+
+[[needs.privilege]]
+id = "com.amazon.privilege.security.file-sharing"
+
+[[needs.privilege]]
+id = "com.amazon.media.secureplayback"
 
 [offers]
 

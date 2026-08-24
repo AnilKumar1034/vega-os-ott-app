@@ -10,11 +10,10 @@ import {SettingsScreen} from '../screens/SettingsScreen';
 import {ProfileScreen} from '../screens/ProfileScreen';
 import {EditProfileScreen} from '../screens/EditProfileScreen';
 import {SplashScreen} from '../screens/SplashScreen';
-import {VideoPlayerScreen} from '../screens/VideoPlayerScreen';
 import {LoginScreen} from '../screens/LoginScreen';
 import {RegisterScreen} from '../screens/RegisterScreen';
 import {LiveTVScreen} from '../features/live-tv/screens/LiveTVScreen';
-import PlayerTestScreen from '../PlayerTestScreen';
+import {LiveChannelDrmConfig} from '../features/live-tv/models/LiveChannel';
 import {createStackNavigator} from './StackNavigator';
 import {AuthProvider} from '../context/AuthProvider';
 import {DEEPLINK_PREFIX, DeeplinkRoutes} from '../utils/deeplink';
@@ -30,7 +29,15 @@ export type RootStackParamList = {
   [Routes.Profile]: undefined;
   [Routes.EditProfile]: undefined;
   [Routes.MovieDetail]: {movie?: any};
-  [Routes.VideoPlayer]: {movie?: any; videoUrl?: string; seek?: number};
+  [Routes.VideoPlayer]: {
+    movie?: any;
+    videoUrl?: string;
+    seek?: number;
+    isLive?: boolean;
+    streamType?: 'hls' | 'dash';
+    isVideoOnly?: boolean;
+    drm?: LiveChannelDrmConfig;
+  };
   [Routes.PlayerTest]: undefined;
   [Routes.Login]: {
     redirectTo?: {
@@ -42,6 +49,19 @@ export type RootStackParamList = {
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
+
+// These routes initialize the native W3C media module. Register lightweight
+// route wrappers so the module is not evaluated while the app is booting into
+// Splash/Home.
+const VideoPlayerRoute = () => {
+  const {VideoPlayerScreen} = require('../screens/VideoPlayerScreen');
+  return <VideoPlayerScreen />;
+};
+
+const PlayerTestRoute = () => {
+  const PlayerTestScreen = require('../PlayerTestScreen').default;
+  return <PlayerTestScreen />;
+};
 
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: [DEEPLINK_PREFIX],
@@ -93,9 +113,9 @@ export const AppNavigator = () => {
           />
           <Stack.Screen
             name={Routes.VideoPlayer}
-            component={VideoPlayerScreen}
+            component={VideoPlayerRoute}
           />
-          <Stack.Screen name={Routes.PlayerTest} component={PlayerTestScreen} />
+          <Stack.Screen name={Routes.PlayerTest} component={PlayerTestRoute} />
           <Stack.Screen name={Routes.Settings} component={SettingsScreen} />
           <Stack.Screen name={Routes.Profile} component={ProfileScreen} />
           <Stack.Screen

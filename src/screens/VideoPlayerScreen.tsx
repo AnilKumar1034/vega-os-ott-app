@@ -1,4 +1,5 @@
-import React, {useCallback, useEffect, useRef, useState} from 'react';
+/* global globalThis */
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   Dimensions,
   ImageBackground,
@@ -20,8 +21,12 @@ import {
   saveContinueWatchProgress,
 } from '../services/watchProgressService';
 import {styles} from './VideoPlayerScreen.styles';
+import type {ShakaPlayer, ShakaPlayerSettings} from '../shakaplayer/ShakaPlayer';
+import {LiveChannelDrmConfig} from '../features/live-tv/models/LiveChannel';
+import {verifyWidevineSupport} from '../utils/widevineDiagnostics';
 
 let KeplerVideoViewComponent: any = View;
+let KeplerVideoSurfaceViewComponent: any = View;
 let VideoPlayerClass: any = null;
 
 try {
@@ -32,10 +37,13 @@ try {
       w3cMedia.KeplerVideoSurfaceView ||
       w3cMedia.Video ||
       View;
+    KeplerVideoSurfaceViewComponent =
+      w3cMedia.KeplerVideoSurfaceView || w3cMedia.KeplerVideoView || View;
     VideoPlayerClass = w3cMedia.VideoPlayer || w3cMedia.Video || null;
   }
 } catch (e) {
   KeplerVideoViewComponent = View;
+  KeplerVideoSurfaceViewComponent = View;
   VideoPlayerClass = null;
 }
 
@@ -43,20 +51,34 @@ export const VideoPlayerScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const {user, loading} = useAuth();
+  const isLive = Boolean(route.params?.isLive);
+  const streamType = route.params?.streamType as 'hls' | 'dash' | undefined;
+  const isVideoOnly = Boolean(route.params?.isVideoOnly);
+  const drm = route.params?.drm as LiveChannelDrmConfig | undefined;
+  const isDrmContent = Boolean(drm?.enabled);
+  // DASH requires MSE/Shaka even when it is clear content. Keeping this path
+  // available lets us verify the MSE pipeline independently from Widevine.
+  const useShakaPlayer = streamType === 'dash' || isDrmContent;
 
   const screenDimensions = Dimensions.get('window');
   const screenWidth = screenDimensions.width || 1920;
   const screenHeight = screenDimensions.height || 1080;
+  const shakaSurfaceWidth = Math.min(screenWidth, 1920);
+  const shakaSurfaceHeight = Math.min(screenHeight, 1080);
 
   const deeplinkMovie = findContentById(route.params?.movieId);
-  const movie: HomeContentItem = route.params?.movie ||
-    deeplinkMovie || {
-      id: 'sample-video',
-      title: strings.nav.videoSampleTitle,
-      genre: strings.nav.videoSampleGenre,
-      rating: strings.nav.videoSampleRating,
-      image: require('../assets/background.png'),
-    };
+  const movie = useMemo<HomeContentItem>(
+    () =>
+      route.params?.movie ||
+      deeplinkMovie || {
+        id: 'sample-video',
+        title: strings.nav.videoSampleTitle,
+        genre: strings.nav.videoSampleGenre,
+        rating: strings.nav.videoSampleRating,
+        image: require('../assets/background.png'),
+      },
+    [deeplinkMovie, route.params?.movie],
+  );
 
   const videoUrl =
     route.params?.videoUrl || movie.videoUrl || DEFAULT_MOCK_VIDEO_URL;
@@ -85,8 +107,13 @@ export const VideoPlayerScreen = () => {
           routeName: Routes.VideoPlayer,
           params: {
             movieId: route.params?.movieId || movie.id,
+            movie: route.params?.movie,
             videoUrl: route.params?.videoUrl || movie.videoUrl,
             seek: route.params?.seek,
+            isLive: route.params?.isLive,
+            streamType: route.params?.streamType,
+            isVideoOnly: route.params?.isVideoOnly,
+            drm: route.params?.drm,
           },
         },
       });
@@ -94,6 +121,7 @@ export const VideoPlayerScreen = () => {
   }, [loading, movie.id, movie.videoUrl, navigation, route.params, user]);
 
   const playerRef = useRef<any>(null);
+  const sourceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   if (playerRef.current === null && VideoPlayerClass) {
     try {
       playerRef.current = new VideoPlayerClass();
@@ -103,10 +131,18 @@ export const VideoPlayerScreen = () => {
   }
   const player = playerRef.current;
   const movieId = movie.id;
+  const shakaPlayerRef = useRef<ShakaPlayer | null>(null);
+  const drmPlaybackStartedRef = useRef(false);
+  // A D-pad Select that opens the player can be delivered once more as the
+  // initial TV focus settles. Keep it from activating the Back button.
+  const playerOpenedAtRef = useRef(Date.now());
 
   const backButtonRef = useRef<any>(null);
   const [backButtonNode, setBackButtonNode] = useState<any>(null);
   const [isBackFocused, setIsBackFocused] = useState(false);
+  const [isPlaybackControlFocused, setIsPlaybackControlFocused] =
+    useState(false);
+  const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [isPlayerInitialized, setIsPlayerInitialized] = useState(false);
@@ -129,6 +165,107 @@ export const VideoPlayerScreen = () => {
     }, 8000);
   }, []);
 
+  const startDrmPlayback = useCallback(async () => {
+    if (!useShakaPlayer || !player || drmPlaybackStartedRef.current) {
+      return;
+    }
+
+    drmPlaybackStartedRef.current = true;
+    try {
+      if (isDrmContent && drm?.keySystem === 'com.widevine.alpha') {
+        const hasWidevineSupport = await verifyWidevineSupport();
+        if (!hasWidevineSupport) {
+          throw new Error(
+            'Widevine DRM is unavailable on this Vega device configuration.',
+          );
+        }
+      }
+
+      (globalThis as any).gmedia = player;
+
+      const playerSettings: ShakaPlayerSettings = {
+        secure: isDrmContent,
+        abrEnabled: true,
+        // The public Sintel Widevine asset advertises a 4K rendition. The
+        // Vega MSE source-buffer path on this device rejects that rendition,
+        // so keep Shaka on the broadly supported FHD H.264 profiles.
+        abrMaxWidth: Math.min(screenWidth, 1920),
+        abrMaxHeight: Math.min(screenHeight, 1080),
+      };
+      // Shaka installs several browser/media polyfills at module load time.
+      // Keep that work off the app bootstrap path: this screen is registered by
+      // the root navigator even when the user never opens adaptive playback.
+      const {ShakaPlayer: ShakaPlayerImplementation} = require('../shakaplayer/ShakaPlayer');
+      const shakaPlayer = new ShakaPlayerImplementation(
+        player,
+        playerSettings,
+      ) as ShakaPlayer;
+      shakaPlayerRef.current = shakaPlayer;
+      const source = {
+        secure: isDrmContent ? 'true' : 'false',
+        uri: videoUrl,
+        type: streamType === 'hls' ? 'HLS' : 'DASH',
+        container: 'MP4',
+        vcodec: 'avc1',
+        ...(isVideoOnly ? {} : {acodec: 'mp4a'}),
+        ...(isVideoOnly ? {video_only: 'true'} : {}),
+        ...(isDrmContent && drm
+          ? {
+              drm_scheme: drm.keySystem,
+              drm_license_uri: drm.licenseUrl,
+            }
+          : {}),
+      };
+
+      await shakaPlayer.load(source, true);
+    } catch (error: any) {
+      drmPlaybackStartedRef.current = false;
+      console.log('DRM playback initialization error:', error);
+      setVideoError(error?.message || strings.errors.videoPlaybackUnavailable);
+      throw error;
+    }
+  }, [
+    drm,
+    isDrmContent,
+    isVideoOnly,
+    player,
+    screenHeight,
+    screenWidth,
+    streamType,
+    useShakaPlayer,
+    videoUrl,
+  ]);
+
+  const handleDrmSurfaceCreated = useCallback(
+    (
+      surface:
+        | string
+        | {surfaceHandle?: string; nativeEvent?: {surfaceHandle?: string}},
+    ) => {
+      const surfaceHandle =
+        typeof surface === 'string'
+          ? surface
+          : surface?.surfaceHandle || surface?.nativeEvent?.surfaceHandle;
+      if (!surfaceHandle) {
+        setVideoError(strings.errors.videoPlaybackUnavailable);
+        return;
+      }
+
+      player?.setSurfaceHandle?.(surfaceHandle);
+      // Shaka begins loading immediately after media initialization, matching
+      // the Vega sample lifecycle.  At this point the adaptive source may
+      // already be loading; the surface callback only attaches the native
+      // target and starts presentation.
+      Promise.resolve(player?.play?.()).catch((error) => {
+        console.log('Adaptive playback start error:', error);
+        setVideoError(
+          error?.message || strings.errors.videoPlaybackUnavailable,
+        );
+      });
+    },
+    [player],
+  );
+
   useEffect(() => {
     resetHideTimer();
     return () => {
@@ -139,6 +276,11 @@ export const VideoPlayerScreen = () => {
   }, [resetHideTimer]);
 
   useEffect(() => {
+    if (isLive) {
+      setResumeTime(0);
+      return;
+    }
+
     let active = true;
 
     const loadResumeTime = async () => {
@@ -167,7 +309,7 @@ export const VideoPlayerScreen = () => {
     return () => {
       active = false;
     };
-  }, [movieId, user]);
+  }, [isLive, movieId, user]);
 
   useEffect(() => {
     if (!player) {
@@ -217,38 +359,52 @@ export const VideoPlayerScreen = () => {
           return;
         }
 
+        if (useShakaPlayer) {
+          if (!disposed) {
+            // Follow the official Vega adaptive-player lifecycle: start the
+            // Shaka load after media initialization, then attach the native
+            // surface and call play from its creation callback.  This keeps
+            // MSE source-buffer creation independent of surface timing.
+            setIsPlayerInitialized(true);
+            startDrmPlayback().catch((error) => {
+              if (!disposed) {
+                console.log('Adaptive playback initialization error:', error);
+              }
+            });
+          }
+          return;
+        }
         // Mount the native video view only after initialization. KeplerVideoView
         // then creates and attaches its surface, and provides the native TV
         // transport controls.
         setIsPlayerInitialized(true);
-        player.src = videoUrl;
-        const initialSeek =
-          hasExplicitSeek !== null
-            ? hasExplicitSeek
-            : resumeTime > 0
-            ? resumeTime
-            : null;
-        if (initialSeek !== null) {
-          shouldApplySeekRef.current = true;
-          pendingSeekRef.current = initialSeek;
-          if (metadataReadyRef.current) {
-            try {
-              player.currentTime = initialSeek;
-            } catch (error) {
-              console.log('Resume seek error:', error);
+        // Wait for KeplerVideoView to create its native surface before setting
+        // an HLS source. This matches the project's player test flow.
+        sourceTimerRef.current = setTimeout(() => {
+          if (disposed) {
+            return;
+          }
+
+          player.src = videoUrl;
+          const initialSeek =
+            !isLive && hasExplicitSeek !== null
+              ? hasExplicitSeek
+              : !isLive && resumeTime > 0
+              ? resumeTime
+              : null;
+          if (initialSeek !== null) {
+            shouldApplySeekRef.current = true;
+            pendingSeekRef.current = initialSeek;
+          }
+          Promise.resolve(player.play?.()).catch((error) => {
+            if (!disposed) {
+              console.log('Initial playback error:', error);
+              setVideoError(
+                error?.message || strings.errors.videoPlaybackUnavailable,
+              );
             }
-            pendingSeekRef.current = null;
-            shouldApplySeekRef.current = false;
-          }
-        }
-        Promise.resolve(player.play?.()).catch((error) => {
-          if (!disposed) {
-            console.log('Initial playback error:', error);
-            setVideoError(
-              error?.message || strings.errors.videoPlaybackUnavailable,
-            );
-          }
-        });
+          });
+        }, 1000);
       } catch (err: any) {
         if (!disposed) {
           console.log('Init error:', err);
@@ -264,23 +420,52 @@ export const VideoPlayerScreen = () => {
     return () => {
       disposed = true;
       setIsPlayerInitialized(false);
+      drmPlaybackStartedRef.current = false;
+      if (sourceTimerRef.current) {
+        clearTimeout(sourceTimerRef.current);
+        sourceTimerRef.current = null;
+      }
       if (player?.removeEventListener) {
         player.removeEventListener('loadstart', onLoadStart);
         player.removeEventListener('error', onError);
         player.removeEventListener('loadedmetadata', onLoadedMetadata);
       }
 
-      try {
-        player.pause?.();
-        player.deinitializeSync?.(1000);
-      } catch (e) {
-        console.log('Player cleanup error:', e);
-      }
+      const shakaPlayer = shakaPlayerRef.current;
+      shakaPlayerRef.current = null;
+      (globalThis as any).gmedia = null;
+
+      // Stop Shaka's live-manifest update timer before the W3C media element
+      // is deinitialized. Otherwise Shaka continues to fetch the manifest
+      // against a detached MSE surface after the player screen closes.
+      void (async () => {
+        try {
+          await shakaPlayer?.destroy();
+        } catch (error) {
+          console.log('Shaka cleanup error:', error);
+        } finally {
+          try {
+            player.pause?.();
+            player.deinitializeSync?.(1000);
+          } catch (error) {
+            console.log('Player cleanup error:', error);
+          }
+        }
+      })();
     };
-  }, [hasExplicitSeek, movieId, player, resumeTime, videoUrl]);
+  }, [
+    hasExplicitSeek,
+    useShakaPlayer,
+    isLive,
+    movieId,
+    player,
+    resumeTime,
+    startDrmPlayback,
+    videoUrl,
+  ]);
 
   useEffect(() => {
-    if (!player || resumeTime <= 0) {
+    if (isLive || !player || resumeTime <= 0) {
       return;
     }
 
@@ -295,10 +480,10 @@ export const VideoPlayerScreen = () => {
       pendingSeekRef.current = null;
       shouldApplySeekRef.current = false;
     }
-  }, [player, resumeTime]);
+  }, [isLive, player, resumeTime]);
 
   const persistProgress = useCallback(async () => {
-    if (!player || !movie?.id || !user) {
+    if (isLive || !player || !movie?.id || !user) {
       return;
     }
 
@@ -315,13 +500,13 @@ export const VideoPlayerScreen = () => {
     lastSavedTimeRef.current = currentTime;
     try {
       await saveContinueWatchProgress(movie, currentTime, duration);
-    } catch (error) {
+    } catch (error: any) {
       console.log('Save continue watch error:', error);
     }
-  }, [movie, player, user]);
+  }, [isLive, movie, player, user]);
 
   useEffect(() => {
-    if (!player) {
+    if (isLive || !player) {
       return;
     }
 
@@ -369,12 +554,28 @@ export const VideoPlayerScreen = () => {
 
       void persistProgress();
     };
-  }, [movieId, persistProgress, player]);
+  }, [isLive, movieId, persistProgress, player]);
 
   const handleBackFocus = () => {
     resetHideTimer();
     setIsBackFocused(true);
   };
+
+  const togglePlayback = useCallback(async () => {
+    resetHideTimer();
+    try {
+      if (isPlaybackPaused) {
+        await Promise.resolve(player?.play?.());
+        setIsPlaybackPaused(false);
+      } else {
+        player?.pause?.();
+        setIsPlaybackPaused(true);
+      }
+    } catch (error: any) {
+      console.log('Playback control error:', error);
+      setVideoError(error?.message || strings.errors.videoPlaybackUnavailable);
+    }
+  }, [isPlaybackPaused, player, resetHideTimer]);
 
   const backdropSource =
     movie.image && typeof movie.image === 'object' && 'uri' in movie.image
@@ -404,13 +605,24 @@ export const VideoPlayerScreen = () => {
           styles.videoSurface,
           {width: screenWidth, height: screenHeight},
         ])}>
-        {isPlayerInitialized && (
-          <KeplerVideoViewComponent
-            videoPlayer={player}
-            showControls
-            testID="w3c-video-surface"
-          />
-        )}
+        {isPlayerInitialized &&
+          (useShakaPlayer ? (
+            <View style={styles.shakaSurfaceContainer}>
+              <KeplerVideoSurfaceViewComponent
+                style={[
+                  styles.shakaVideoSurface,
+                  {width: shakaSurfaceWidth, height: shakaSurfaceHeight},
+                ]}
+                onSurfaceViewCreated={handleDrmSurfaceCreated}
+                testID="w3c-drm-video-surface"
+              />
+            </View>
+          ) : (
+            <KeplerVideoViewComponent
+              videoPlayer={player}
+              testID="w3c-video-surface"
+            />
+          ))}
       </View>
 
       {videoError && (
@@ -425,6 +637,10 @@ export const VideoPlayerScreen = () => {
               style={styles.retryButton}
               onPress={() => {
                 setVideoError(null);
+                if (useShakaPlayer) {
+                  navigation.replace(Routes.VideoPlayer, route.params);
+                  return;
+                }
                 if (player) {
                   player.src = videoUrl;
                   Promise.resolve(player.play?.()).catch(() => {});
@@ -463,7 +679,14 @@ export const VideoPlayerScreen = () => {
               onFocus={handleBackFocus}
               onBlur={() => setIsBackFocused(false)}
               onPress={async () => {
+                if (isLive && Date.now() - playerOpenedAtRef.current < 750) {
+                  return;
+                }
                 await persistProgress();
+                if (isLive && navigation.canGoBack?.()) {
+                  navigation.goBack();
+                  return;
+                }
                 navigation.navigate(Routes.Home);
               }}
               activeOpacity={0.8}
@@ -490,6 +713,36 @@ export const VideoPlayerScreen = () => {
               <Text style={styles.qualityBadgeText}>{strings.header.uhd}</Text>
             </View>
           </View>
+
+          {useShakaPlayer && (
+            <View style={styles.bottomControls}>
+              <TouchableOpacity
+                style={[
+                  styles.playbackControl,
+                  isPlaybackControlFocused && styles.playbackControlFocused,
+                ]}
+                onFocus={() => {
+                  resetHideTimer();
+                  setIsPlaybackControlFocused(true);
+                }}
+                onBlur={() => setIsPlaybackControlFocused(false)}
+                onPress={togglePlayback}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isPlaybackPaused
+                    ? strings.actions.play
+                    : strings.actions.pause
+                }
+                testID="shaka-playback-control">
+                <Text style={styles.playbackControlText}>
+                  {isPlaybackPaused
+                    ? `▶ ${strings.actions.play}`
+                    : `Ⅱ ${strings.actions.pause}`}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
         </TVFocusGuideView>
       )}
     </TVFocusGuideView>

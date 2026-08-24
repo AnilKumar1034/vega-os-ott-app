@@ -35,6 +35,23 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     marginLeft: 'auto',
   },
+  filterButton: {
+    minWidth: 180,
+    marginLeft: spacing.xlarge,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderWidth: spacing.borderMedium,
+    borderColor: colors.cardBorder,
+    borderRadius: spacing.sm,
+    backgroundColor: colors.darkCardBackground,
+  },
+  filterButtonFocused: {borderColor: colors.focusRing},
+  filterButtonText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.button,
+    fontWeight: fontWeights.bold,
+    textAlign: 'center',
+  },
   statusDot: {
     width: spacing.xl,
     height: spacing.xl,

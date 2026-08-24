@@ -7,4 +7,5 @@ export interface EPGProgram {
   endTime: string;
   category?: string;
   image?: string;
+  logo?: string;
 }

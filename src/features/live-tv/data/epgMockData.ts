@@ -1,5 +1,6 @@
 import {Channel} from '../models/Channel';
 import {EPGProgram} from '../models/EPGProgram';
+import {LiveChannelDrmConfig} from '../models/LiveChannel';
 import {getCurrentEPGSlotTimeMs} from '../utils/epgTimeUtils';
 
 export const channels: Channel[] = [
@@ -302,7 +303,12 @@ export interface VegaEPGProgram {
   startTime: number;
   endTime: number;
   shortDescription?: string;
-  extras: {sourceProgram: EPGProgram};
+  extras: {
+    sourceProgram: EPGProgram;
+    streamUrl?: string;
+    streamType?: 'hls' | 'dash';
+    drm?: LiveChannelDrmConfig;
+  };
 }
 
 export interface VegaEPGChannel {

@@ -5,10 +5,11 @@ const LOGIXSTREAM_CHANNELS_URL =
   'https://jiotv.data.cdn.jio.com/apis/v3.0/getMobileChannelList/get/?os=android&devicetype=phone&usertype=tvYR7NSNn7rymo3F';
 const LOGIXSTREAM_EPG_URL =
   'https://jiotv.data.cdn.jio.com/apis/v1.3/getepg/get?offset=0&channel_id=';
-const LOGIXSTREAM_LOGO_BASE_URL = 'https://jiotvimages.cdn.jio.com/dare_images/images/';
+const LOGIXSTREAM_LOGO_BASE_URL =
+  'https://jiotvimages.cdn.jio.com/dare_images/images/';
 const LOGIXSTREAM_PROGRAMME_IMAGE_BASE_URL =
   'https://jiotv.catchup.cdn.jio.com/dare_images/shows/';
-const MAX_CHANNELS = 120;
+const MAX_CHANNELS = 1000;
 const EPG_REQUEST_CONCURRENCY = 7;
 
 interface LogixTVChannel {
@@ -16,6 +17,11 @@ interface LogixTVChannel {
   channel_name: string;
   logoUrl?: string;
   stbChannelNumber?: number;
+  channelCategoryId?: number;
+  streamUrl?: string;
+  stream_url?: string;
+  playbackUrl?: string;
+  playback_url?: string;
 }
 
 interface LogixTVProgramme {
@@ -42,6 +48,17 @@ export interface LogixTVEPGPage extends RealEPGData {
 
 let channelListPromise: Promise<LogixTVChannel[]> | null = null;
 
+const providerCategoryIds: Record<string, number[]> = {
+  News: [12],
+  Entertainment: [5, 9, 13],
+  Sports: [8],
+  Movies: [6],
+  Kids: [7],
+  Culture: [9, 10, 15, 17],
+  Regional: [5],
+  Documentary: [10],
+};
+
 const fetchJson = async <T>(url: string): Promise<T> => {
   const response = await fetch(url);
   if (!response.ok) {
@@ -50,11 +67,19 @@ const fetchJson = async <T>(url: string): Promise<T> => {
   return response.json() as Promise<T>;
 };
 
-const getSelectedChannels = (channels: LogixTVChannel[]) => {
+const getSelectedChannels = (
+  channels: LogixTVChannel[],
+  requiresStreamUrl = false,
+  category?: string,
+) => {
+  const categoryIds = category ? providerCategoryIds[category] : undefined;
   return channels
     .filter(
       (channel) =>
-        Number.isFinite(channel.channel_id) && Boolean(channel.channel_name),
+        Number.isFinite(channel.channel_id) &&
+        Boolean(channel.channel_name) &&
+        (!requiresStreamUrl || Boolean(getChannelStreamUrl(channel))) &&
+        (!categoryIds || categoryIds.includes(channel.channelCategoryId || -1)),
     )
     .sort(
       (left, right) =>
@@ -68,9 +93,19 @@ const fetchLogixTVChannels = () => {
   if (!channelListPromise) {
     channelListPromise = fetchJson<{result?: LogixTVChannel[]}>(
       LOGIXSTREAM_CHANNELS_URL,
-    ).then((response) => getSelectedChannels(response.result || []));
+    ).then((response) => response.result || []);
   }
   return channelListPromise;
+};
+
+const getChannelStreamUrl = (channel: LogixTVChannel) => {
+  const streamUrl =
+    channel.streamUrl ||
+    channel.stream_url ||
+    channel.playbackUrl ||
+    channel.playback_url;
+
+  return streamUrl?.trim() || undefined;
 };
 
 const fetchSchedules = async (selectedChannels: LogixTVChannel[]) => {
@@ -148,14 +183,31 @@ const toVegaProgram = (
 export const fetchLogixTVEPGPage = async ({
   offset,
   limit,
+  requiresStreamUrl = false,
+  category,
 }: {
   offset: number;
   limit: number;
+  requiresStreamUrl?: boolean;
+  category?: string;
 }): Promise<LogixTVEPGPage> => {
-  const availableChannels = await fetchLogixTVChannels();
+  const availableChannels = getSelectedChannels(
+    await fetchLogixTVChannels(),
+    requiresStreamUrl,
+    category,
+  );
   const selectedChannels = availableChannels.slice(offset, offset + limit);
-  if (!selectedChannels.length && offset === 0) {
+  if (!selectedChannels.length && offset === 0 && !requiresStreamUrl) {
     throw new Error('LogixTV returned no channels');
+  }
+  if (!selectedChannels.length) {
+    const now = Date.now();
+    return {
+      channels: [],
+      startTimeMs: now,
+      endTimeMs: now,
+      hasMore: false,
+    };
   }
 
   const schedules = await fetchSchedules(selectedChannels);
@@ -179,7 +231,13 @@ export const fetchLogixTVEPGPage = async ({
         logoUrl: channel.logoUrl
           ? `${LOGIXSTREAM_LOGO_BASE_URL}${channel.logoUrl}`
           : '',
-        programs,
+        programs: programs.map((program) => ({
+          ...program,
+          extras: {
+            ...program.extras,
+            streamUrl: getChannelStreamUrl(channel),
+          },
+        })),
       } as VegaEPGChannel;
     })
     .filter((channel): channel is VegaEPGChannel => Boolean(channel));
