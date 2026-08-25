@@ -1,6 +1,5 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
-import {useEffect} from 'react';
 import {useNavigation} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {ProfileAvatar} from '../components/molecules/ProfileAvatar';
@@ -13,6 +12,7 @@ import {
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
+import {useProfile} from '../profiles/hooks/useProfile';
 import {styles} from './ProfileScreen.styles';
 
 interface DetailTileProps {
@@ -68,16 +68,23 @@ const PreferenceRow = ({
 export const ProfileScreen = () => {
   const navigation = useNavigation<any>();
   const {user, userProfile, loading} = useAuth();
-  const [isEditFocused, setIsEditFocused] = useState(false);
+  const {activeProfile} = useProfile();
+  const [focusedId, setFocusedId] = useState<string | null>(null);
 
   const displayName =
-    userProfile?.username || user?.displayName || strings.auth.defaultUser;
+    activeProfile?.name ||
+    userProfile?.username ||
+    user?.displayName ||
+    strings.auth.defaultUser;
+  const avatar = activeProfile?.avatarId || userProfile?.avatar;
+  const isKids = activeProfile?.isKids ?? false;
+
   const email = userProfile?.email || user?.email || strings.auth.notAvailable;
   const subscription = userProfile?.subscription || strings.auth.defaultSub;
   const subscriptionQuality = getSubscriptionQuality(subscription);
   const city = userProfile?.city || strings.auth.notSpecified;
   const country = userProfile?.country || strings.auth.notSpecified;
-  const avatarOption = getProfileAvatar(userProfile?.avatar);
+  const avatarOption = getProfileAvatar(avatar);
   const theme = getProfileTheme(userProfile?.themePreference);
   const notificationsEnabled = userProfile?.notificationsEnabled ?? true;
   const autoplayEnabled = userProfile?.autoplayEnabled ?? true;
@@ -113,13 +120,13 @@ export const ProfileScreen = () => {
               <View style={styles.readyBadge}>
                 <View style={styles.readyDot} />
                 <Text style={styles.readyText}>
-                  {strings.auth.profileReady}
+                  {isKids ? 'KIDS PROFILE' : strings.auth.profileReady}
                 </Text>
               </View>
             </View>
 
             <ProfileAvatar
-              avatar={userProfile?.avatar}
+              avatar={avatar}
               displayName={displayName}
               size="large"
             />
@@ -146,10 +153,10 @@ export const ProfileScreen = () => {
             <TouchableOpacity
               style={[
                 styles.editButton,
-                isEditFocused && styles.editButtonFocused,
+                focusedId === 'edit' && styles.editButtonFocused,
               ]}
-              onFocus={() => setIsEditFocused(true)}
-              onBlur={() => setIsEditFocused(false)}
+              onFocus={() => setFocusedId('edit')}
+              onBlur={() => setFocusedId(null)}
               onPress={() => navigation.navigate(Routes.EditProfile)}
               hasTVPreferredFocus
               activeOpacity={1}
@@ -158,6 +165,25 @@ export const ProfileScreen = () => {
               testID="profile-edit-button">
               <Text style={styles.editButtonText}>
                 {strings.auth.editProfile}
+              </Text>
+              <Text style={styles.editButtonArrow}>{'>'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.editButton,
+                styles.switchButton,
+                focusedId === 'switch' && styles.editButtonFocused,
+              ]}
+              onFocus={() => setFocusedId('switch')}
+              onBlur={() => setFocusedId(null)}
+              onPress={() => navigation.navigate(Routes.ProfileSelection)}
+              activeOpacity={1}
+              accessibilityRole="button"
+              accessibilityLabel={strings.profiles?.switchProfile || 'Switch Profile'}
+              testID="profile-switch-button">
+              <Text style={styles.editButtonText}>
+                {strings.profiles?.switchProfile || 'Switch Profile'}
               </Text>
               <Text style={styles.editButtonArrow}>{'>'}</Text>
             </TouchableOpacity>

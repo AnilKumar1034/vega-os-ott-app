@@ -11,6 +11,8 @@ export const Routes = {
   PlayerTest: 'PlayerTest',
   Profile: 'Profile',
   EditProfile: 'EditProfile',
+  ProfileSelection: 'ProfileSelection',
+  CreateProfile: 'CreateProfile',
   Login: 'Login',
   Register: 'Register',
 } as const;

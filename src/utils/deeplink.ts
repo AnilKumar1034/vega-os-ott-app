@@ -10,6 +10,7 @@ export const DeeplinkRoutes = {
   Details: 'movie',
   Player: 'play',
   Profile: 'profile',
+  Profiles: 'profiles',
   Settings: 'settings',
 } as const;
 

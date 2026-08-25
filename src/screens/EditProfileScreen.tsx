@@ -14,6 +14,12 @@ import {PROFILE_AVATARS, PROFILE_THEMES} from '../constants/profileOptions';
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
+import {DeleteProfileDialog} from '../profiles/components/DeleteProfileDialog';
+import {useProfile} from '../profiles/hooks/useProfile';
+import {
+  PROFILE_NAME_MAX_LENGTH,
+  validateProfileName,
+} from '../profiles/types/Profile';
 import {colors} from '../theme/colors';
 import {sanitizeEmailInput} from '../utils/inputUtils';
 import {styles} from './EditProfileScreen.styles';
@@ -59,15 +65,24 @@ const PreferenceToggle = ({
 
 export const EditProfileScreen = () => {
   const navigation = useNavigation<any>();
-  const {user, userProfile, updateProfile, loading: authLoading} = useAuth();
+  const {user, userProfile, updateProfile: updateAccountProfile, loading: authLoading} = useAuth();
+  const {
+    activeProfile,
+    profiles,
+    updateProfile: updateActiveViewingProfile,
+    deleteProfile: deleteActiveViewingProfile,
+  } = useProfile();
 
-  const [username, setUsername] = useState(
-    userProfile?.username || user?.displayName || '',
+  const [profileName, setProfileName] = useState(
+    activeProfile?.name || userProfile?.username || user?.displayName || '',
   );
   const email = sanitizeEmailInput(userProfile?.email || user?.email || '');
   const [city, setCity] = useState(userProfile?.city || '');
   const [country, setCountry] = useState(userProfile?.country || '');
-  const [avatar, setAvatar] = useState(userProfile?.avatar || 'initial');
+  const [avatar, setAvatar] = useState(
+    activeProfile?.avatarId || userProfile?.avatar || 'avatar-1',
+  );
+  const [isKids, setIsKids] = useState(activeProfile?.isKids ?? false);
   const [themePreference, setThemePreference] = useState(
     userProfile?.themePreference || 'cinematic',
   );
@@ -79,6 +94,8 @@ export const EditProfileScreen = () => {
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [focusedId, setFocusedId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -102,24 +119,25 @@ export const EditProfileScreen = () => {
   };
 
   const handleSave = async () => {
-    if (!username.trim()) {
-      setErrorMsg(strings.errors.enterUsername);
-      return;
-    }
-    if (!city.trim()) {
-      setErrorMsg(strings.errors.enterCity);
-      return;
-    }
-    if (!country.trim()) {
-      setErrorMsg(strings.errors.enterCountry);
+    const validation = validateProfileName(profileName);
+    if (!validation.isValid) {
+      setErrorMsg(validation.error || strings.errors.enterUsername);
       return;
     }
 
     setErrorMsg(null);
     setSaving(true);
     try {
-      await updateProfile({
-        username: username.trim(),
+      if (activeProfile) {
+        await updateActiveViewingProfile(activeProfile.id, {
+          name: profileName.trim(),
+          avatarId: avatar,
+          isKids,
+        });
+      }
+
+      await updateAccountProfile({
+        username: profileName.trim(),
         city: city.trim(),
         country: country.trim(),
         avatar,
@@ -127,12 +145,31 @@ export const EditProfileScreen = () => {
         notificationsEnabled,
         autoplayEnabled,
       });
+
       leaveEditor();
     } catch (err: any) {
       console.log('Update profile error:', err);
       setErrorMsg(err.message || strings.auth.preferenceUpdateFailed);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!activeProfile) {
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      await deleteActiveViewingProfile(activeProfile.id);
+      setShowDeleteDialog(false);
+      navigation.replace(Routes.ProfileSelection);
+    } catch (err: any) {
+      console.log('Delete profile error:', err);
+      setErrorMsg(err.message || strings.profiles.deleteProfileFailed);
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -159,14 +196,16 @@ export const EditProfileScreen = () => {
 
             <ProfileAvatar
               avatar={avatar}
-              displayName={username || strings.auth.defaultUser}
+              displayName={profileName || strings.auth.defaultUser}
               size="large"
             />
             <Text style={styles.previewName} numberOfLines={1}>
-              {username || strings.auth.defaultUser}
+              {profileName || strings.auth.defaultUser}
             </Text>
             <Text style={styles.previewLabel}>
-              {strings.common.primaryViewer}
+              {isKids
+                ? strings.profiles.kidsProfileType
+                : strings.common.primaryViewer}
             </Text>
 
             <TVFocusGuideView style={styles.avatarGrid} autoFocus>
@@ -223,19 +262,20 @@ export const EditProfileScreen = () => {
 
             <View style={styles.formRow}>
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>{strings.auth.usernameLabel}</Text>
+                <Text style={styles.label}>
+                  {strings.profiles?.profileNameLabel || strings.auth.usernameLabel}
+                </Text>
                 <TextInput
-                  style={[
-                    styles.input,
-                  ]}
-                  value={username}
-                  onChangeText={setUsername}
+                  style={[styles.input]}
+                  value={profileName}
+                  onChangeText={setProfileName}
                   onFocus={() => setFocusedId('username')}
                   onBlur={() => setFocusedId(null)}
-                  placeholder={strings.placeholders.username}
+                  placeholder={strings.profiles.profileNamePlaceholder}
                   placeholderTextColor={colors.inputPlaceholder}
                   autoCapitalize="words"
                   autoCorrect={false}
+                  maxLength={PROFILE_NAME_MAX_LENGTH}
                   testID="edit-username-input"
                 />
               </View>
@@ -250,13 +290,24 @@ export const EditProfileScreen = () => {
               </View>
             </View>
 
+            {/* Kids Profile Toggle */}
+            <TVFocusGuideView style={styles.toggleRow} autoFocus>
+              <PreferenceToggle
+                id="kids-toggle"
+                label={strings.profiles.kidsProfileLabel}
+                hint={strings.profiles.kidsProfileShortHint}
+                enabled={isKids}
+                focusedId={focusedId}
+                onFocus={setFocusedId}
+                onPress={() => setIsKids((value) => !value)}
+              />
+            </TVFocusGuideView>
+
             <View style={styles.formRow}>
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>{strings.auth.cityLabel}</Text>
                 <TextInput
-                  style={[
-                    styles.input,
-                  ]}
+                  style={[styles.input]}
                   value={city}
                   onChangeText={setCity}
                   onFocus={() => setFocusedId('city')}
@@ -271,9 +322,7 @@ export const EditProfileScreen = () => {
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>{strings.auth.countryLabel}</Text>
                 <TextInput
-                  style={[
-                    styles.input,
-                  ]}
+                  style={[styles.input]}
                   value={country}
                   onChangeText={setCountry}
                   onFocus={() => setFocusedId('country')}
@@ -343,6 +392,25 @@ export const EditProfileScreen = () => {
             </TVFocusGuideView>
 
             <TVFocusGuideView style={styles.actionRow} autoFocus>
+              {activeProfile && (
+                <TouchableOpacity
+                  style={[
+                    styles.deleteButton,
+                    focusedId === 'delete' && styles.controlFocused,
+                  ]}
+                  onFocus={() => setFocusedId('delete')}
+                  onBlur={() => setFocusedId(null)}
+                  onPress={() => setShowDeleteDialog(true)}
+                  disabled={saving || deleting}
+                  activeOpacity={1}
+                  accessibilityRole="button"
+                  testID="delete-profile-button">
+                  <Text style={styles.deleteButtonText}>
+                    {strings.profiles?.deleteProfile || 'Delete Profile'}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
               <TouchableOpacity
                 style={[
                   styles.cancelButton,
@@ -351,7 +419,7 @@ export const EditProfileScreen = () => {
                 onFocus={() => setFocusedId('cancel')}
                 onBlur={() => setFocusedId(null)}
                 onPress={leaveEditor}
-                disabled={saving}
+                disabled={saving || deleting}
                 activeOpacity={1}
                 accessibilityRole="button"
                 testID="cancel-profile-button">
@@ -363,12 +431,12 @@ export const EditProfileScreen = () => {
                 style={[
                   styles.saveButton,
                   focusedId === 'save' && styles.controlFocused,
-                  saving && styles.controlDisabled,
+                  (saving || deleting) && styles.controlDisabled,
                 ]}
                 onFocus={() => setFocusedId('save')}
                 onBlur={() => setFocusedId(null)}
                 onPress={handleSave}
-                disabled={saving}
+                disabled={saving || deleting}
                 activeOpacity={1}
                 accessibilityRole="button"
                 testID="save-profile-button">
@@ -383,6 +451,15 @@ export const EditProfileScreen = () => {
             </TVFocusGuideView>
           </View>
         </View>
+
+        <DeleteProfileDialog
+          visible={showDeleteDialog}
+          profile={activeProfile}
+          isOnlyProfile={profiles.length <= 1}
+          isDeleting={deleting}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setShowDeleteDialog(false)}
+        />
       </TVFocusGuideView>
     </ScreenLayout>
   );

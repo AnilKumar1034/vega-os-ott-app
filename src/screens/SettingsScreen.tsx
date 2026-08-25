@@ -11,6 +11,7 @@ import {
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
+import {useProfile} from '../profiles/hooks/useProfile';
 import {styles} from './SettingsScreen.styles';
 
 interface ActionButtonProps {
@@ -104,6 +105,7 @@ const ToggleCard = ({
 export const SettingsScreen = () => {
   const navigation = useNavigation<any>();
   const {user, userProfile, logout, updateProfile, loading} = useAuth();
+  const {activeProfile, clearActiveProfile} = useProfile();
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [themePreference, setThemePreference] = useState(
     userProfile?.themePreference || 'cinematic',
@@ -140,7 +142,13 @@ export const SettingsScreen = () => {
   }, [loading, navigation, user]);
 
   const displayName =
-    userProfile?.username || user?.displayName || strings.auth.defaultUser;
+    activeProfile?.name ||
+    userProfile?.username ||
+    user?.displayName ||
+    strings.auth.defaultUser;
+  const avatar = activeProfile?.avatarId || userProfile?.avatar;
+  const isKids = activeProfile?.isKids ?? false;
+
   const email = userProfile?.email || user?.email || strings.auth.notAvailable;
   const subscription = userProfile?.subscription || strings.auth.defaultSub;
   const subscriptionQuality = getSubscriptionQuality(subscription);
@@ -149,6 +157,7 @@ export const SettingsScreen = () => {
 
   const handleLogout = async () => {
     try {
+      await clearActiveProfile();
       await logout();
       navigation.navigate(Routes.Login);
     } catch (err) {
@@ -227,13 +236,18 @@ export const SettingsScreen = () => {
             <View style={styles.accountPanel}>
               <View style={styles.accountHeader}>
                 <ProfileAvatar
-                  avatar={userProfile?.avatar}
+                  avatar={avatar}
                   displayName={displayName}
                 />
                 <View style={styles.accountHeaderCopy}>
                   <Text style={styles.userName} numberOfLines={1}>
                     {displayName}
                   </Text>
+                  {isKids && (
+                    <Text style={styles.kidsBadgeText}>
+                      {strings.profiles?.kidsBadge || 'KIDS PROFILE'}
+                    </Text>
+                  )}
                   <Text style={styles.userEmail} numberOfLines={1}>
                     {email}
                   </Text>
@@ -289,6 +303,15 @@ export const SettingsScreen = () => {
                   onFocus={setFocusedId}
                   onPress={() => navigation.navigate(Routes.EditProfile)}
                   testID="settings-edit-profile-button"
+                />
+                <ActionButton
+                  id="switch-profile"
+                  label={strings.profiles?.switchProfile || 'Switch Profile'}
+                  hint={strings.profiles?.switchProfileHint || 'Switch to another viewing profile'}
+                  focusedId={focusedId}
+                  onFocus={setFocusedId}
+                  onPress={() => navigation.navigate(Routes.ProfileSelection)}
+                  testID="settings-switch-profile-button"
                 />
               </View>
 

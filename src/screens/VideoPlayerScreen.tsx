@@ -336,13 +336,26 @@ export const VideoPlayerScreen = () => {
 
     const onLoadedMetadata = () => {
       metadataReadyRef.current = true;
-      if (pendingSeekRef.current !== null) {
+      const requestedSeek = pendingSeekRef.current;
+      if (requestedSeek !== null) {
         try {
-          player.currentTime = pendingSeekRef.current;
+          // Progress can outlive a manifest update.  Do not ask the native
+          // player to seek past the end of the currently loaded VOD asset,
+          // because that is reported as a stream playback error on Vega.
+          const duration = Number(player.duration);
+          const seekTime =
+            Number.isFinite(duration) && duration > 0
+              ? Math.min(requestedSeek, Math.max(0, duration - 1))
+              : requestedSeek;
+
+          if (Number.isFinite(seekTime) && seekTime > 0) {
+            player.currentTime = seekTime;
+          }
         } catch (error) {
           console.log('Resume seek error:', error);
         }
         pendingSeekRef.current = null;
+        shouldApplySeekRef.current = false;
       }
     };
 
@@ -385,13 +398,12 @@ export const VideoPlayerScreen = () => {
             return;
           }
 
+          // A player instance can be reused after a retry, so metadata from a
+          // previous source must not make a new resume seek run too early.
+          metadataReadyRef.current = false;
           player.src = videoUrl;
           const initialSeek =
-            !isLive && hasExplicitSeek !== null
-              ? hasExplicitSeek
-              : !isLive && resumeTime > 0
-              ? resumeTime
-              : null;
+            !isLive && hasExplicitSeek !== null ? hasExplicitSeek : null;
           if (initialSeek !== null) {
             shouldApplySeekRef.current = true;
             pendingSeekRef.current = initialSeek;
@@ -457,9 +469,7 @@ export const VideoPlayerScreen = () => {
     hasExplicitSeek,
     useShakaPlayer,
     isLive,
-    movieId,
     player,
-    resumeTime,
     startDrmPlayback,
     videoUrl,
   ]);
@@ -473,7 +483,14 @@ export const VideoPlayerScreen = () => {
     shouldApplySeekRef.current = true;
     if (metadataReadyRef.current) {
       try {
-        player.currentTime = resumeTime;
+        const duration = Number(player.duration);
+        const seekTime =
+          Number.isFinite(duration) && duration > 0
+            ? Math.min(resumeTime, Math.max(0, duration - 1))
+            : resumeTime;
+        if (Number.isFinite(seekTime) && seekTime > 0) {
+          player.currentTime = seekTime;
+        }
       } catch (error) {
         console.log('Resume seek error:', error);
       }

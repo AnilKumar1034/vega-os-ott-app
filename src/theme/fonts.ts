@@ -1,8 +1,10 @@
 export const fontWeights = {
+  light: '300',
   regular: '400',
   medium: '500',
   semibold: '600',
   bold: 'bold',
+  boldWeight: '700',
   extraBold: '800',
   black: '900',
 } as const;
@@ -30,11 +32,14 @@ export const fontSizes = {
   userName: 28,
   synopsis: 28,
   rowTitle: 32,
+  monogram: 34,
   sideMenuOption: 34,
   avatar: 36,
   heroDescription: 38,
+  pageTitle: 40,
   moviesTitle: 44,
   sideMenuTitle: 46,
+  addIcon: 48,
   headerSubtitle: 50,
   tileLabel: 52,
   commonHeaderTitle: 58,
@@ -56,4 +61,6 @@ export const lineHeights = {
   movieDetailTitle: 82,
   heroTitle: 116,
   heroDescription: 52,
+  addIcon: 52,
+  dialogBody: 24,
 } as const;

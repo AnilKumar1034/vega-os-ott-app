@@ -284,6 +284,23 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     marginTop: 'auto',
   },
+  deleteButton: {
+    minWidth: sizes.settingsCancelButtonMinWidth,
+    minHeight: sizes.profileCardMinHeight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xlarge,
+    marginRight: 'auto',
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.deleteButtonLightBackground,
+    borderWidth: spacing.borderHeavy,
+    borderColor: colors.deleteButtonLightBorder,
+  },
+  deleteButtonText: {
+    color: colors.errorText,
+    fontSize: fontSizes.body,
+    fontWeight: fontWeights.bold,
+  },
   cancelButton: {
     minWidth: sizes.settingsCancelButtonMinWidth,
     minHeight: sizes.profileCardMinHeight,
