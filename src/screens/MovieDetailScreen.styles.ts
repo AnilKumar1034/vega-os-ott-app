@@ -97,7 +97,7 @@ export const styles = StyleSheet.create({
   description: {
     color: colors.textPrimary,
     fontSize: fontSizes.synopsis,
-    lineHeight: lineHeights.movieDetailTitle,
+    lineHeight: lineHeights.tileLabel,
     opacity: 0.9,
     marginBottom: spacing.huge,
     maxWidth: sizes.movieDetailDescriptionMaxWidth,

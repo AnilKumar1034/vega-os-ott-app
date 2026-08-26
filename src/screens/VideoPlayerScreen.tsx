@@ -14,6 +14,7 @@ import {DEFAULT_MOCK_VIDEO_URL, HomeContentItem} from '../data/home';
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
+import {useProfile} from '../profiles/hooks/useProfile';
 import {findContentById} from '../utils/deeplink';
 import {
   clearContinueWatchProgress,
@@ -21,7 +22,10 @@ import {
   saveContinueWatchProgress,
 } from '../services/watchProgressService';
 import {styles} from './VideoPlayerScreen.styles';
-import type {ShakaPlayer, ShakaPlayerSettings} from '../shakaplayer/ShakaPlayer';
+import type {
+  ShakaPlayer,
+  ShakaPlayerSettings,
+} from '../shakaplayer/ShakaPlayer';
 import {LiveChannelDrmConfig} from '../features/live-tv/models/LiveChannel';
 import {verifyWidevineSupport} from '../utils/widevineDiagnostics';
 
@@ -51,6 +55,7 @@ export const VideoPlayerScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const {user, loading} = useAuth();
+  const {activeProfile} = useProfile();
   const isLive = Boolean(route.params?.isLive);
   const streamType = route.params?.streamType as 'hls' | 'dash' | undefined;
   const isVideoOnly = Boolean(route.params?.isVideoOnly);
@@ -137,6 +142,13 @@ export const VideoPlayerScreen = () => {
   // initial TV focus settles. Keep it from activating the Back button.
   const playerOpenedAtRef = useRef(Date.now());
 
+  const playbackProfileIdRef = useRef<string | null>(activeProfile?.id || null);
+  useEffect(() => {
+    if (!playbackProfileIdRef.current && activeProfile?.id) {
+      playbackProfileIdRef.current = activeProfile.id;
+    }
+  }, [activeProfile?.id]);
+
   const backButtonRef = useRef<any>(null);
   const [backButtonNode, setBackButtonNode] = useState<any>(null);
   const [isBackFocused, setIsBackFocused] = useState(false);
@@ -195,7 +207,9 @@ export const VideoPlayerScreen = () => {
       // Shaka installs several browser/media polyfills at module load time.
       // Keep that work off the app bootstrap path: this screen is registered by
       // the root navigator even when the user never opens adaptive playback.
-      const {ShakaPlayer: ShakaPlayerImplementation} = require('../shakaplayer/ShakaPlayer');
+      const {
+        ShakaPlayer: ShakaPlayerImplementation,
+      } = require('../shakaplayer/ShakaPlayer');
       const shakaPlayer = new ShakaPlayerImplementation(
         player,
         playerSettings,
@@ -284,7 +298,8 @@ export const VideoPlayerScreen = () => {
     let active = true;
 
     const loadResumeTime = async () => {
-      if (!user) {
+      const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+      if (!user || !targetProfileId) {
         if (active) {
           setResumeTime(0);
         }
@@ -292,7 +307,10 @@ export const VideoPlayerScreen = () => {
       }
 
       try {
-        const progressRecord = await fetchContinueWatchForContent(movieId);
+        const progressRecord = await fetchContinueWatchForContent(
+          targetProfileId,
+          movieId,
+        );
         if (active) {
           setResumeTime(progressRecord?.currentTime || 0);
         }
@@ -309,7 +327,7 @@ export const VideoPlayerScreen = () => {
     return () => {
       active = false;
     };
-  }, [isLive, movieId, user]);
+  }, [activeProfile?.id, isLive, movieId, user]);
 
   useEffect(() => {
     if (!player) {
@@ -500,13 +518,14 @@ export const VideoPlayerScreen = () => {
   }, [isLive, player, resumeTime]);
 
   const persistProgress = useCallback(async () => {
-    if (isLive || !player || !movie?.id || !user) {
+    const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+    if (isLive || !player || !movie?.id || !user || !targetProfileId) {
       return;
     }
 
     const currentTime = Number(player.currentTime || 0);
     const duration = Number(player.duration || 0);
-    if (!currentTime || currentTime <= 0) {
+    if (!currentTime || currentTime <= 0 || !Number.isFinite(currentTime)) {
       return;
     }
 
@@ -516,11 +535,16 @@ export const VideoPlayerScreen = () => {
 
     lastSavedTimeRef.current = currentTime;
     try {
-      await saveContinueWatchProgress(movie, currentTime, duration);
+      await saveContinueWatchProgress(
+        targetProfileId,
+        movie,
+        currentTime,
+        duration,
+      );
     } catch (error: any) {
       console.log('Save continue watch error:', error);
     }
-  }, [isLive, movie, player, user]);
+  }, [activeProfile?.id, isLive, movie, player, user]);
 
   useEffect(() => {
     if (isLive || !player) {
@@ -544,10 +568,13 @@ export const VideoPlayerScreen = () => {
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
       }
-      try {
-        await clearContinueWatchProgress(movieId);
-      } catch (error) {
-        console.log('Clear continue watch error:', error);
+      const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+      if (targetProfileId) {
+        try {
+          await clearContinueWatchProgress(targetProfileId, movieId);
+        } catch (error) {
+          console.log('Clear continue watch error:', error);
+        }
       }
     };
 
@@ -571,7 +598,7 @@ export const VideoPlayerScreen = () => {
 
       void persistProgress();
     };
-  }, [isLive, movieId, persistProgress, player]);
+  }, [activeProfile?.id, isLive, movieId, persistProgress, player]);
 
   const handleBackFocus = () => {
     resetHideTimer();

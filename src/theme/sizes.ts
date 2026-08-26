@@ -123,7 +123,7 @@ export const spacing = {
   movieDetailPlayMinWidth: 200,
   movieDetailSecondaryMinWidth: 180,
   movieDetailBackMinWidth: 160,
-  movieDetailDescriptionMaxWidth: 900,
+  movieDetailDescriptionMaxWidth: 1200,
 
   // Profile Specific Dimensions
   profileCardWidth: 190,

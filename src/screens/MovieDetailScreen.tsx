@@ -11,6 +11,7 @@ import {AppDetails} from '../constants/appDetails';
 import {styles} from './MovieDetailScreen.styles';
 import {filterContentItem} from '../utils/searchUtils';
 import {useAuth} from '../context/authContext';
+import {useProfile} from '../profiles/hooks/useProfile';
 import {strings as appStrings} from '../constants/strings';
 import {
   clearContinueWatchProgress,
@@ -27,6 +28,7 @@ export const MovieDetailScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const {user} = useAuth();
+  const {activeProfile} = useProfile();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
@@ -73,17 +75,27 @@ export const MovieDetailScreen = () => {
       }
 
       try {
-        const progressRecord = await fetchContinueWatchForContent(
+        if (activeProfile?.id) {
+          const progressRecord = await fetchContinueWatchForContent(
+            activeProfile.id,
+            selectedMovie.id,
+          );
+          if (active) {
+            setContinueWatchProgress(
+              progressRecord &&
+                progressRecord.progress > 0 &&
+                progressRecord.progress < 1
+                ? progressRecord.progress
+                : null,
+            );
+          }
+        } else if (active) {
+          setContinueWatchProgress(null);
+        }
+
+        const favouriteRecord = await fetchFavouriteForContent(
           selectedMovie.id,
         );
-        if (active) {
-          setContinueWatchProgress(
-            progressRecord && progressRecord.progress > 0 && progressRecord.progress < 1
-              ? progressRecord.progress
-              : null,
-          );
-        }
-        const favouriteRecord = await fetchFavouriteForContent(selectedMovie.id);
         if (active) {
           setIsFavourite(Boolean(favouriteRecord));
         }
@@ -101,7 +113,7 @@ export const MovieDetailScreen = () => {
     return () => {
       active = false;
     };
-  }, [selectedMovie.id, user]);
+  }, [activeProfile?.id, selectedMovie.id, user]);
 
   const handleMenuFocus = () => {
     setIsMenuExpanded(true);
@@ -119,21 +131,26 @@ export const MovieDetailScreen = () => {
   };
 
   const renderDetailItem = () => (
-      <MovieDetailBody
-        selectedMovie={selectedMovie}
-        recommendations={recommendations}
-        focusedAction={focusedAction}
-        continueWatchProgress={continueWatchProgress}
-        isFavourite={isFavourite}
-        toastMessage={toastMsg}
-        onRemoveContinueWatch={async () => {
-          try {
-            await clearContinueWatchProgress(selectedMovie.id);
-            setContinueWatchProgress(null);
-          } catch (error) {
-            console.log('Remove watchlist error:', error);
+    <MovieDetailBody
+      selectedMovie={selectedMovie}
+      recommendations={recommendations}
+      focusedAction={focusedAction}
+      continueWatchProgress={continueWatchProgress}
+      isFavourite={isFavourite}
+      toastMessage={toastMsg}
+      onRemoveContinueWatch={async () => {
+        try {
+          if (activeProfile?.id) {
+            await clearContinueWatchProgress(
+              activeProfile.id,
+              selectedMovie.id,
+            );
           }
-        }}
+          setContinueWatchProgress(null);
+        } catch (error) {
+          console.log('Remove watchlist error:', error);
+        }
+      }}
       onAddFavourite={async () => {
         if (!user) {
           showToast(appStrings.toasts.signInToAddFavourites);
@@ -189,15 +206,17 @@ export const MovieDetailScreen = () => {
             searchValue={searchQuery}
             onSearchChange={setSearchQuery}
             onSearchFocus={() => {
-             setIsSearchFocused(true);
-             collapseMenu();
+              setIsSearchFocused(true);
+              collapseMenu();
             }}
             onSearchBlur={() => setIsSearchFocused(false)}
             searchHasTVPreferredFocus={isSearchFocused}
           />
         </View>
 
-        <TVFocusGuideView autoFocus={!isSearchFocused} style={styles.background}>
+        <TVFocusGuideView
+          autoFocus={!isSearchFocused}
+          style={styles.background}>
           <FlatList
             data={[selectedMovie]}
             keyExtractor={(item) => item.id || item.title}

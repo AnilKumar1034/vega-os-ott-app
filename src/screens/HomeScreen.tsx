@@ -15,6 +15,7 @@ import {
 import {AppDetails} from '../constants/appDetails';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
+import {useProfile} from '../profiles/hooks/useProfile';
 import {
   fetchFavouriteItems,
   FavouriteRecord,
@@ -28,6 +29,7 @@ import {styles} from './HomeScreen.styles';
 
 export const HomeScreen = () => {
   const {user} = useAuth();
+  const {activeProfile} = useProfile();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
@@ -46,11 +48,15 @@ export const HomeScreen = () => {
       return;
     }
 
-    try {
-      const continueWatch = await fetchContinueWatchItems();
-      setContinueWatchRecords(continueWatch);
-    } catch (error) {
-      console.log('Continue watch load error:', error);
+    if (activeProfile?.id) {
+      try {
+        const continueWatch = await fetchContinueWatchItems(activeProfile.id);
+        setContinueWatchRecords(continueWatch);
+      } catch (error) {
+        console.log('Continue watch load error:', error);
+        setContinueWatchRecords([]);
+      }
+    } else {
       setContinueWatchRecords([]);
     }
 
@@ -61,36 +67,85 @@ export const HomeScreen = () => {
       console.log('Favourite load error:', error);
       setFavouriteRecords([]);
     }
-  }, [user]);
+  }, [user, activeProfile?.id]);
 
   useEffect(() => {
-    void loadLibraryState();
-  }, [loadLibraryState]);
+    let isCurrent = true;
+
+    // Immediately clear current records when active profile changes
+    // to prevent showing previous profile's continue watching items
+    setContinueWatchRecords([]);
+
+    if (!user || !activeProfile?.id) {
+      return;
+    }
+
+    const currentProfileId = activeProfile.id;
+    (async () => {
+      try {
+        const continueWatch = await fetchContinueWatchItems(currentProfileId);
+        if (isCurrent) {
+          setContinueWatchRecords(continueWatch);
+        }
+      } catch (error) {
+        console.log('Continue watch load error:', error);
+        if (isCurrent) {
+          setContinueWatchRecords([]);
+        }
+      }
+    })();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [user, activeProfile?.id]);
+
+  useEffect(() => {
+    if (!user) {
+      setFavouriteRecords([]);
+      return;
+    }
+
+    (async () => {
+      try {
+        const favourites = await fetchFavouriteItems();
+        setFavouriteRecords(favourites);
+      } catch (error) {
+        console.log('Favourite load error:', error);
+        setFavouriteRecords([]);
+      }
+    })();
+  }, [user]);
 
   const continueWatchingItems = useMemo<HomeContentItem[]>(() => {
     return continueWatchRecords.map((record) => ({
       id: record.contentId,
       title: record.title,
-      image: record.imageUri ? {uri: record.imageUri} : require('../assets/background.png'),
+      image: record.imageUri
+        ? {uri: record.imageUri}
+        : require('../assets/background.png'),
       progress: record.progress,
       videoUrl: record.videoUrl,
     }));
   }, [continueWatchRecords]);
 
-  const continueWatchingRow: HomeContentRow | null = continueWatchingItems.length
-    ? {
-        id: 'continue-watching',
-        title: strings.hero.continueWatching,
-        layout: 'horizontal',
-        items: continueWatchingItems,
-      }
-    : null;
+  const continueWatchingRow: HomeContentRow | null =
+    continueWatchingItems.length
+      ? {
+          id: 'continue-watching',
+          title: strings.hero.continueWatching,
+          layout: 'horizontal',
+          items: continueWatchingItems,
+        }
+      : null;
 
   const favouritesItems = useMemo<HomeContentItem[]>(() => {
     return favouriteRecords.map((record) => ({
       id: record.contentId,
       title: record.title,
-      image: record.imageUri ? {uri: record.imageUri} : require('../assets/background.png'),
+      image: record.imageUri
+        ? {uri: record.imageUri}
+        : require('../assets/background.png'),
       videoUrl: record.videoUrl,
     }));
   }, [favouriteRecords]);
