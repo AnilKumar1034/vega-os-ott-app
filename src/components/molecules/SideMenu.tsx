@@ -32,6 +32,12 @@ const menuOptions: MenuOptionItem[] = [
     icon: require('../../assets/get-started.png'),
   },
   {
+    route: Routes.MyList,
+    title: strings.sideMenu.myList,
+    name: 'MyList',
+    icon: require('../../assets/learn-more.png'),
+  },
+  {
     route: Routes.Details,
     title: AppDetails.details,
     name: 'Details',

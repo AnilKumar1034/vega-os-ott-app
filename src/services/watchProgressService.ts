@@ -1,15 +1,13 @@
 import {firebaseConfig} from '../config/firebaseConfig';
 import {HomeContentItem} from '../data/home';
+import {
+  authenticatedFirestoreFetch,
+  getStoredSession,
+} from './authService';
 
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1';
-const SESSION_STORAGE_KEY = '@vegaott/auth-session';
 const CONTINUE_WATCH_COLLECTION = 'continueWatching';
 const WATCHED_RATIO_THRESHOLD = 0.02;
-
-type StoredSession = {
-  user: {uid: string};
-  idToken: string;
-};
 
 export type ContinueWatchRecord = {
   contentId: string;
@@ -27,24 +25,6 @@ const readJson = async (response: any) => {
     return await response.json();
   } catch {
     return {};
-  }
-};
-
-const getSession = async (): Promise<StoredSession | null> => {
-  const AsyncStorage =
-    require('@amazon-devices/react-native-async-storage__async-storage/lib/commonjs/AsyncStorage.native')
-      .default as {
-      getItem: (key: string) => Promise<string | null>;
-    };
-  const storedValue = await AsyncStorage.getItem(SESSION_STORAGE_KEY);
-  if (!storedValue) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(storedValue) as StoredSession;
-  } catch {
-    return null;
   }
 };
 
@@ -99,17 +79,14 @@ export const fetchContinueWatchItems = async (
     return [];
   }
 
-  const session = await getSession();
+  const session = await getStoredSession();
   if (!session?.user?.uid) {
     return [];
   }
 
   try {
-    const response = await fetch(
+    const response = await authenticatedFirestoreFetch(
       getProfileCollectionUrl(session.user.uid, profileId.trim()),
-      {
-        headers: {Authorization: `Bearer ${session.idToken}`},
-      },
     );
 
     if (!response.ok) {
@@ -155,17 +132,14 @@ export const fetchContinueWatchForContent = async (
     return null;
   }
 
-  const session = await getSession();
+  const session = await getStoredSession();
   if (!session?.user?.uid) {
     return null;
   }
 
   try {
-    const response = await fetch(
+    const response = await authenticatedFirestoreFetch(
       getProfileDocUrl(session.user.uid, profileId.trim(), contentId),
-      {
-        headers: {Authorization: `Bearer ${session.idToken}`},
-      },
     );
 
     if (!response.ok) {
@@ -212,7 +186,7 @@ export const saveContinueWatchProgress = async (
     return;
   }
 
-  const session = await getSession();
+  const session = await getStoredSession();
   if (!session?.user?.uid) {
     return;
   }
@@ -231,13 +205,12 @@ export const saveContinueWatchProgress = async (
     updatedAt: new Date().toISOString(),
   };
 
-  const response = await fetch(
+  const response = await authenticatedFirestoreFetch(
     getProfileDocUrl(session.user.uid, profileId.trim(), movie.id),
     {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${session.idToken}`,
       },
       body: JSON.stringify(encodeRecord(record)),
     },
@@ -262,17 +235,16 @@ export const clearContinueWatchProgress = async (
     return;
   }
 
-  const session = await getSession();
+  const session = await getStoredSession();
   if (!session?.user?.uid) {
     return;
   }
 
   try {
-    await fetch(
+    await authenticatedFirestoreFetch(
       getProfileDocUrl(session.user.uid, profileId.trim(), contentId),
       {
         method: 'DELETE',
-        headers: {Authorization: `Bearer ${session.idToken}`},
       },
     );
   } catch (error) {

@@ -3,6 +3,7 @@ import {render, waitFor} from '@testing-library/react-native';
 import * as React from 'react';
 import {VideoPlayerScreen} from '../src/screens/VideoPlayerScreen';
 import * as watchProgressService from '../src/services/watchProgressService';
+import * as viewingHistoryService from '../src/services/viewingHistoryService';
 import * as authContext from '../src/context/authContext';
 import * as profileContext from '../src/profiles/context/profileContext';
 
@@ -79,6 +80,7 @@ describe('VideoPlayerScreen Profile-Specific Continue Watching Integration', () 
   let mockFetchForContent: jest.SpyInstance;
   let mockSaveProgress: jest.SpyInstance;
   let mockClearProgress: jest.SpyInstance;
+  let mockRecordViewingHistory: jest.SpyInstance;
   let mockUseAuth: jest.SpyInstance;
   let mockUseProfile: jest.SpyInstance;
 
@@ -143,12 +145,17 @@ describe('VideoPlayerScreen Profile-Specific Continue Watching Integration', () 
     mockClearProgress = jest
       .spyOn(watchProgressService, 'clearContinueWatchProgress')
       .mockResolvedValue();
+
+    mockRecordViewingHistory = jest
+      .spyOn(viewingHistoryService, 'recordViewingHistory')
+      .mockResolvedValue();
   });
 
   afterEach(() => {
     mockFetchForContent.mockRestore();
     mockSaveProgress.mockRestore();
     mockClearProgress.mockRestore();
+    mockRecordViewingHistory.mockRestore();
     mockUseAuth.mockRestore();
     mockUseProfile.mockRestore();
   });
@@ -228,5 +235,50 @@ describe('VideoPlayerScreen Profile-Specific Continue Watching Integration', () 
     await waitFor(() => {
       expect(mockFetchForContent).toHaveBeenCalledWith('profile-anil', 'kalki');
     });
+  });
+
+  it('records viewing history once on playing event for playback profile', async () => {
+    render(<VideoPlayerScreen />);
+
+    await waitFor(() => {
+      expect(mockFetchForContent).toHaveBeenCalled();
+    });
+
+    expect(mockEventHandlers.playing).toBeDefined();
+
+    // Trigger playing event first time
+    mockEventHandlers.playing();
+    expect(mockRecordViewingHistory).toHaveBeenCalledTimes(1);
+    expect(mockRecordViewingHistory).toHaveBeenCalledWith(
+      'profile-anil',
+      expect.objectContaining({id: 'kalki'}),
+    );
+
+    // Trigger playing event second time in same session - must NOT record again
+    mockEventHandlers.playing();
+    expect(mockRecordViewingHistory).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not record viewing history for Live TV stream', async () => {
+    mockRouteParams = {
+      params: {
+        isLive: true,
+        movie: {
+          id: 'live-channel-1',
+          title: 'Live News Channel',
+        },
+      },
+    };
+
+    render(<VideoPlayerScreen />);
+
+    await waitFor(() => {
+      expect(mockFetchForContent).not.toHaveBeenCalled();
+    });
+
+    if (mockEventHandlers.playing) {
+      mockEventHandlers.playing();
+    }
+    expect(mockRecordViewingHistory).not.toHaveBeenCalled();
   });
 });

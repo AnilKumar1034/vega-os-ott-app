@@ -18,10 +18,10 @@ import {
   fetchContinueWatchForContent,
 } from '../services/watchProgressService';
 import {
-  addFavourite,
-  fetchFavouriteForContent,
-  removeFavourite,
-} from '../services/favouritesService';
+  addToWatchlist,
+  getWatchlistItem,
+  removeFromWatchlist,
+} from '../services/watchlistService';
 import {findContentById} from '../utils/deeplink';
 
 export const MovieDetailScreen = () => {
@@ -38,8 +38,9 @@ export const MovieDetailScreen = () => {
   const [continueWatchProgress, setContinueWatchProgress] = useState<
     number | null
   >(null);
-  const [isFavourite, setIsFavourite] = useState(false);
+  const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [isTogglingList, setIsTogglingList] = useState(false);
 
   const selectedMovie: HomeContentItem =
     route.params?.movie ||
@@ -65,21 +66,22 @@ export const MovieDetailScreen = () => {
   useEffect(() => {
     let active = true;
 
+    // Immediately reset on profile/user change
+    setIsInWatchlist(false);
+    setContinueWatchProgress(null);
+
     const loadMeta = async () => {
       if (!user) {
-        if (active) {
-          setContinueWatchProgress(null);
-          setIsFavourite(false);
-        }
         return;
       }
 
       try {
         if (activeProfile?.id) {
-          const progressRecord = await fetchContinueWatchForContent(
-            activeProfile.id,
-            selectedMovie.id,
-          );
+          const [progressRecord, watchlistItem] = await Promise.all([
+            fetchContinueWatchForContent(activeProfile.id, selectedMovie.id),
+            getWatchlistItem(activeProfile.id, selectedMovie.id),
+          ]);
+
           if (active) {
             setContinueWatchProgress(
               progressRecord &&
@@ -88,22 +90,14 @@ export const MovieDetailScreen = () => {
                 ? progressRecord.progress
                 : null,
             );
+            setIsInWatchlist(Boolean(watchlistItem));
           }
-        } else if (active) {
-          setContinueWatchProgress(null);
-        }
-
-        const favouriteRecord = await fetchFavouriteForContent(
-          selectedMovie.id,
-        );
-        if (active) {
-          setIsFavourite(Boolean(favouriteRecord));
         }
       } catch (error) {
         console.log('Movie detail meta load error:', error);
         if (active) {
           setContinueWatchProgress(null);
-          setIsFavourite(false);
+          setIsInWatchlist(false);
         }
       }
     };
@@ -130,13 +124,55 @@ export const MovieDetailScreen = () => {
     setTimeout(() => setToastMsg(null), 2500);
   };
 
+  const handleToggleWatchlist = async () => {
+    if (isTogglingList) {
+      return;
+    }
+
+    if (!user) {
+      showToast(appStrings.toasts.signInToAddToWatchlist);
+      return;
+    }
+
+    if (!activeProfile?.id) {
+      showToast(appStrings.toasts.selectProfileToAddToWatchlist);
+      return;
+    }
+
+    setIsTogglingList(true);
+    const profileId = activeProfile.id;
+    try {
+      if (isInWatchlist) {
+        await removeFromWatchlist(profileId, selectedMovie.id);
+        setIsInWatchlist(false);
+        showToast(appStrings.toasts.removedFromWatchlist);
+      } else {
+        await addToWatchlist(profileId, selectedMovie);
+        setIsInWatchlist(true);
+        showToast(appStrings.toasts.addedToWatchlist);
+      }
+    } catch (error) {
+      console.log('Toggle watchlist error:', error);
+      // Recheck actual remote state to ensure UI accuracy
+      try {
+        const item = await getWatchlistItem(profileId, selectedMovie.id);
+        setIsInWatchlist(Boolean(item));
+      } catch {
+        // ignore
+      }
+    } finally {
+      setIsTogglingList(false);
+    }
+  };
+
   const renderDetailItem = () => (
     <MovieDetailBody
       selectedMovie={selectedMovie}
       recommendations={recommendations}
       focusedAction={focusedAction}
       continueWatchProgress={continueWatchProgress}
-      isFavourite={isFavourite}
+      isInWatchlist={isInWatchlist}
+      isFavourite={isInWatchlist}
       toastMessage={toastMsg}
       onRemoveContinueWatch={async () => {
         try {
@@ -148,33 +184,12 @@ export const MovieDetailScreen = () => {
           }
           setContinueWatchProgress(null);
         } catch (error) {
-          console.log('Remove watchlist error:', error);
+          console.log('Remove continue watch error:', error);
         }
       }}
-      onAddFavourite={async () => {
-        if (!user) {
-          showToast(appStrings.toasts.signInToAddFavourites);
-          return;
-        }
-        try {
-          await addFavourite(selectedMovie);
-          setIsFavourite(true);
-        } catch (error) {
-          console.log('Add favourite error:', error);
-        }
-      }}
-      onRemoveFavourite={async () => {
-        if (!user) {
-          showToast(appStrings.toasts.signInToRemoveFavourites);
-          return;
-        }
-        try {
-          await removeFavourite(selectedMovie.id);
-          setIsFavourite(false);
-        } catch (error) {
-          console.log('Remove favourite error:', error);
-        }
-      }}
+      onToggleWatchlist={handleToggleWatchlist}
+      onAddFavourite={handleToggleWatchlist}
+      onRemoveFavourite={handleToggleWatchlist}
       onFocusAction={(action) => {
         setIsMenuExpanded(false);
         setFocusedAction(action);

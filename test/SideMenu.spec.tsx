@@ -32,6 +32,7 @@ describe('SideMenu component', () => {
     expect(screen.getByText('LogiXstream')).toBeTruthy();
     expect(screen.getByTestId('side-menu-label-Home')).toBeTruthy();
     expect(screen.getByTestId('side-menu-label-Movies')).toBeTruthy();
+    expect(screen.getByTestId('side-menu-label-MyList')).toBeTruthy();
   });
 
   it('calls onMenuFocus when a menu item is focused', () => {

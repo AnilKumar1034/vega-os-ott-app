@@ -1,10 +1,12 @@
 import {firebaseConfig} from '../config/firebaseConfig';
 
-const AsyncStorage = require('@amazon-devices/react-native-async-storage__async-storage/lib/commonjs/AsyncStorage.native')
-  .default as {
-  getItem: (key: string) => Promise<string | null>;
-  setItem: (key: string, value: string) => Promise<void>;
-  removeItem: (key: string) => Promise<void>;
+const getAsyncStorage = () => {
+  return require('@amazon-devices/react-native-async-storage__async-storage/lib/commonjs/AsyncStorage.native')
+    .default as {
+    getItem: (key: string) => Promise<string | null>;
+    setItem: (key: string, value: string) => Promise<void>;
+    removeItem: (key: string) => Promise<void>;
+  };
 };
 
 export interface UserProfileData {
@@ -138,7 +140,12 @@ const saveSession = async (session: {
   idToken: string;
   refreshToken: string;
 }) => {
-  await AsyncStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+  try {
+    const storage = getAsyncStorage();
+    await storage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+  } catch (err) {
+    console.log('Failed to save auth session:', err);
+  }
 };
 
 type FetchLikeResponse = {
@@ -229,22 +236,32 @@ export const getStoredSession = async (): Promise<{
   idToken: string;
   refreshToken: string;
 } | null> => {
-  const storedValue = await AsyncStorage.getItem(SESSION_STORAGE_KEY);
-  if (!storedValue) {
-    return null;
-  }
-
   try {
+    const storage = getAsyncStorage();
+    const storedValue = await storage.getItem(SESSION_STORAGE_KEY);
+    if (!storedValue) {
+      return null;
+    }
     return JSON.parse(storedValue) as StoredSession;
   } catch (err) {
     console.log('Failed to parse stored auth session:', err);
-    await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+    try {
+      const storage = getAsyncStorage();
+      await storage.removeItem(SESSION_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
     return null;
   }
 };
 
 const clearSession = async () => {
-  await AsyncStorage.removeItem(SESSION_STORAGE_KEY);
+  try {
+    const storage = getAsyncStorage();
+    await storage.removeItem(SESSION_STORAGE_KEY);
+  } catch {
+    // ignore
+  }
 };
 
 const authRequest = async (
@@ -275,6 +292,88 @@ const authRequest = async (
   }
 };
 
+const TOKEN_REFRESH_BASE = 'https://securetoken.googleapis.com/v1/token';
+
+export const refreshAuthSession = async (): Promise<StoredSession | null> => {
+  const session = await getStoredSession();
+  if (!session?.refreshToken) {
+    return null;
+  }
+
+  try {
+    const url = `${TOKEN_REFRESH_BASE}?key=${firebaseConfig.apiKey}`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `grant_type=refresh_token&refresh_token=${encodeURIComponent(
+        session.refreshToken,
+      )}`,
+    });
+
+    if (!response.ok) {
+      console.log('Failed to refresh Firebase token, status:', response.status);
+      return null;
+    }
+
+    const data = await readJson(response);
+    const newIdToken = data.id_token || data.access_token;
+    const newRefreshToken = data.refresh_token || session.refreshToken;
+
+    if (!newIdToken) {
+      return null;
+    }
+
+    const updatedSession: StoredSession = {
+      user: session.user,
+      idToken: newIdToken,
+      refreshToken: newRefreshToken,
+    };
+
+    await saveSession(updatedSession);
+    return updatedSession;
+  } catch (error) {
+    console.log('Error refreshing Firebase auth token:', error);
+    return null;
+  }
+};
+
+export const authenticatedFirestoreFetch = async (
+  url: string,
+  options: {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+  } = {},
+): Promise<Response> => {
+  let session = await getStoredSession();
+  const headers: Record<string, string> = {
+    ...(options.headers || {}),
+  };
+
+  if (session?.idToken) {
+    headers.Authorization = `Bearer ${session.idToken}`;
+  }
+
+  let response = await fetch(url, {...options, headers});
+
+  // If 401 UNAUTHENTICATED or 403 PERMISSION_DENIED, try refreshing token once
+  if (
+    response &&
+    (response.status === 401 || response.status === 403) &&
+    session?.refreshToken
+  ) {
+    const refreshed = await refreshAuthSession();
+    if (refreshed?.idToken) {
+      headers.Authorization = `Bearer ${refreshed.idToken}`;
+      response = await fetch(url, {...options, headers});
+    }
+  }
+
+  return response;
+};
+
 const firestoreWriteProfile = async (
   idToken: string,
   profile: UserProfileData,
@@ -282,11 +381,10 @@ const firestoreWriteProfile = async (
   const url = `${FIRESTORE_BASE}/projects/${firebaseConfig.projectId}/databases/(default)/documents/users/${profile.uid}`;
 
   try {
-    const response = await fetch(url, {
+    const response = await authenticatedFirestoreFetch(url, {
       method: 'PATCH',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${idToken}`,
       },
       body: JSON.stringify(encodeProfile(profile)),
     });
@@ -309,11 +407,7 @@ const firestoreReadProfile = async (
   const url = `${FIRESTORE_BASE}/projects/${firebaseConfig.projectId}/databases/(default)/documents/users/${uid}`;
 
   try {
-    const response = await fetch(url, {
-      headers: {
-        Authorization: `Bearer ${idToken}`,
-      },
-    });
+    const response = await authenticatedFirestoreFetch(url);
 
     if (!response.ok) {
       return null;

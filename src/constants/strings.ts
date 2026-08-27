@@ -27,6 +27,11 @@ export const strings = {
     moviesHeaderTitle: 'Blockbuster Movies',
     moviesHeaderSubtitle:
       'Browse handpicked hit films, trending titles, and critically acclaimed masterpieces.',
+    myListTitle: 'My List',
+    myListDesc: 'Browse and watch movies saved to your personal watchlist.',
+    myListHeaderTitle: 'My List',
+    myListHeaderSubtitle:
+      'Browse handpicked movies saved to your active profile watchlist.',
   },
 
   liveTV: {
@@ -66,6 +71,7 @@ export const strings = {
     home: 'Home',
     movies: 'Movies',
     liveTV: 'Live TV',
+    myList: 'My List',
     series: 'Series',
     categories: 'Categories',
     search: 'Search',
@@ -87,6 +93,9 @@ export const strings = {
     play: 'Play',
     favourite: '♡ Add to Favourites',
     inFavourites: '♥ Remove from Favourites',
+    addToMyList: '+ Add to My List',
+    inMyList: '✓ In My List',
+    removeFromMyList: '✕ Remove from My List',
     pause: 'Pause',
     addWatchlist: '+ Add to Watchlist',
     watchlist: 'x Remove from Watchlist',
@@ -109,6 +118,27 @@ export const strings = {
   toasts: {
     signInToAddFavourites: 'Please sign in to add favourites.',
     signInToRemoveFavourites: 'Please sign in to remove favourites.',
+    signInToAddToWatchlist: 'Please sign in to add to My List.',
+    signInToRemoveFromWatchlist: 'Please sign in to remove from My List.',
+    selectProfileToAddToWatchlist: 'Please select a profile to add to My List.',
+    addedToWatchlist: 'Added to My List',
+    removedFromWatchlist: 'Removed from My List',
+  },
+
+  // My List
+  myList: {
+    title: 'My List',
+    screenTitle: 'LogiXstream • My List',
+    emptyTitle: 'Your Watchlist is empty',
+    emptySubtitle:
+      'Explore blockbuster movies and trending titles to add them to your personal watchlist.',
+    exploreButton: 'Explore Movies',
+    loading: 'Loading your watchlist...',
+    errorTitle: 'Unable to load watchlist',
+    errorSubtitle: 'Please check your connection and try again.',
+    retry: 'Retry',
+    itemCount: (count: number) =>
+      count === 1 ? '1 Saved Title' : `${count} Saved Titles`,
   },
 
   // Auth & Settings

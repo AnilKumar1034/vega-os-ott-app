@@ -170,7 +170,7 @@ describe('profileRepository', () => {
     expect(updated.avatarId).toBe('avatar-1');
   });
 
-  it('deletes a profile from Firestore', async () => {
+  it('deletes a profile and cleans up subcollections from Firestore', async () => {
     mockStorage.set(
       '@vegaott/auth-session',
       JSON.stringify({
@@ -179,18 +179,19 @@ describe('profileRepository', () => {
       }),
     );
 
-    mockFetch.mockResolvedValueOnce({
+    mockFetch.mockResolvedValue({
       ok: true,
       status: 200,
-      json: async () => ({}),
+      json: async () => ({documents: []}),
     });
 
     await expect(
       profileRepository.deleteProfile(uid, 'p1'),
     ).resolves.toBeUndefined();
 
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-    const [url, options] = mockFetch.mock.calls[0];
+    expect(mockFetch).toHaveBeenCalled();
+    const lastCall = mockFetch.mock.calls[mockFetch.mock.calls.length - 1];
+    const [url, options] = lastCall;
     expect(url).toContain(`/users/${uid}/profiles/p1`);
     expect(options.method).toBe('DELETE');
   });

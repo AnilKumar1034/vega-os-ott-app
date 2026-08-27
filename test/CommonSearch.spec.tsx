@@ -59,9 +59,9 @@ describe('CommonSearch and Multi-Screen Search Filtering', () => {
     const screen = render(<MoviesScreen />);
 
     const input = screen.getByTestId('common-search-input');
-    fireEvent.changeText(input, 'Pushpa');
+    fireEvent.changeText(input, 'Dark Knight');
 
-    expect(screen.getByText('Pushpa: The Rise')).toBeTruthy();
-    expect(screen.queryByText('The Last Horizon')).toBeNull();
+    expect(screen.getByText('The Dark Knight')).toBeTruthy();
+    expect(screen.queryByText('Avatar: The Way of Water')).toBeNull();
   });
 });

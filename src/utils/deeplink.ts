@@ -12,6 +12,7 @@ export const DeeplinkRoutes = {
   Profile: 'profile',
   Profiles: 'profiles',
   Settings: 'settings',
+  MyList: 'my-list',
 } as const;
 
 export const findContentById = (contentId?: string): HomeContentItem | null => {

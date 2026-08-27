@@ -1,4 +1,5 @@
 import {firebaseConfig} from '../../config/firebaseConfig';
+import {authenticatedFirestoreFetch} from '../../services/authService';
 import {
   CreateProfileInput,
   UpdateProfileInput,
@@ -6,28 +7,6 @@ import {
 } from '../types/Profile';
 
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1';
-const SESSION_STORAGE_KEY = '@vegaott/auth-session';
-
-type StoredSession = {
-  user: {uid: string};
-  idToken: string;
-};
-
-const getSession = async (): Promise<StoredSession | null> => {
-  try {
-    const AsyncStorage = require('@amazon-devices/react-native-async-storage__async-storage/lib/commonjs/AsyncStorage.native')
-      .default as {
-      getItem: (key: string) => Promise<string | null>;
-    };
-    const storedValue = await AsyncStorage.getItem(SESSION_STORAGE_KEY);
-    if (!storedValue) {
-      return null;
-    }
-    return JSON.parse(storedValue) as StoredSession;
-  } catch {
-    return null;
-  }
-};
 
 const readJson = async (response: Response) => {
   try {
@@ -121,15 +100,7 @@ const getDocumentUrl = (uid: string, profileId: string) =>
 
 export const profileRepository = {
   getProfiles: async (uid: string): Promise<UserProfile[]> => {
-    const session = await getSession();
-    const token = session?.idToken;
-
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
-    const response = await fetch(getCollectionUrl(uid), {headers});
+    const response = await authenticatedFirestoreFetch(getCollectionUrl(uid));
 
     if (!response.ok) {
       if (response.status === 404) {
@@ -153,9 +124,6 @@ export const profileRepository = {
     uid: string,
     input: CreateProfileInput,
   ): Promise<UserProfile> => {
-    const session = await getSession();
-    const token = session?.idToken;
-
     const profileId = `profile_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const now = Date.now();
 
@@ -168,18 +136,16 @@ export const profileRepository = {
       updatedAt: now,
     };
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
-    const response = await fetch(getDocumentUrl(uid, profileId), {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify(encodeProfileDocument(newProfile)),
-    });
+    const response = await authenticatedFirestoreFetch(
+      getDocumentUrl(uid, profileId),
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(encodeProfileDocument(newProfile)),
+      },
+    );
 
     if (!response.ok) {
       const json = await readJson(response);
@@ -194,9 +160,6 @@ export const profileRepository = {
     profileId: string,
     input: UpdateProfileInput,
   ): Promise<UserProfile> => {
-    const session = await getSession();
-    const token = session?.idToken;
-
     const existingProfiles = await profileRepository.getProfiles(uid);
     const existing = existingProfiles.find((p) => p.id === profileId);
 
@@ -217,18 +180,16 @@ export const profileRepository = {
       updatedAt: Date.now(),
     };
 
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
-    const response = await fetch(getDocumentUrl(uid, profileId), {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify(encodeProfileDocument(updatedProfile)),
-    });
+    const response = await authenticatedFirestoreFetch(
+      getDocumentUrl(uid, profileId),
+      {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(encodeProfileDocument(updatedProfile)),
+      },
+    );
 
     if (!response.ok) {
       const json = await readJson(response);
@@ -239,20 +200,35 @@ export const profileRepository = {
   },
 
   deleteProfile: async (uid: string, profileId: string): Promise<void> => {
-    const session = await getSession();
-    const token = session?.idToken;
-
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
+    // Clean up known subcollections for this profile to prevent orphaned documents
+    const subcollections = ['continueWatching', 'watchlist', 'history'];
+    for (const subcol of subcollections) {
+      try {
+        const subcolUrl = `${getDocumentUrl(uid, profileId)}/${subcol}`;
+        const subcolRes = await authenticatedFirestoreFetch(subcolUrl);
+        if (subcolRes?.ok) {
+          const json = await readJson(subcolRes);
+          const docs: any[] = Array.isArray(json?.documents) ? json.documents : [];
+          for (const doc of docs) {
+            if (doc?.name) {
+              const docUrl = `${FIRESTORE_BASE}/projects/${firebaseConfig.projectId}/databases/(default)/documents/${doc.name}`;
+              await authenticatedFirestoreFetch(docUrl, {method: 'DELETE'});
+            }
+          }
+        }
+      } catch (subcolErr) {
+        console.log(`Failed to clean up subcollection ${subcol}:`, subcolErr);
+      }
     }
 
-    const response = await fetch(getDocumentUrl(uid, profileId), {
-      method: 'DELETE',
-      headers,
-    });
+    const response = await authenticatedFirestoreFetch(
+      getDocumentUrl(uid, profileId),
+      {
+        method: 'DELETE',
+      },
+    );
 
-    if (!response.ok && response.status !== 404) {
+    if (response && !response.ok && response.status !== 404) {
       const json = await readJson(response);
       throw new Error(json?.error?.message || 'FAILED_TO_DELETE_PROFILE');
     }

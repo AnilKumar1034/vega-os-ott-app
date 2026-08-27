@@ -21,6 +21,7 @@ import {
   fetchContinueWatchForContent,
   saveContinueWatchProgress,
 } from '../services/watchProgressService';
+import {recordViewingHistory} from '../services/viewingHistoryService';
 import {styles} from './VideoPlayerScreen.styles';
 import type {
   ShakaPlayer,
@@ -143,6 +144,7 @@ export const VideoPlayerScreen = () => {
   const playerOpenedAtRef = useRef(Date.now());
 
   const playbackProfileIdRef = useRef<string | null>(activeProfile?.id || null);
+  const historyRecordedForSessionRef = useRef(false);
   useEffect(() => {
     if (!playbackProfileIdRef.current && activeProfile?.id) {
       playbackProfileIdRef.current = activeProfile.id;
@@ -556,6 +558,20 @@ export const VideoPlayerScreen = () => {
     };
 
     const onPlaying = () => {
+      const targetProfileId =
+        playbackProfileIdRef.current || activeProfile?.id;
+      if (
+        !isLive &&
+        targetProfileId &&
+        !historyRecordedForSessionRef.current &&
+        movie?.id
+      ) {
+        historyRecordedForSessionRef.current = true;
+        recordViewingHistory(targetProfileId, movie).catch((err) => {
+          console.log('Record viewing history error:', err);
+        });
+      }
+
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
       }

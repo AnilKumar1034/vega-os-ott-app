@@ -12,6 +12,7 @@ import {EditProfileScreen} from '../screens/EditProfileScreen';
 import {SplashScreen} from '../screens/SplashScreen';
 import {LoginScreen} from '../screens/LoginScreen';
 import {RegisterScreen} from '../screens/RegisterScreen';
+import {MyListScreen} from '../screens/MyListScreen';
 import {LiveTVScreen} from '../features/live-tv/screens/LiveTVScreen';
 import {LiveChannelDrmConfig} from '../features/live-tv/models/LiveChannel';
 import {createStackNavigator} from './StackNavigator';
@@ -26,6 +27,7 @@ export type RootStackParamList = {
   [Routes.Home]: undefined;
   [Routes.Movies]: undefined;
   [Routes.LiveTV]: undefined;
+  [Routes.MyList]: undefined;
   [Routes.Search]: {q?: string};
   [Routes.Details]: undefined;
   [Routes.Settings]: undefined;
@@ -76,6 +78,7 @@ const linking: LinkingOptions<RootStackParamList> = {
       [Routes.Home]: DeeplinkRoutes.Home,
       [Routes.Movies]: DeeplinkRoutes.Movies,
       [Routes.LiveTV]: DeeplinkRoutes.LiveTV,
+      [Routes.MyList]: DeeplinkRoutes.MyList,
       [Routes.Search]: {
         path: DeeplinkRoutes.Search,
         parse: {
@@ -113,6 +116,7 @@ export const AppNavigator = () => {
             <Stack.Screen name={Routes.Home} component={HomeScreen} />
             <Stack.Screen name={Routes.Movies} component={MoviesScreen} />
             <Stack.Screen name={Routes.LiveTV} component={LiveTVScreen} />
+            <Stack.Screen name={Routes.MyList} component={MyListScreen} />
             <Stack.Screen name={Routes.Search} component={SearchScreen} />
             <Stack.Screen name={Routes.Details} component={DetailsScreen} />
             <Stack.Screen

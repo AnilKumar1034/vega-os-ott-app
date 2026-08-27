@@ -1,22 +1,99 @@
-import React, {useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import {FlatList, ImageBackground, Text, View} from 'react-native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {CommonHeader} from '../components/molecules/CommonHeader';
 import {ContentRow} from '../components/molecules/ContentRow';
 import {SideMenu} from '../components/molecules/SideMenu';
 import {Routes} from '../constants/routes';
-import {homeContentRows, HomeContentRow} from '../data/home';
+import {homeContentRows, HomeContentItem, HomeContentRow} from '../data/home';
 import {AppDetails} from '../constants/appDetails';
 import {strings} from '../constants/strings';
+import {useAuth} from '../context/authContext';
+import {useProfile} from '../profiles/hooks/useProfile';
+import {
+  ContinueWatchRecord,
+  fetchContinueWatchItems,
+} from '../services/watchProgressService';
 import {filterContentRows} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
 
 export const MoviesScreen = () => {
+  const {user} = useAuth();
+  const {activeProfile} = useProfile();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
+  const [continueWatchRecords, setContinueWatchRecords] = useState<
+    ContinueWatchRecord[]
+  >([]);
 
-  const filteredRows = filterContentRows(homeContentRows, searchQuery);
+  useEffect(() => {
+    let isCurrent = true;
+
+    // Immediately clear current records when active profile changes
+    // to prevent showing previous profile's continue watching items
+    setContinueWatchRecords([]);
+
+    if (!user || !activeProfile?.id) {
+      return;
+    }
+
+    const currentProfileId = activeProfile.id;
+    (async () => {
+      try {
+        const continueWatch = await fetchContinueWatchItems(currentProfileId);
+        if (isCurrent) {
+          setContinueWatchRecords(continueWatch);
+        }
+      } catch (error) {
+        console.log('MoviesScreen continue watch load error:', error);
+        if (isCurrent) {
+          setContinueWatchRecords([]);
+        }
+      }
+    })();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [user, activeProfile?.id]);
+
+  const continueWatchingItems = useMemo<HomeContentItem[]>(() => {
+    return continueWatchRecords.map((record) => ({
+      id: record.contentId,
+      title: record.title,
+      image: record.imageUri
+        ? {uri: record.imageUri}
+        : require('../assets/background.png'),
+      progress: record.progress,
+      videoUrl: record.videoUrl,
+    }));
+  }, [continueWatchRecords]);
+
+  const continueWatchingRow: HomeContentRow | null =
+    continueWatchingItems.length
+      ? {
+          id: 'continue-watching',
+          title: strings.hero.continueWatching,
+          layout: 'horizontal',
+          items: continueWatchingItems,
+        }
+      : null;
+
+  const rowsToDisplay = useMemo(
+    () => [
+      ...(continueWatchingRow ? [continueWatchingRow] : []),
+      ...homeContentRows.filter(
+        (row) =>
+          row.id !== 'continue-watching' &&
+          row.id !== 'favourites' &&
+          row.id !== 'my-list',
+      ),
+    ],
+    [continueWatchingRow],
+  );
+
+  const filteredRows = filterContentRows(rowsToDisplay, searchQuery);
 
   const handleMenuFocus = () => {
     setIsMenuExpanded(true);

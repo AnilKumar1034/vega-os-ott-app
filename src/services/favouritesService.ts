@@ -1,14 +1,12 @@
 import {firebaseConfig} from '../config/firebaseConfig';
 import {HomeContentItem} from '../data/home';
+import {
+  authenticatedFirestoreFetch,
+  getStoredSession,
+} from './authService';
 
-const SESSION_STORAGE_KEY = '@vegaott/auth-session';
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1';
 const FAVOURITES_COLLECTION = 'favourites';
-
-type StoredSession = {
-  user: {uid: string};
-  idToken: string;
-};
 
 export type FavouriteRecord = {
   contentId: string;
@@ -23,23 +21,6 @@ const readJson = async (response: Response) => {
     return await response.json();
   } catch {
     return {};
-  }
-};
-
-const getSession = async (): Promise<StoredSession | null> => {
-  const AsyncStorage = require('@amazon-devices/react-native-async-storage__async-storage/lib/commonjs/AsyncStorage.native')
-    .default as {
-    getItem: (key: string) => Promise<string | null>;
-  };
-  const storedValue = await AsyncStorage.getItem(SESSION_STORAGE_KEY);
-  if (!storedValue) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(storedValue) as StoredSession;
-  } catch {
-    return null;
   }
 };
 
@@ -79,14 +60,14 @@ const getUserDocUrl = (uid: string, contentId: string) =>
   `${getUserCollectionUrl(uid)}/${contentId}`;
 
 export const fetchFavouriteItems = async (): Promise<FavouriteRecord[]> => {
-  const session = await getSession();
+  const session = await getStoredSession();
   if (!session?.user?.uid) {
     return [];
   }
 
-  const response = await fetch(getUserCollectionUrl(session.user.uid), {
-    headers: {Authorization: `Bearer ${session.idToken}`},
-  });
+  const response = await authenticatedFirestoreFetch(
+    getUserCollectionUrl(session.user.uid),
+  );
 
   if (!response.ok) {
     return [];
@@ -102,14 +83,14 @@ export const fetchFavouriteItems = async (): Promise<FavouriteRecord[]> => {
 export const fetchFavouriteForContent = async (
   contentId: string,
 ): Promise<FavouriteRecord | null> => {
-  const session = await getSession();
+  const session = await getStoredSession();
   if (!session?.user?.uid) {
     return null;
   }
 
-  const response = await fetch(getUserDocUrl(session.user.uid, contentId), {
-    headers: {Authorization: `Bearer ${session.idToken}`},
-  });
+  const response = await authenticatedFirestoreFetch(
+    getUserDocUrl(session.user.uid, contentId),
+  );
 
   if (!response.ok) {
     return null;
@@ -125,7 +106,7 @@ type FavouriteSource = Pick<
 >;
 
 export const addFavourite = async (movie: FavouriteSource) => {
-  const session = await getSession();
+  const session = await getStoredSession();
   if (!session?.user?.uid) {
     return;
   }
@@ -141,14 +122,16 @@ export const addFavourite = async (movie: FavouriteSource) => {
     updatedAt: new Date().toISOString(),
   };
 
-  const response = await fetch(getUserDocUrl(session.user.uid, movie.id), {
-    method: 'PATCH',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${session.idToken}`,
+  const response = await authenticatedFirestoreFetch(
+    getUserDocUrl(session.user.uid, movie.id),
+    {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(encodeRecord(record)),
     },
-    body: JSON.stringify(encodeRecord(record)),
-  });
+  );
 
   if (!response.ok) {
     const json = await readJson(response);
@@ -157,13 +140,15 @@ export const addFavourite = async (movie: FavouriteSource) => {
 };
 
 export const removeFavourite = async (contentId: string) => {
-  const session = await getSession();
+  const session = await getStoredSession();
   if (!session?.user?.uid) {
     return;
   }
 
-  await fetch(getUserDocUrl(session.user.uid, contentId), {
-    method: 'DELETE',
-    headers: {Authorization: `Bearer ${session.idToken}`},
-  });
+  await authenticatedFirestoreFetch(
+    getUserDocUrl(session.user.uid, contentId),
+    {
+      method: 'DELETE',
+    },
+  );
 };
