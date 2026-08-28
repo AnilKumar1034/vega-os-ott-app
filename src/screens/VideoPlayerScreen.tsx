@@ -22,6 +22,7 @@ import {
   saveContinueWatchProgress,
 } from '../services/watchProgressService';
 import {recordViewingHistory} from '../services/viewingHistoryService';
+import {canProfileAccessContent} from '../utils/contentAccessPolicy';
 import {styles} from './VideoPlayerScreen.styles';
 import type {
   ShakaPlayer,
@@ -387,6 +388,11 @@ export const VideoPlayerScreen = () => {
 
     const init = async () => {
       try {
+        if (!isLive && !canProfileAccessContent(activeProfile, movie)) {
+          setVideoError(strings.parentalControls.contentRestrictedMessage);
+          return;
+        }
+
         await Promise.resolve(player.initialize?.());
         if (disposed) {
           return;

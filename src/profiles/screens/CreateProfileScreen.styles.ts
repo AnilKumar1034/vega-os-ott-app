@@ -216,4 +216,43 @@ export const styles = StyleSheet.create({
     fontSize: fontSizes.body,
     fontWeight: fontWeights.extraBold,
   },
+  maturityGroup: {
+    marginVertical: spacing.sm,
+  },
+  maturityGrid: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.xs,
+  },
+  maturityOption: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
+    backgroundColor: colors.inputBackground,
+    borderRadius: borderRadius.lg,
+    borderWidth: spacing.borderThick,
+    borderColor: colors.chipBackground,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  maturityOptionSelected: {
+    borderColor: colors.heroAccent,
+    backgroundColor: colors.inputFocusedAltBackground,
+  },
+  maturityOptionFocused: {
+    borderColor: colors.textPrimary,
+    transform: [{scale: 1.04}],
+  },
+  maturityOptionText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.small,
+    fontWeight: fontWeights.boldWeight,
+    textAlign: 'center',
+  },
+  maturityOptionAge: {
+    color: colors.heroAccent,
+    fontSize: fontSizes.caption,
+    fontWeight: fontWeights.semibold,
+    marginTop: spacing.xxs,
+  },
 });

@@ -1,5 +1,7 @@
 import React, {ReactNode, useCallback, useEffect, useState} from 'react';
 import {useAuth} from '../../context/authContext';
+import {parentalControlsService} from '../../services/parentalControlsService';
+import {ParentalControlsSettings} from '../../types/parentalControls';
 import {profileRepository} from '../data/profileRepository';
 import {
   CreateProfileInput,
@@ -23,10 +25,33 @@ const getAsyncStorage = () => {
 
 export const ProfileProvider = ({children}: {children: ReactNode}) => {
   const {user, loading: authLoading} = useAuth();
-  const [activeProfile, setActiveProfileState] = useState<UserProfile | null>(null);
+  const [activeProfile, setActiveProfileState] = useState<UserProfile | null>(
+    null,
+  );
   const [profiles, setProfiles] = useState<UserProfile[]>([]);
   const [isLoadingProfiles, setIsLoadingProfiles] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // In-memory only parent authorization session (not persisted)
+  const [isParentAuthorized, setIsParentAuthorized] = useState<boolean>(false);
+  const [parentalSettings, setParentalSettings] =
+    useState<ParentalControlsSettings | null>(null);
+  const [isLoadingParentalSettings, setIsLoadingParentalSettings] =
+    useState<boolean>(false);
+
+  const loadParentalSettingsForUser = useCallback(async (uid: string) => {
+    setIsLoadingParentalSettings(true);
+    try {
+      const settings = await parentalControlsService.getSettings(uid);
+      setParentalSettings(settings);
+      return settings;
+    } catch (err) {
+      console.log('Error loading parental settings:', err);
+      return null;
+    } finally {
+      setIsLoadingParentalSettings(false);
+    }
+  }, []);
 
   const loadProfilesForUser = useCallback(async (uid: string) => {
     setIsLoadingProfiles(true);
@@ -74,26 +99,36 @@ export const ProfileProvider = ({children}: {children: ReactNode}) => {
       setActiveProfileState(null);
       setProfiles([]);
       setIsLoadingProfiles(false);
+      setIsParentAuthorized(false);
+      setParentalSettings(null);
       return;
     }
 
     (async () => {
       if (isMounted) {
-        await loadProfilesForUser(user.uid);
+        await Promise.all([
+          loadProfilesForUser(user.uid),
+          loadParentalSettingsForUser(user.uid),
+        ]);
       }
     })();
 
     return () => {
       isMounted = false;
     };
-  }, [authLoading, user, loadProfilesForUser]);
+  }, [authLoading, user, loadProfilesForUser, loadParentalSettingsForUser]);
 
   const setActiveProfile = async (profile: UserProfile | null) => {
     const AsyncStorage = getAsyncStorage();
     if (profile) {
+      // Switching to a Kids profile clears in-memory parent authorization session
+      if (profile.isKids) {
+        setIsParentAuthorized(false);
+      }
       setActiveProfileState(profile);
       await AsyncStorage.setItem(ACTIVE_PROFILE_STORAGE_KEY, profile.id);
     } else {
+      setIsParentAuthorized(false);
       setActiveProfileState(null);
       await AsyncStorage.removeItem(ACTIVE_PROFILE_STORAGE_KEY);
     }
@@ -112,6 +147,42 @@ export const ProfileProvider = ({children}: {children: ReactNode}) => {
       return [];
     }
     return loadProfilesForUser(user.uid);
+  };
+
+  const refreshParentalSettings = async (): Promise<ParentalControlsSettings | null> => {
+    if (!user) {
+      return null;
+    }
+    return loadParentalSettingsForUser(user.uid);
+  };
+
+  const verifyParentPin = async (pin: string): Promise<boolean> => {
+    if (!user) {
+      return false;
+    }
+    const isValid = await parentalControlsService.verifyPin(user.uid, pin);
+    if (isValid) {
+      setIsParentAuthorized(true);
+    }
+    return isValid;
+  };
+
+  const setParentPin = async (pin: string): Promise<void> => {
+    if (!user) {
+      throw new Error('NO_AUTHENTICATED_USER');
+    }
+    await parentalControlsService.setParentPin(user.uid, pin);
+    setIsParentAuthorized(true);
+    await refreshParentalSettings();
+  };
+
+  const removeParentPin = async (): Promise<void> => {
+    if (!user) {
+      throw new Error('NO_AUTHENTICATED_USER');
+    }
+    await parentalControlsService.removeParentPin(user.uid);
+    setIsParentAuthorized(false);
+    await refreshParentalSettings();
   };
 
   const createProfile = async (
@@ -175,6 +246,9 @@ export const ProfileProvider = ({children}: {children: ReactNode}) => {
       );
       setProfiles(updatedProfiles);
       if (activeProfile?.id === profileId) {
+        if (updated.isKids) {
+          setIsParentAuthorized(false);
+        }
         setActiveProfileState(updated);
       }
       return updated;
@@ -226,9 +300,17 @@ export const ProfileProvider = ({children}: {children: ReactNode}) => {
         profiles,
         isLoadingProfiles,
         error,
+        isParentAuthorized,
+        parentalSettings,
+        isLoadingParentalSettings,
+        setParentAuthorized: setIsParentAuthorized,
         setActiveProfile,
         switchProfile,
         refreshProfiles,
+        refreshParentalSettings,
+        verifyParentPin,
+        setParentPin,
+        removeParentPin,
         createProfile,
         updateProfile,
         deleteProfile,

@@ -3,12 +3,17 @@ import {FlatList, ImageBackground, View} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {CommonHeader} from '../components/molecules/CommonHeader';
+import {ContentBlockedBanner} from '../components/molecules/ContentBlockedBanner';
 import {MovieDetailBody} from '../components/organisms/MovieDetailBody';
 import {SideMenu} from '../components/molecules/SideMenu';
 import {Routes} from '../constants/routes';
 import {homeContentRows, HomeContentItem} from '../data/home';
 import {AppDetails} from '../constants/appDetails';
 import {styles} from './MovieDetailScreen.styles';
+import {
+  canProfileAccessContent,
+  filterContentForProfile,
+} from '../utils/contentAccessPolicy';
 import {filterContentItem} from '../utils/searchUtils';
 import {useAuth} from '../context/authContext';
 import {useProfile} from '../profiles/hooks/useProfile';
@@ -48,10 +53,17 @@ export const MovieDetailScreen = () => {
     homeContentRows[0].items[0];
   const resolvedMovie =
     route.params?.movie || findContentById(route.params?.movieId);
+  const isContentAllowed = canProfileAccessContent(activeProfile, selectedMovie);
+
   const allRecommendations =
     homeContentRows[1]?.items || homeContentRows[0].items;
 
-  const recommendations = allRecommendations.filter((item) =>
+  const allowedRecommendations = filterContentForProfile(
+    activeProfile,
+    allRecommendations,
+  );
+
+  const recommendations = allowedRecommendations.filter((item) =>
     filterContentItem(item, searchQuery),
   );
 
@@ -199,9 +211,13 @@ export const MovieDetailScreen = () => {
     />
   );
 
+  const backdropSource = isContentAllowed
+    ? selectedMovie.image
+    : require('../assets/background.png');
+
   return (
     <ImageBackground
-      source={selectedMovie.image}
+      source={backdropSource}
       style={styles.background}
       imageStyle={styles.backdropImage}
       testID="movie-detail-screen">
@@ -229,16 +245,24 @@ export const MovieDetailScreen = () => {
           />
         </View>
 
-        <TVFocusGuideView
-          autoFocus={!isSearchFocused}
-          style={styles.background}>
-          <FlatList
-            data={[selectedMovie]}
-            keyExtractor={(item) => item.id || item.title}
-            showsVerticalScrollIndicator={false}
-            renderItem={renderDetailItem}
+        {!isContentAllowed ? (
+          <ContentBlockedBanner
+            title={appStrings.parentalControls.contentRestrictedTitle}
+            message={appStrings.parentalControls.contentRestrictedMessage}
+            testID="movie-detail-blocked-state"
           />
-        </TVFocusGuideView>
+        ) : (
+          <TVFocusGuideView
+            autoFocus={!isSearchFocused}
+            style={styles.background}>
+            <FlatList
+              data={[selectedMovie]}
+              keyExtractor={(item) => item.id || item.title}
+              showsVerticalScrollIndicator={false}
+              renderItem={renderDetailItem}
+            />
+          </TVFocusGuideView>
+        )}
       </View>
     </ImageBackground>
   );

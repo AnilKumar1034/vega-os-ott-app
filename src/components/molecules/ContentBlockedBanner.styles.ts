@@ -1,0 +1,105 @@
+import {StyleSheet} from 'react-native';
+import {colors} from '../../theme/colors';
+import {fontSizes, fontWeights, lineHeights} from '../../theme/fonts';
+import {borderRadius, sizes, spacing} from '../../theme/sizes';
+
+export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.huge,
+  },
+  card: {
+    width: 600,
+    backgroundColor: colors.dialogBackground,
+    borderRadius: borderRadius.dialog,
+    borderWidth: spacing.borderThick,
+    borderColor: colors.cardBorder,
+    padding: spacing.colossal,
+    alignItems: 'center',
+    shadowColor: colors.shadowDark,
+    shadowOffset: {width: 0, height: spacing.lg},
+    shadowOpacity: 0.7,
+    shadowRadius: spacing.xlarge,
+  },
+  badge: {
+    backgroundColor: colors.errorBackground,
+    borderWidth: 1,
+    borderColor: colors.errorBorder,
+    borderRadius: borderRadius.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xxs,
+    marginBottom: spacing.lg,
+  },
+  badgeText: {
+    color: colors.errorText,
+    fontSize: fontSizes.cardBadge,
+    fontWeight: fontWeights.boldWeight,
+    letterSpacing: 1.5,
+    textTransform: 'uppercase',
+  },
+  title: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.userName,
+    fontWeight: fontWeights.extraBold,
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
+  message: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.body,
+    lineHeight: lineHeights.dialogBody,
+    textAlign: 'center',
+    marginBottom: spacing.xxl,
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: spacing.lg,
+    justifyContent: 'center',
+    width: '100%',
+  },
+  primaryButton: {
+    height: sizes.dialogButtonHeight,
+    paddingHorizontal: spacing.xlarge,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.heroAccent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: spacing.borderThick,
+    borderColor: colors.transparent,
+  },
+  primaryButtonFocused: {
+    borderColor: colors.textPrimary,
+    transform: [{scale: 1.05}],
+    shadowColor: colors.heroAccent,
+    shadowOffset: {width: 0, height: spacing.xs},
+    shadowOpacity: 0.6,
+    shadowRadius: spacing.md,
+  },
+  primaryButtonText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.body,
+    fontWeight: fontWeights.boldWeight,
+  },
+  secondaryButton: {
+    height: sizes.dialogButtonHeight,
+    paddingHorizontal: spacing.xlarge,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.cardBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: spacing.borderThick,
+    borderColor: colors.transparent,
+  },
+  secondaryButtonFocused: {
+    borderColor: colors.textPrimary,
+    backgroundColor: colors.controlBackground,
+    transform: [{scale: 1.05}],
+  },
+  secondaryButtonText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.body,
+    fontWeight: fontWeights.boldWeight,
+  },
+});

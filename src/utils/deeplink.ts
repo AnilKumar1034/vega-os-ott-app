@@ -23,6 +23,7 @@ export const findContentById = (contentId?: string): HomeContentItem | null => {
   const allItems = [
     ...homeHeroSlides.map((slide) => ({
       id: slide.id,
+      maturityRating: slide.maturityRating,
       title: slide.title,
       image: slide.image,
       badge: slide.badge,

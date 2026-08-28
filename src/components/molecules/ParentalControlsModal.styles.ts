@@ -1,0 +1,166 @@
+import {StyleSheet} from 'react-native';
+import {colors} from '../../theme/colors';
+import {fontSizes, fontWeights, lineHeights} from '../../theme/fonts';
+import {borderRadius, sizes, spacing} from '../../theme/sizes';
+
+export const styles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.overlayDark,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1050,
+  },
+  modal: {
+    width: 620,
+    backgroundColor: colors.dialogBackground,
+    borderRadius: borderRadius.dialog,
+    borderWidth: spacing.borderThick,
+    borderColor: colors.cardBorder,
+    padding: spacing.xxl,
+    alignItems: 'center',
+    shadowColor: colors.shadowDark,
+    shadowOffset: {width: 0, height: spacing.lg},
+    shadowOpacity: 0.7,
+    shadowRadius: spacing.xlarge,
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  iconCircle: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.cardBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.md,
+    borderWidth: spacing.borderThick,
+    borderColor: colors.heroAccent,
+  },
+  iconText: {
+    fontSize: 26,
+  },
+  title: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.subheading,
+    fontWeight: fontWeights.extraBold,
+    marginBottom: spacing.xs,
+    textAlign: 'center',
+  },
+  subtitle: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.caption,
+    lineHeight: lineHeights.dialogBody,
+    textAlign: 'center',
+    paddingHorizontal: spacing.md,
+  },
+  statusCard: {
+    width: '100%',
+    backgroundColor: colors.cardBackground,
+    borderRadius: borderRadius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  statusLabel: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.caption,
+    marginBottom: spacing.xxs,
+  },
+  statusValue: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.body,
+    fontWeight: fontWeights.boldWeight,
+  },
+  statusBadge: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+  },
+  statusBadgeActive: {
+    backgroundColor: 'rgba(76, 175, 80, 0.2)',
+    borderColor: '#4CAF50',
+    borderWidth: 1,
+  },
+  statusBadgeInactive: {
+    backgroundColor: 'rgba(255, 152, 0, 0.2)',
+    borderColor: '#FF9800',
+    borderWidth: 1,
+  },
+  statusBadgeText: {
+    fontSize: fontSizes.cardBadge,
+    fontWeight: fontWeights.boldWeight,
+    color: colors.textPrimary,
+  },
+  optionsList: {
+    width: '100%',
+    gap: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  optionButton: {
+    width: '100%',
+    height: 54,
+    backgroundColor: colors.cardBorder,
+    borderRadius: borderRadius.lg,
+    borderWidth: spacing.borderThick,
+    borderColor: colors.transparent,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+  },
+  optionButtonFocused: {
+    borderColor: colors.textPrimary,
+    backgroundColor: colors.controlBackground,
+    transform: [{scale: 1.02}],
+  },
+  optionButtonDestructive: {
+    borderColor: colors.errorBorder,
+  },
+  optionButtonText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.body,
+    fontWeight: fontWeights.boldWeight,
+  },
+  optionButtonTextDestructive: {
+    color: colors.errorText,
+  },
+  optionArrow: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.body,
+    fontWeight: fontWeights.boldWeight,
+  },
+  closeButton: {
+    height: sizes.dialogButtonHeight,
+    paddingHorizontal: spacing.xxl,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.cardBorder,
+    borderWidth: spacing.borderThick,
+    borderColor: colors.transparent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonFocused: {
+    borderColor: colors.textPrimary,
+    backgroundColor: colors.controlBackground,
+    transform: [{scale: 1.04}],
+  },
+  closeButtonText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.caption,
+    fontWeight: fontWeights.boldWeight,
+  },
+  feedbackText: {
+    color: colors.success,
+    fontSize: fontSizes.caption,
+    fontWeight: fontWeights.semibold,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+});

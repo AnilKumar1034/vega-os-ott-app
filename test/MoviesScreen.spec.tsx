@@ -65,6 +65,14 @@ describe('MoviesScreen (Real Continue Watching integration)', () => {
       updateProfile: jest.fn(),
       deleteProfile: jest.fn(),
       clearActiveProfile: jest.fn(),
+      isParentAuthorized: false,
+      parentalSettings: null,
+      isLoadingParentalSettings: false,
+      setParentAuthorized: jest.fn(),
+      refreshParentalSettings: jest.fn().mockResolvedValue(null),
+      verifyParentPin: jest.fn().mockResolvedValue(true),
+      setParentPin: jest.fn().mockResolvedValue(undefined),
+      removeParentPin: jest.fn().mockResolvedValue(undefined),
     });
 
     mockFetchContinueWatch = jest

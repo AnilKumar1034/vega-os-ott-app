@@ -40,6 +40,7 @@ const encodeProfileDocument = (profile: UserProfile) => ({
     isKids: encodeBoolean(profile.isKids),
     createdAt: encodeNumber(profile.createdAt),
     updatedAt: encodeNumber(profile.updatedAt),
+    ...(profile.kidsMaturityLimit ? {kidsMaturityLimit: encodeString(profile.kidsMaturityLimit)} : {}),
     ...(profile.maturityRating ? {maturityRating: encodeString(profile.maturityRating)} : {}),
     ...(profile.language ? {language: encodeString(profile.language)} : {}),
     ...(profile.autoplay !== undefined ? {autoplay: encodeBoolean(profile.autoplay)} : {}),
@@ -76,6 +77,9 @@ const decodeProfileDocument = (doc: any): UserProfile | null => {
     updatedAt,
   };
 
+  if (fields.kidsMaturityLimit) {
+    profile.kidsMaturityLimit = decodeString(fields.kidsMaturityLimit) as any;
+  }
   if (fields.maturityRating) {
     profile.maturityRating = decodeString(fields.maturityRating);
   }
@@ -126,12 +130,16 @@ export const profileRepository = {
   ): Promise<UserProfile> => {
     const profileId = `profile_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const now = Date.now();
+    const isKids = input.isKids ?? false;
 
     const newProfile: UserProfile = {
       id: profileId,
       name: input.name.trim(),
       avatarId: input.avatarId,
-      isKids: input.isKids ?? false,
+      isKids,
+      ...(isKids
+        ? {kidsMaturityLimit: input.kidsMaturityLimit || 'KIDS'}
+        : {}),
       createdAt: now,
       updatedAt: now,
     };
@@ -167,11 +175,23 @@ export const profileRepository = {
       throw new Error('PROFILE_NOT_FOUND');
     }
 
+    const nextIsKids = input.isKids !== undefined ? input.isKids : existing.isKids;
+    let nextKidsMaturityLimit = input.kidsMaturityLimit !== undefined
+      ? input.kidsMaturityLimit
+      : existing.kidsMaturityLimit;
+
+    if (nextIsKids && !nextKidsMaturityLimit) {
+      nextKidsMaturityLimit = 'KIDS';
+    } else if (!nextIsKids) {
+      nextKidsMaturityLimit = undefined;
+    }
+
     const updatedProfile: UserProfile = {
       ...existing,
       name: input.name !== undefined ? input.name.trim() : existing.name,
       avatarId: input.avatarId !== undefined ? input.avatarId : existing.avatarId,
-      isKids: input.isKids !== undefined ? input.isKids : existing.isKids,
+      isKids: nextIsKids,
+      kidsMaturityLimit: nextKidsMaturityLimit,
       maturityRating: input.maturityRating !== undefined ? input.maturityRating : existing.maturityRating,
       language: input.language !== undefined ? input.language : existing.language,
       autoplay: input.autoplay !== undefined ? input.autoplay : existing.autoplay,

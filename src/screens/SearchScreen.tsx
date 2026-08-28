@@ -10,17 +10,22 @@ import {
   HomeContentRow,
 } from '../data/home';
 import {AppDetails} from '../constants/appDetails';
+import {useProfile} from '../profiles/hooks/useProfile';
+import {filterContentRowsForProfile} from '../utils/contentAccessPolicy';
 import {filterContentRows} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
 import {useRoute} from '@react-navigation/native';
 
 export const SearchScreen = () => {
   const route = useRoute<any>();
+  const {activeProfile} = useProfile();
   const initialQuery = route.params?.q || '';
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
-  const filteredRows = filterContentRows(homeContentRows, searchQuery);
+
+  const allowedRows = filterContentRowsForProfile(activeProfile, homeContentRows);
+  const filteredRows = filterContentRows(allowedRows, searchQuery);
 
   const handleMenuFocus = () => {
     setIsMenuExpanded(true);

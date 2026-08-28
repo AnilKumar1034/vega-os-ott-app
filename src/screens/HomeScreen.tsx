@@ -28,6 +28,11 @@ import {
   fetchWatchlist,
 } from '../services/watchlistService';
 import {WatchlistItem} from '../types/watchlist';
+import {
+  canProfileAccessContent,
+  filterContentRowsForProfile,
+  filterHeroSlidesForProfile,
+} from '../utils/contentAccessPolicy';
 import {findContentById} from '../utils/deeplink';
 import {filterContentRows, filterHeroSlides} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
@@ -106,16 +111,22 @@ export const HomeScreen = () => {
   }, [user, activeProfile?.id]);
 
   const continueWatchingItems = useMemo<HomeContentItem[]>(() => {
-    return continueWatchRecords.map((record) => ({
-      id: record.contentId,
-      title: record.title,
-      image: record.imageUri
-        ? {uri: record.imageUri}
-        : require('../assets/background.png'),
-      progress: record.progress,
-      videoUrl: record.videoUrl,
-    }));
-  }, [continueWatchRecords]);
+    return continueWatchRecords
+      .map((record) => {
+        const fullItem = findContentById(record.contentId);
+        return {
+          id: record.contentId,
+          maturityRating: fullItem?.maturityRating,
+          title: record.title,
+          image: record.imageUri
+            ? {uri: record.imageUri}
+            : require('../assets/background.png'),
+          progress: record.progress,
+          videoUrl: record.videoUrl,
+        };
+      })
+      .filter((item) => canProfileAccessContent(activeProfile, item));
+  }, [activeProfile, continueWatchRecords]);
 
   const continueWatchingRow: HomeContentRow | null =
     continueWatchingItems.length
@@ -128,22 +139,25 @@ export const HomeScreen = () => {
       : null;
 
   const watchlistItems = useMemo<HomeContentItem[]>(() => {
-    return watchlistRecords.map((record) => {
-      const fullCatalogItem = findContentById(record.contentId);
-      if (fullCatalogItem) {
-        return fullCatalogItem;
-      }
+    return watchlistRecords
+      .map((record) => {
+        const fullCatalogItem = findContentById(record.contentId);
+        if (fullCatalogItem) {
+          return fullCatalogItem;
+        }
 
-      return {
-        id: record.contentId,
-        title: record.title,
-        genre: record.genre,
-        image: record.image
-          ? {uri: record.image}
-          : require('../assets/background.png'),
-      };
-    });
-  }, [watchlistRecords]);
+        return {
+          id: record.contentId,
+          maturityRating: undefined,
+          title: record.title,
+          genre: record.genre,
+          image: record.image
+            ? {uri: record.image}
+            : require('../assets/background.png'),
+        };
+      })
+      .filter((item) => canProfileAccessContent(activeProfile, item));
+  }, [activeProfile, watchlistRecords]);
 
   const watchlistRow: HomeContentRow | null = watchlistItems.length
     ? {
@@ -154,19 +168,28 @@ export const HomeScreen = () => {
       }
     : null;
 
-  const rowsToDisplay = [
-    ...(continueWatchingRow ? [continueWatchingRow] : []),
-    ...(watchlistRow ? [watchlistRow] : []),
-    ...homeContentRows.filter(
+  const allowedCatalogRows = useMemo(() => {
+    const rawCatalog = homeContentRows.filter(
       (row) =>
         row.id !== 'continue-watching' &&
         row.id !== 'favourites' &&
         row.id !== 'my-list',
-    ),
+    );
+    return filterContentRowsForProfile(activeProfile, rawCatalog);
+  }, [activeProfile]);
+
+  const rowsToDisplay = [
+    ...(continueWatchingRow ? [continueWatchingRow] : []),
+    ...(watchlistRow ? [watchlistRow] : []),
+    ...allowedCatalogRows,
   ];
 
+  const allowedHeroSlides = useMemo(() => {
+    return filterHeroSlidesForProfile(activeProfile, homeHeroSlides);
+  }, [activeProfile]);
+
   const filteredRows = filterContentRows(rowsToDisplay, searchQuery);
-  const filteredHeroSlides = filterHeroSlides(homeHeroSlides, searchQuery);
+  const filteredHeroSlides = filterHeroSlides(allowedHeroSlides, searchQuery);
 
   const handleMenuFocus = () => {
     setIsMenuExpanded(true);

@@ -126,6 +126,14 @@ describe('VideoPlayerScreen Profile-Specific Continue Watching Integration', () 
       updateProfile: jest.fn(),
       deleteProfile: jest.fn(),
       clearActiveProfile: jest.fn(),
+      isParentAuthorized: false,
+      parentalSettings: null,
+      isLoadingParentalSettings: false,
+      setParentAuthorized: jest.fn(),
+      refreshParentalSettings: jest.fn().mockResolvedValue(null),
+      verifyParentPin: jest.fn().mockResolvedValue(true),
+      setParentPin: jest.fn().mockResolvedValue(undefined),
+      removeParentPin: jest.fn().mockResolvedValue(undefined),
     });
 
     mockFetchForContent = jest

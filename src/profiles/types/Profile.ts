@@ -1,10 +1,12 @@
 import {strings} from '../../constants/strings';
+import {ContentMaturityRating} from '../../types/maturity';
 
 export interface UserProfile {
   id: string;
   name: string;
   avatarId: string;
   isKids: boolean;
+  kidsMaturityLimit?: ContentMaturityRating;
   createdAt: number;
   updatedAt: number;
   maturityRating?: string;
@@ -18,12 +20,14 @@ export interface CreateProfileInput {
   name: string;
   avatarId: string;
   isKids?: boolean;
+  kidsMaturityLimit?: ContentMaturityRating;
 }
 
 export interface UpdateProfileInput {
   name?: string;
   avatarId?: string;
   isKids?: boolean;
+  kidsMaturityLimit?: ContentMaturityRating;
   maturityRating?: string;
   language?: string;
   autoplay?: boolean;

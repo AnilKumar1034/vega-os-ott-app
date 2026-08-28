@@ -102,10 +102,19 @@ const ToggleCard = ({
   </TouchableOpacity>
 );
 
+import {ParentalControlsModal} from '../components/molecules/ParentalControlsModal';
+import {PinEntryDialog} from '../components/molecules/PinEntryDialog';
+
 export const SettingsScreen = () => {
   const navigation = useNavigation<any>();
   const {user, userProfile, logout, updateProfile, loading} = useAuth();
-  const {activeProfile, clearActiveProfile} = useProfile();
+  const {
+    activeProfile,
+    clearActiveProfile,
+    parentalSettings,
+    isParentAuthorized,
+    verifyParentPin,
+  } = useProfile();
   const [focusedId, setFocusedId] = useState<string | null>(null);
   const [themePreference, setThemePreference] = useState(
     userProfile?.themePreference || 'cinematic',
@@ -118,6 +127,45 @@ export const SettingsScreen = () => {
   );
   const [savingPreference, setSavingPreference] = useState(false);
   const [preferenceError, setPreferenceError] = useState<string | null>(null);
+  const [showParentalModal, setShowParentalModal] = useState(false);
+  const [showPinAuthDialog, setShowPinAuthDialog] = useState(false);
+  const [pendingAction, setPendingAction] = useState<
+    'parental_controls' | 'switch_profile' | null
+  >(null);
+
+  const isPinLockActive = Boolean(
+    activeProfile?.isKids &&
+      parentalSettings?.pinEnabled &&
+      !isParentAuthorized,
+  );
+
+  const handleOpenParentalControls = () => {
+    if (isPinLockActive) {
+      setPendingAction('parental_controls');
+      setShowPinAuthDialog(true);
+      return;
+    }
+    setShowParentalModal(true);
+  };
+
+  const handleSwitchProfile = () => {
+    if (isPinLockActive) {
+      setPendingAction('switch_profile');
+      setShowPinAuthDialog(true);
+      return;
+    }
+    navigation.navigate(Routes.ProfileSelection);
+  };
+
+  const handlePinAuthSuccess = () => {
+    setShowPinAuthDialog(false);
+    if (pendingAction === 'parental_controls') {
+      setShowParentalModal(true);
+    } else if (pendingAction === 'switch_profile') {
+      navigation.navigate(Routes.ProfileSelection);
+    }
+    setPendingAction(null);
+  };
 
   useEffect(() => {
     setThemePreference(userProfile?.themePreference || 'cinematic');
@@ -305,12 +353,25 @@ export const SettingsScreen = () => {
                   testID="settings-edit-profile-button"
                 />
                 <ActionButton
+                  id="parental-controls"
+                  label={strings.parentalControls.settingsSection}
+                  hint={
+                    parentalSettings?.pinEnabled
+                      ? strings.parentalControls.pinStatusEnabled
+                      : strings.parentalControls.settingsHint
+                  }
+                  focusedId={focusedId}
+                  onFocus={setFocusedId}
+                  onPress={handleOpenParentalControls}
+                  testID="settings-parental-controls-button"
+                />
+                <ActionButton
                   id="switch-profile"
                   label={strings.profiles?.switchProfile || 'Switch Profile'}
                   hint={strings.profiles?.switchProfileHint || 'Switch to another viewing profile'}
                   focusedId={focusedId}
                   onFocus={setFocusedId}
-                  onPress={() => navigation.navigate(Routes.ProfileSelection)}
+                  onPress={handleSwitchProfile}
                   testID="settings-switch-profile-button"
                 />
               </View>
@@ -472,6 +533,25 @@ export const SettingsScreen = () => {
           </View>
         )}
       </TVFocusGuideView>
+
+      <ParentalControlsModal
+        visible={showParentalModal}
+        onClose={() => setShowParentalModal(false)}
+      />
+
+      <PinEntryDialog
+        visible={showPinAuthDialog}
+        title={strings.parentalControls.enterPinTitle}
+        subtitle={strings.parentalControls.enterPinSubtitle}
+        isConfirmMode={false}
+        validatePin={verifyParentPin}
+        onSuccess={handlePinAuthSuccess}
+        onCancel={() => {
+          setShowPinAuthDialog(false);
+          setPendingAction(null);
+        }}
+        testID="settings-pin-auth-dialog"
+      />
     </ScreenLayout>
   );
 };

@@ -1,3 +1,4 @@
+import {ContentMaturityRating} from '../types/maturity';
 import {ImageSourcePropType} from 'react-native';
 
 export type CardLayoutType = 'horizontal' | 'portrait' | 'grid';
@@ -14,6 +15,7 @@ export const DEFAULT_MOCK_VIDEO_URL = WORKING_VIDEO_URLS[0];
 
 export interface HomeContentItem {
   id: string;
+  maturityRating?: ContentMaturityRating;
   title: string;
   image: ImageSourcePropType;
   progress?: number;
@@ -36,6 +38,7 @@ export interface HomeContentRow {
 
 export interface HeroSlide {
   id: string;
+  maturityRating?: ContentMaturityRating;
   eyebrow?: string;
   title: string;
   description: string;
@@ -51,9 +54,28 @@ export interface HeroSlide {
 
 export const homeHeroSlides: HeroSlide[] = [
   {
+    id: 'the-lion-king-hero',
+    eyebrow: 'DISNEY CLASSIC • KIDS SPECIAL',
+    title: 'The Lion King',
+    maturityRating: 'KIDS',
+    description:
+      'A young lion prince flees his kingdom only to learn the true meaning of responsibility and bravery.',
+    meta: ['2019', 'ENGLISH', '1h 58m', '4K UHD', 'IMDb 6.9', 'KIDS'],
+    image: {
+      uri: 'https://image.tmdb.org/t/p/w1280/sKCr78MXSLixwmZ8DyJLrpMsd15.jpg',
+    },
+    badge: 'KIDS FAVORITE',
+    rating: '⭐ 7.7 / 10',
+    genre: 'Animation • Adventure • Family',
+    director: 'Jon Favreau',
+    cast: 'Donald Glover, Beyoncé, Seth Rogen, Chiwetel Ejiofor',
+    videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+  },
+  {
     id: 'horizon',
     eyebrow: 'TELUGU SUPERHIT • RRR',
     title: 'The Last Horizon',
+    maturityRating: '13_PLUS',
     description:
       'A fearless revolutionary and a dedicated officer in British India form an unshakeable bond to battle colonial tyranny.',
     meta: ['2022', 'TELUGU', '3h 07m', '4K UHD', 'IMDb 7.9', 'OSCAR WINNER'],
@@ -71,6 +93,7 @@ export const homeHeroSlides: HeroSlide[] = [
     id: 'kalki',
     eyebrow: 'TELUGU SCI-FI EPIC',
     title: 'Kalki 2898 AD',
+    maturityRating: '13_PLUS',
     description:
       'In a post-apocalyptic dystopian world, a heroic warrior awakens to protect the unborn savior of mankind.',
     meta: ['2024', 'TELUGU', '3h 01m', '4K UHD', 'IMDb 7.7'],
@@ -89,6 +112,7 @@ export const homeHeroSlides: HeroSlide[] = [
     id: 'kgf-2',
     eyebrow: 'KANNADA MEGAHIT',
     title: 'K.G.F: Chapter 2',
+    maturityRating: '16_PLUS',
     description:
       'Rocky rules over Kolar Gold Fields, striking terror into his enemies while fighting off government and criminal forces.',
     meta: ['2022', 'KANNADA', '2h 48m', 'HDR10', 'IMDb 8.3'],
@@ -107,6 +131,7 @@ export const homeHeroSlides: HeroSlide[] = [
     id: 'jawan',
     eyebrow: 'HINDI ACTION THRILLER',
     title: 'Jawan',
+    maturityRating: '13_PLUS',
     description:
       'A vigilante commander leads a team of women in daring missions to expose high-level corruption and fight for justice.',
     meta: ['2023', 'HINDI', '2h 49m', '4K UHD', 'IMDb 7.0'],
@@ -125,6 +150,7 @@ export const homeHeroSlides: HeroSlide[] = [
     id: 'interstellar',
     eyebrow: 'ENGLISH SCI-FI MASTERPIECE',
     title: 'Interstellar',
+    maturityRating: '13_PLUS',
     description:
       'When Earth becomes uninhabitable, a pilot and researchers travel through a wormhole in space to find a new home.',
     meta: ['2014', 'ENGLISH', '2h 49m', 'Dolby Vision', 'IMDb 8.7'],
@@ -152,6 +178,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'horizon',
         title: 'RRR',
+    maturityRating: '13_PLUS',
         description:
           'RRR - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -167,6 +194,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-2',
         title: 'Pushpa: The Rise',
+    maturityRating: '13_PLUS',
         description:
           'Pushpa: The Rise - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -182,6 +210,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-3',
         title: 'Jawan',
+    maturityRating: '13_PLUS',
         description:
           'Jawan - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -197,6 +226,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-4',
         title: 'Kantara',
+    maturityRating: '13_PLUS',
         description:
           'Kantara - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -212,6 +242,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-5',
         title: 'Inception',
+    maturityRating: '13_PLUS',
         description:
           'Inception - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -227,6 +258,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-6',
         title: 'Kalki 2898 AD',
+    maturityRating: '13_PLUS',
         description:
           'Kalki 2898 AD - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -242,6 +274,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-7',
         title: 'K.G.F: Chapter 2',
+    maturityRating: '16_PLUS',
         description:
           'K.G.F: Chapter 2 - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -257,6 +290,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-8',
         title: 'Baahubali 2: The Conclusion',
+    maturityRating: '13_PLUS',
         description:
           'Baahubali 2: The Conclusion - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -272,6 +306,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-9',
         title: 'Salaar',
+    maturityRating: '13_PLUS',
         description:
           'Salaar - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -287,6 +322,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-10',
         title: 'Devara',
+    maturityRating: '13_PLUS',
         description:
           'Devara - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -302,6 +338,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-11',
         title: 'HanuMan',
+    maturityRating: '7_PLUS',
         description:
           'HanuMan - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -317,6 +354,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-12',
         title: 'Pathaan',
+    maturityRating: '13_PLUS',
         description:
           'Pathaan - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -332,6 +370,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-13',
         title: 'Dangal',
+    maturityRating: 'ALL',
         description:
           'Dangal - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -347,6 +386,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-14',
         title: 'Brahmastra',
+    maturityRating: '13_PLUS',
         description:
           'Brahmastra - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -362,6 +402,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-15',
         title: 'Stree 2',
+    maturityRating: '13_PLUS',
         description:
           'Stree 2 - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -377,6 +418,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-16',
         title: '3 Idiots',
+    maturityRating: 'ALL',
         description:
           '3 Idiots - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -392,6 +434,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-17',
         title: '777 Charlie',
+    maturityRating: 'KIDS',
         description:
           '777 Charlie - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -407,6 +450,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-18',
         title: 'Vikrant Rona',
+    maturityRating: '13_PLUS',
         description:
           'Vikrant Rona - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -422,6 +466,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-19',
         title: 'Kabzaa',
+    maturityRating: '16_PLUS',
         description:
           'Kabzaa - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -437,6 +482,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'continue-watching-20',
         title: 'Interstellar',
+    maturityRating: '13_PLUS',
         description:
           'Interstellar - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -459,6 +505,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'summit',
         title: 'The Dark Knight',
+    maturityRating: '13_PLUS',
         description:
           'The Dark Knight - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -473,6 +520,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-2',
         title: 'Avatar: The Way of Water',
+    maturityRating: '13_PLUS',
         description:
           'Avatar: The Way of Water - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -487,6 +535,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-3',
         title: 'Dune: Part Two',
+    maturityRating: '13_PLUS',
         description:
           'Dune: Part Two - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -501,6 +550,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-4',
         title: 'Oppenheimer',
+    maturityRating: '16_PLUS',
         description:
           'Oppenheimer - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -515,6 +565,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-5',
         title: 'Avengers: Endgame',
+    maturityRating: '13_PLUS',
         description:
           'Avengers: Endgame - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -529,6 +580,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-6',
         title: 'Spiderman: No Way Home',
+    maturityRating: '13_PLUS',
         description:
           'Spiderman: No Way Home - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -543,6 +595,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-7',
         title: 'Gladiator',
+    maturityRating: '16_PLUS',
         description:
           'Gladiator - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -557,6 +610,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-8',
         title: 'Titanic',
+    maturityRating: '13_PLUS',
         description:
           'Titanic - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -571,6 +625,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-9',
         title: 'The Matrix',
+    maturityRating: '16_PLUS',
         description:
           'The Matrix - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -585,6 +640,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-10',
         title: 'Fight Club',
+    maturityRating: '18_PLUS',
         description:
           'Fight Club - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -599,6 +655,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-11',
         title: 'Pulp Fiction',
+    maturityRating: '18_PLUS',
         description:
           'Pulp Fiction - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -613,6 +670,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-12',
         title: 'Forrest Gump',
+    maturityRating: '13_PLUS',
         description:
           'Forrest Gump - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -627,6 +685,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-13',
         title: 'The Godfather',
+    maturityRating: '18_PLUS',
         description:
           'The Godfather - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -641,6 +700,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-14',
         title: 'The Shawshank Redemption',
+    maturityRating: '16_PLUS',
         description:
           'The Shawshank Redemption - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -655,6 +715,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-15',
         title: 'Jurassic Park',
+    maturityRating: '13_PLUS',
         description:
           'Jurassic Park - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -669,6 +730,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-16',
         title: 'Top Gun: Maverick',
+    maturityRating: '13_PLUS',
         description:
           'Top Gun: Maverick - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -683,6 +745,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-17',
         title: 'Spider-Man: Across the Spider-Verse',
+    maturityRating: '7_PLUS',
         description:
           'Spider-Man: Across the Spider-Verse - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -697,6 +760,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-18',
         title: 'The Lion King',
+    maturityRating: 'KIDS',
         description:
           'The Lion King - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -711,6 +775,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-19',
         title: 'Black Panther',
+    maturityRating: '13_PLUS',
         description:
           'Black Panther - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -725,6 +790,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'trending-20',
         title: 'Doctor Strange',
+    maturityRating: '13_PLUS',
         description:
           'Doctor Strange - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -746,6 +812,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-1',
         title: 'Baahubali: The Beginning',
+    maturityRating: '13_PLUS',
         description:
           'Baahubali: The Beginning - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -760,6 +827,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-2',
         title: 'Magadheera',
+    maturityRating: '13_PLUS',
         description:
           'Magadheera - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -774,6 +842,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-4',
         title: 'Ala Vaikunthapurramuloo',
+    maturityRating: '13_PLUS',
         description:
           'Ala Vaikunthapurramuloo - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -788,6 +857,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-5',
         title: 'Sarileru Neekevvaru',
+    maturityRating: '13_PLUS',
         description:
           'Sarileru Neekevvaru - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -802,6 +872,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-6',
         title: 'Pushpa 2: The Rule',
+    maturityRating: '16_PLUS',
         description:
           'Pushpa 2: The Rule - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -816,6 +887,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-7',
         title: 'Guntur Kaaram',
+    maturityRating: '13_PLUS',
         description:
           'Guntur Kaaram - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -830,6 +902,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-8',
         title: 'Sita Ramam',
+    maturityRating: '13_PLUS',
         description:
           'Sita Ramam - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -844,6 +917,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-9',
         title: 'Dasara',
+    maturityRating: '16_PLUS',
         description:
           'Dasara - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -858,6 +932,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-10',
         title: 'Baby 2023',
+    maturityRating: '18_PLUS',
         description:
           'Baby 2023 - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -872,6 +947,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-11',
         title: 'Hi Nanna',
+    maturityRating: '7_PLUS',
         description:
           'Hi Nanna - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -886,6 +962,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-12',
         title: 'Tillu Square',
+    maturityRating: '16_PLUS',
         description:
           'Tillu Square - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -900,6 +977,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-13',
         title: 'Major',
+    maturityRating: '13_PLUS',
         description:
           'Major - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -914,6 +992,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-14',
         title: 'DJ Tillu',
+    maturityRating: '16_PLUS',
         description:
           'DJ Tillu - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -928,6 +1007,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-15',
         title: 'Bheemla Nayak',
+    maturityRating: '13_PLUS',
         description:
           'Bheemla Nayak - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -942,6 +1022,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-16',
         title: 'Akhanda',
+    maturityRating: '13_PLUS',
         description:
           'Akhanda - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -956,6 +1037,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-17',
         title: 'Waltair Veerayya',
+    maturityRating: '13_PLUS',
         description:
           'Waltair Veerayya - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -970,6 +1052,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-18',
         title: 'Veera Simha Reddy',
+    maturityRating: '13_PLUS',
         description:
           'Veera Simha Reddy - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -984,6 +1067,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-19',
         title: 'Geetha Govindam',
+    maturityRating: '13_PLUS',
         description:
           'Geetha Govindam - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -998,6 +1082,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'telugu-blockbusters-20',
         title: 'Arjun Reddy',
+    maturityRating: '18_PLUS',
         description:
           'Arjun Reddy - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1019,6 +1104,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-1',
         title: 'Animal 2023',
+    maturityRating: '18_PLUS',
         description:
           'Animal 2023 - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1033,6 +1119,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-2',
         title: 'Gadar 2',
+    maturityRating: '13_PLUS',
         description:
           'Gadar 2 - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1047,6 +1134,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-3',
         title: '12th Fail',
+    maturityRating: 'ALL',
         description:
           '12th Fail - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1061,6 +1149,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-4',
         title: 'Bhool Bhulaiyaa 2',
+    maturityRating: '13_PLUS',
         description:
           'Bhool Bhulaiyaa 2 - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1075,6 +1164,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-5',
         title: 'Drishyam 2',
+    maturityRating: '13_PLUS',
         description:
           'Drishyam 2 - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1089,6 +1179,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-6',
         title: 'War 2019',
+    maturityRating: '13_PLUS',
         description:
           'War 2019 - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1103,6 +1194,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-7',
         title: 'Kabir Singh',
+    maturityRating: '18_PLUS',
         description:
           'Kabir Singh - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1117,6 +1209,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-8',
         title: 'Sanju',
+    maturityRating: '16_PLUS',
         description:
           'Sanju - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1131,6 +1224,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-9',
         title: 'PK',
+    maturityRating: 'ALL',
         description:
           'PK - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1145,6 +1239,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-10',
         title: 'Bajrangi Bhaijaan',
+    maturityRating: '7_PLUS',
         description:
           'Bajrangi Bhaijaan - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1159,6 +1254,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-11',
         title: 'Sultan',
+    maturityRating: '13_PLUS',
         description:
           'Sultan - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1173,6 +1269,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-12',
         title: 'Padmaavat',
+    maturityRating: '13_PLUS',
         description:
           'Padmaavat - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1187,6 +1284,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-13',
         title: 'Chhichhore',
+    maturityRating: '13_PLUS',
         description:
           'Chhichhore - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1201,6 +1299,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-14',
         title: 'Uri: The Surgical Strike',
+    maturityRating: '16_PLUS',
         description:
           'Uri: The Surgical Strike - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1215,6 +1314,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-15',
         title: 'Andhadhun',
+    maturityRating: '16_PLUS',
         description:
           'Andhadhun - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1229,6 +1329,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-16',
         title: 'Tumbbad',
+    maturityRating: '18_PLUS',
         description:
           'Tumbbad - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1243,6 +1344,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-17',
         title: 'Om Shanti Om',
+    maturityRating: 'ALL',
         description:
           'Om Shanti Om - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1257,6 +1359,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-18',
         title: 'Zindagi Na Milegi Dobara',
+    maturityRating: 'ALL',
         description:
           'Zindagi Na Milegi Dobara - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1271,6 +1374,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-19',
         title: 'Dilwale Dulhania Le Jayenge',
+    maturityRating: 'ALL',
         description:
           'Dilwale Dulhania Le Jayenge - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1285,6 +1389,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'hindi-cinema-20',
         title: 'Sholay',
+    maturityRating: '13_PLUS',
         description:
           'Sholay - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1306,6 +1411,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'global-blockbusters-12',
         title: 'Pacific Rim',
+    maturityRating: '13_PLUS',
         description:
           'Pacific Rim - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1320,6 +1426,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'global-blockbusters-13',
         title: 'Ready Player One',
+    maturityRating: '13_PLUS',
         description:
           'Ready Player One - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1334,6 +1441,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'global-blockbusters-14',
         title: 'Tron: Legacy',
+    maturityRating: '7_PLUS',
         description:
           'Tron: Legacy - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1348,6 +1456,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'global-blockbusters-15',
         title: 'Oblivion 2013',
+    maturityRating: '13_PLUS',
         description:
           'Oblivion 2013 - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1362,6 +1471,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'global-blockbusters-16',
         title: 'Prometheus',
+    maturityRating: '18_PLUS',
         description:
           'Prometheus - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1376,6 +1486,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'global-blockbusters-17',
         title: 'Avatar',
+    maturityRating: '13_PLUS',
         description:
           'Avatar - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1390,6 +1501,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'global-blockbusters-18',
         title: 'Guardians of the Galaxy',
+    maturityRating: '13_PLUS',
         description:
           'Guardians of the Galaxy - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1404,6 +1516,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'global-blockbusters-19',
         title: 'Thor: Ragnarok',
+    maturityRating: '13_PLUS',
         description:
           'Thor: Ragnarok - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1418,6 +1531,7 @@ export const homeContentRows: HomeContentRow[] = [
       {
         id: 'global-blockbusters-20',
         title: 'Iron Man 2008',
+    maturityRating: '13_PLUS',
         description:
           'Iron Man 2008 - An extraordinary cinematic masterpiece featuring stellar performances, high-octane drama, and magnificent direction.',
         image: {
@@ -1428,6 +1542,88 @@ export const homeContentRows: HomeContentRow[] = [
         genre: 'Action • Thriller',
         director: 'Renowned Director',
         cast: 'Star Cast & Ensemble',
+      },
+    ],
+  },
+  {
+    id: 'kids-family',
+    title: 'Kids & Family Favorites (పిల్లల సినిమాలు)',
+    layout: 'portrait',
+    items: [
+      {
+        id: 'the-lion-king',
+        title: 'The Lion King',
+        maturityRating: 'KIDS',
+        description:
+          'A young lion prince flees his kingdom only to learn the true meaning of responsibility and bravery.',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/sKCr78MXSLixwmZ8DyJLrpMsd15.jpg',
+        },
+        badge: 'KIDS FAVORITE',
+        rating: '⭐ 7.7 / 10',
+        genre: 'Animation • Adventure • Family',
+        director: 'Jon Favreau',
+        cast: 'Donald Glover, Beyoncé, Seth Rogen',
+      },
+      {
+        id: 'frozen-2',
+        title: 'Frozen II',
+        maturityRating: 'KIDS',
+        description:
+          'Elsa, Anna, Kristoff, Olaf and Sven journey into the enchanted forest to discover the origin of Elsas magical powers.',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/qdfGSpdaQJJ4be30aEZWNxXKiAc.jpg',
+        },
+        badge: 'DISNEY HIT',
+        rating: '⭐ 7.5 / 10',
+        genre: 'Animation • Adventure • Musical',
+        director: 'Chris Buck, Jennifer Lee',
+        cast: 'Kristen Bell, Idina Menzel, Josh Gad',
+      },
+      {
+        id: 'moana',
+        title: 'Moana',
+        maturityRating: 'KIDS',
+        description:
+          'An adventurous teenager sails out on a daring mission to save her people, meeting the mighty demigod Maui along the way.',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/4JeeYYAzvB4cb0Mrlp8lI5V7qP4.jpg',
+        },
+        badge: 'FAMILY FAVORITE',
+        rating: '⭐ 7.8 / 10',
+        genre: 'Animation • Adventure • Comedy',
+        director: 'Ron Clements, John Musker',
+        cast: 'Auliʻi Cravalho, Dwayne Johnson, Rachel House',
+      },
+      {
+        id: 'finding-nemo',
+        title: 'Finding Nemo',
+        maturityRating: 'KIDS',
+        description:
+          'After his son is captured in the Great Barrier Reef and taken to Sydney, a timid clownfish embarks on a journey to bring him home.',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/eHuGQ10FUzK1mdOY69Tu8osAQ7N.jpg',
+        },
+        badge: 'PIXAR CLASSIC',
+        rating: '⭐ 8.2 / 10',
+        genre: 'Animation • Adventure • Comedy',
+        director: 'Andrew Stanton',
+        cast: 'Albert Brooks, Ellen DeGeneres, Alexander Gould',
+      },
+      {
+        id: 'spider-man-spider-verse',
+        title: 'Spider-Man: Across the Spider-Verse',
+        maturityRating: '7_PLUS',
+        description:
+          'Miles Morales catapults across the Multiverse, where he encounters a team of Spider-People charged with protecting its very existence.',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg',
+        },
+        badge: 'ANIMATION HIT',
+        rating: '⭐ 8.7 / 10',
+        genre: 'Animation • Action • Sci-Fi',
+        director: 'Joaquim Dos Santos, Kemp Powers',
+        cast: 'Shameik Moore, Hailee Steinfeld, Oscar Isaac',
       },
     ],
   },

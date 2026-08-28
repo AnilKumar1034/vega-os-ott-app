@@ -14,6 +14,11 @@ import {
   ContinueWatchRecord,
   fetchContinueWatchItems,
 } from '../services/watchProgressService';
+import {
+  canProfileAccessContent,
+  filterContentRowsForProfile,
+} from '../utils/contentAccessPolicy';
+import {findContentById} from '../utils/deeplink';
 import {filterContentRows} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
 
@@ -59,16 +64,22 @@ export const MoviesScreen = () => {
   }, [user, activeProfile?.id]);
 
   const continueWatchingItems = useMemo<HomeContentItem[]>(() => {
-    return continueWatchRecords.map((record) => ({
-      id: record.contentId,
-      title: record.title,
-      image: record.imageUri
-        ? {uri: record.imageUri}
-        : require('../assets/background.png'),
-      progress: record.progress,
-      videoUrl: record.videoUrl,
-    }));
-  }, [continueWatchRecords]);
+    return continueWatchRecords
+      .map((record) => {
+        const fullItem = findContentById(record.contentId);
+        return {
+          id: record.contentId,
+          maturityRating: fullItem?.maturityRating,
+          title: record.title,
+          image: record.imageUri
+            ? {uri: record.imageUri}
+            : require('../assets/background.png'),
+          progress: record.progress,
+          videoUrl: record.videoUrl,
+        };
+      })
+      .filter((item) => canProfileAccessContent(activeProfile, item));
+  }, [activeProfile, continueWatchRecords]);
 
   const continueWatchingRow: HomeContentRow | null =
     continueWatchingItems.length
@@ -80,17 +91,22 @@ export const MoviesScreen = () => {
         }
       : null;
 
+  const allowedCatalogRows = useMemo(() => {
+    const rawCatalog = homeContentRows.filter(
+      (row) =>
+        row.id !== 'continue-watching' &&
+        row.id !== 'favourites' &&
+        row.id !== 'my-list',
+    );
+    return filterContentRowsForProfile(activeProfile, rawCatalog);
+  }, [activeProfile]);
+
   const rowsToDisplay = useMemo(
     () => [
       ...(continueWatchingRow ? [continueWatchingRow] : []),
-      ...homeContentRows.filter(
-        (row) =>
-          row.id !== 'continue-watching' &&
-          row.id !== 'favourites' &&
-          row.id !== 'my-list',
-      ),
+      ...allowedCatalogRows,
     ],
-    [continueWatchingRow],
+    [allowedCatalogRows, continueWatchingRow],
   );
 
   const filteredRows = filterContentRows(rowsToDisplay, searchQuery);

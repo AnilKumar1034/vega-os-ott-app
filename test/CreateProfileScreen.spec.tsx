@@ -81,6 +81,7 @@ describe('CreateProfileScreen', () => {
       name: 'Family Profile',
       avatarId: 'avatar-2',
       isKids: true,
+      kidsMaturityLimit: 'KIDS',
     });
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });

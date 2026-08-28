@@ -13,6 +13,7 @@ import {Routes} from '../../constants/routes';
 import {strings} from '../../constants/strings';
 import {colors} from '../../theme/colors';
 import {ProfileCard} from '../components/ProfileCard';
+import {PinEntryDialog} from '../../components/molecules/PinEntryDialog';
 import {useProfile} from '../hooks/useProfile';
 import {MAX_PROFILES_PER_ACCOUNT, UserProfile} from '../types/Profile';
 import {styles} from './ProfileSelectionScreen.styles';
@@ -24,14 +25,26 @@ export const ProfileSelectionScreen = () => {
     activeProfile,
     isLoadingProfiles,
     error,
+    isParentAuthorized,
+    parentalSettings,
+    verifyParentPin,
     switchProfile,
     refreshProfiles,
   } = useProfile();
 
   const [isRetrying, setIsRetrying] = useState(false);
   const [retryFocused, setRetryFocused] = useState(false);
+  const [pendingProfileSwitch, setPendingProfileSwitch] =
+    useState<UserProfile | null>(null);
+  const [showAddPinDialog, setShowAddPinDialog] = useState(false);
 
-  const handleSelectProfile = async (profile: UserProfile) => {
+  const isPinLockActive = Boolean(
+    activeProfile?.isKids &&
+      parentalSettings?.pinEnabled &&
+      !isParentAuthorized,
+  );
+
+  const executeSwitch = async (profile: UserProfile) => {
     try {
       await switchProfile(profile.id);
       navigation.replace(Routes.Home);
@@ -40,7 +53,34 @@ export const ProfileSelectionScreen = () => {
     }
   };
 
+  const handleSelectProfile = async (profile: UserProfile) => {
+    // If switching from Kids profile to an Adult profile and PIN is enabled
+    if (isPinLockActive && !profile.isKids) {
+      setPendingProfileSwitch(profile);
+      return;
+    }
+
+    await executeSwitch(profile);
+  };
+
   const handleAddProfile = () => {
+    if (isPinLockActive) {
+      setShowAddPinDialog(true);
+      return;
+    }
+    navigation.navigate(Routes.CreateProfile);
+  };
+
+  const handlePinSuccessForSwitch = async () => {
+    if (pendingProfileSwitch) {
+      const target = pendingProfileSwitch;
+      setPendingProfileSwitch(null);
+      await executeSwitch(target);
+    }
+  };
+
+  const handlePinSuccessForAdd = () => {
+    setShowAddPinDialog(false);
     navigation.navigate(Routes.CreateProfile);
   };
 
@@ -129,6 +169,30 @@ export const ProfileSelectionScreen = () => {
           <Text style={styles.footerText}>{strings.common.remoteHint}</Text>
         </View>
       </View>
+
+      {/* PIN verification when switching from Kids to Adult profile */}
+      <PinEntryDialog
+        visible={Boolean(pendingProfileSwitch)}
+        title={strings.parentalControls.enterPinTitle}
+        subtitle={strings.parentalControls.switchFromKidsLockMessage}
+        isConfirmMode={false}
+        validatePin={verifyParentPin}
+        onSuccess={handlePinSuccessForSwitch}
+        onCancel={() => setPendingProfileSwitch(null)}
+        testID="switch-adult-pin-dialog"
+      />
+
+      {/* PIN verification when creating profile from Kids mode */}
+      <PinEntryDialog
+        visible={showAddPinDialog}
+        title={strings.parentalControls.enterPinTitle}
+        subtitle={strings.parentalControls.profileManagementLockMessage}
+        isConfirmMode={false}
+        validatePin={verifyParentPin}
+        onSuccess={handlePinSuccessForAdd}
+        onCancel={() => setShowAddPinDialog(false)}
+        testID="add-profile-pin-dialog"
+      />
     </ImageBackground>
   );
 };

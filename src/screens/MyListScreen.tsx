@@ -13,6 +13,7 @@ import {useAuth} from '../context/authContext';
 import {useProfile} from '../profiles/hooks/useProfile';
 import {fetchWatchlist} from '../services/watchlistService';
 import {WatchlistItem} from '../types/watchlist';
+import {canProfileAccessContent} from '../utils/contentAccessPolicy';
 import {findContentById} from '../utils/deeplink';
 import {filterContentItem} from '../utils/searchUtils';
 import {styles} from './MyListScreen.styles';
@@ -90,22 +91,25 @@ export const MyListScreen = () => {
   }, [user, activeProfile?.id]);
 
   const resolvedContentItems = useMemo<HomeContentItem[]>(() => {
-    return watchlistItems.map((item) => {
-      const fullCatalogItem = findContentById(item.contentId);
-      if (fullCatalogItem) {
-        return fullCatalogItem;
-      }
+    return watchlistItems
+      .map((item) => {
+        const fullCatalogItem = findContentById(item.contentId);
+        if (fullCatalogItem) {
+          return fullCatalogItem;
+        }
 
-      return {
-        id: item.contentId,
-        title: item.title,
-        genre: item.genre,
-        image: item.image
-          ? {uri: item.image}
-          : require('../assets/background.png'),
-      };
-    });
-  }, [watchlistItems]);
+        return {
+          id: item.contentId,
+          maturityRating: undefined,
+          title: item.title,
+          genre: item.genre,
+          image: item.image
+            ? {uri: item.image}
+            : require('../assets/background.png'),
+        };
+      })
+      .filter((item) => canProfileAccessContent(activeProfile, item));
+  }, [activeProfile, watchlistItems]);
 
   const filteredItems = useMemo(() => {
     return resolvedContentItems.filter((item) =>

@@ -23,6 +23,10 @@ import {
   PROFILE_NAME_MAX_LENGTH,
   validateProfileName,
 } from '../types/Profile';
+import {
+  ContentMaturityRating,
+  DEFAULT_KIDS_MATURITY_LIMIT,
+} from '../../types/maturity';
 import {styles} from './CreateProfileScreen.styles';
 
 export const CreateProfileScreen = () => {
@@ -32,6 +36,8 @@ export const CreateProfileScreen = () => {
   const [name, setName] = useState('');
   const [avatarId, setAvatarId] = useState<string>(DEFAULT_AVATAR_ID);
   const [isKids, setIsKids] = useState(false);
+  const [kidsMaturityLimit, setKidsMaturityLimit] =
+    useState<ContentMaturityRating>(DEFAULT_KIDS_MATURITY_LIMIT);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>('name');
@@ -63,6 +69,7 @@ export const CreateProfileScreen = () => {
         name: name.trim(),
         avatarId,
         isKids,
+        kidsMaturityLimit: isKids ? kidsMaturityLimit : undefined,
       });
 
       if (navigation.canGoBack()) {
@@ -208,6 +215,51 @@ export const CreateProfileScreen = () => {
                   />
                 </View>
               </TouchableOpacity>
+
+              {isKids && (
+                <View style={styles.maturityGroup} testID="create-kids-maturity-selector">
+                  <Text style={styles.label}>
+                    {strings.parentalControls.maturityLimitLabel}
+                  </Text>
+                  <TVFocusGuideView style={styles.maturityGrid} autoFocus>
+                    {(
+                      [
+                        {id: 'KIDS', label: 'Kids Only', age: 'Preschool'},
+                        {id: '7_PLUS', label: 'Older Kids', age: '7+'},
+                        {id: '13_PLUS', label: 'Teens', age: '13+'},
+                        {id: '16_PLUS', label: 'Young Adult', age: '16+'},
+                        {id: 'ALL', label: 'All Ages', age: 'All'},
+                      ] as const
+                    ).map((option) => {
+                      const isSelected = kidsMaturityLimit === option.id;
+                      const isFocused = focusedField === `create-maturity-${option.id}`;
+                      return (
+                        <TouchableOpacity
+                          key={option.id}
+                          style={[
+                            styles.maturityOption,
+                            isSelected && styles.maturityOptionSelected,
+                            isFocused && styles.maturityOptionFocused,
+                          ]}
+                          onFocus={() => setFocusedField(`create-maturity-${option.id}`)}
+                          onBlur={() => setFocusedField(null)}
+                          onPress={() => setKidsMaturityLimit(option.id)}
+                          activeOpacity={1}
+                          accessibilityRole="radio"
+                          accessibilityState={{selected: isSelected}}
+                          testID={`create-maturity-option-${option.id}`}>
+                          <Text style={styles.maturityOptionText}>
+                            {option.label}
+                          </Text>
+                          <Text style={styles.maturityOptionAge}>
+                            {option.age}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </TVFocusGuideView>
+                </View>
+              )}
 
               {/* Actions */}
               <TVFocusGuideView style={styles.actionsRow} autoFocus>

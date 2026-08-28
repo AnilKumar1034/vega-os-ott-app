@@ -343,6 +343,49 @@ export const strings = {
     pressOk: 'Press OK',
   },
 
+  // Parental Controls & PIN
+  parentalControls: {
+    title: 'Parental Controls',
+    subtitle: 'Manage your Parent PIN and content restrictions for Kids profiles.',
+    settingsSection: 'Parental Controls',
+    settingsHint: 'Set a PIN to lock profile switching and manage Kids content limits',
+    setPin: 'Set Parent PIN',
+    changePin: 'Change Parent PIN',
+    removePin: 'Remove Parent PIN',
+    pinStatusEnabled: 'Enabled (4-digit lock active)',
+    pinStatusDisabled: 'Not configured',
+    enterPinTitle: 'Enter Parent PIN',
+    enterPinSubtitle: 'Please enter your 4-digit Parent PIN to continue.',
+    setupPinTitle: 'Set Up Parent PIN',
+    setupPinSubtitle: 'Choose a 4-digit numeric PIN for parental controls.',
+    confirmPinTitle: 'Confirm Parent PIN',
+    confirmPinSubtitle: 'Re-enter your 4-digit PIN to confirm.',
+    changePinTitle: 'Change Parent PIN',
+    changePinSubtitle: 'Enter your new 4-digit PIN.',
+    enterCurrentPinSubtitle: 'Enter your current 4-digit PIN first.',
+    pinMismatch: 'PINs do not match. Please try again.',
+    incorrectPin: 'Incorrect PIN. Access denied.',
+    pinMustBe4Digits: 'PIN must be exactly 4 numeric digits.',
+    pinSetSuccess: 'Parent PIN updated successfully.',
+    pinRemovedSuccess: 'Parent PIN removed.',
+    switchFromKidsLockMessage:
+      'Parent PIN is required to switch from a Kids profile to an adult profile.',
+    profileManagementLockMessage:
+      'Parent PIN is required to manage profiles and change maturity settings.',
+    contentRestrictedTitle: 'Content Restricted',
+    contentRestrictedMessage:
+      'This content is not available for the current profile.',
+    contentRestrictedSubtitle:
+      'Content maturity rating exceeds this profile limit or is unclassified.',
+    maturityLimitLabel: 'Allowed Content Limit',
+    maturityLimitHint: 'Highest maturity rating allowed for this Kids profile',
+    backToHome: 'Back to Home',
+    switchProfileButton: 'Switch Profile',
+    clearPinDigit: 'Clear',
+    submitPin: 'Submit',
+    cancel: 'Cancel',
+  },
+
   accessibility: {
     retryVideoPlayback: 'Retry video playback',
     backToHome: 'Back to Home',
