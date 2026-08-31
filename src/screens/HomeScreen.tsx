@@ -15,6 +15,7 @@ import {
 import {AppDetails} from '../constants/appDetails';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
+import {useProfile} from '../profiles/hooks/useProfile';
 import {
   fetchFavouriteItems,
   FavouriteRecord,
@@ -23,11 +24,20 @@ import {
   ContinueWatchRecord,
   fetchContinueWatchItems,
 } from '../services/watchProgressService';
+import {fetchWatchlist} from '../services/watchlistService';
+import {WatchlistItem} from '../types/watchlist';
+import {
+  canProfileAccessContent,
+  filterContentRowsForProfile,
+  filterHeroSlidesForProfile,
+} from '../utils/contentAccessPolicy';
+import {findContentById} from '../utils/deeplink';
 import {filterContentRows, filterHeroSlides} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
 
 export const HomeScreen = () => {
   const {user} = useAuth();
+  const {activeProfile} = useProfile();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
@@ -35,85 +45,149 @@ export const HomeScreen = () => {
   const [continueWatchRecords, setContinueWatchRecords] = useState<
     ContinueWatchRecord[]
   >([]);
-  const [favouriteRecords, setFavouriteRecords] = useState<FavouriteRecord[]>(
-    [],
-  );
+  const [watchlistRecords, setWatchlistRecords] = useState<WatchlistItem[]>([]);
 
   const loadLibraryState = useCallback(async () => {
     if (!user) {
       setContinueWatchRecords([]);
-      setFavouriteRecords([]);
+      setWatchlistRecords([]);
       return;
     }
 
-    try {
-      const continueWatch = await fetchContinueWatchItems();
-      setContinueWatchRecords(continueWatch);
-    } catch (error) {
-      console.log('Continue watch load error:', error);
+    if (activeProfile?.id) {
+      try {
+        const [continueWatch, watchlist] = await Promise.all([
+          fetchContinueWatchItems(activeProfile.id),
+          fetchWatchlist(activeProfile.id),
+        ]);
+        setContinueWatchRecords(continueWatch);
+        setWatchlistRecords(watchlist);
+      } catch (error) {
+        console.log('Library load error:', error);
+      }
+    } else {
       setContinueWatchRecords([]);
+      setWatchlistRecords([]);
     }
-
-    try {
-      const favourites = await fetchFavouriteItems();
-      setFavouriteRecords(favourites);
-    } catch (error) {
-      console.log('Favourite load error:', error);
-      setFavouriteRecords([]);
-    }
-  }, [user]);
+  }, [user, activeProfile?.id]);
 
   useEffect(() => {
-    void loadLibraryState();
-  }, [loadLibraryState]);
+    let isCurrent = true;
+
+    // Immediately clear current records when active profile changes
+    // to prevent showing previous profile's items
+    setContinueWatchRecords([]);
+    setWatchlistRecords([]);
+
+    if (!user || !activeProfile?.id) {
+      return;
+    }
+
+    const currentProfileId = activeProfile.id;
+    (async () => {
+      try {
+        const [continueWatch, watchlist] = await Promise.all([
+          fetchContinueWatchItems(currentProfileId),
+          fetchWatchlist(currentProfileId),
+        ]);
+        if (isCurrent) {
+          setContinueWatchRecords(continueWatch);
+          setWatchlistRecords(watchlist);
+        }
+      } catch (error) {
+        console.log('Profile library load error:', error);
+        if (isCurrent) {
+          setContinueWatchRecords([]);
+          setWatchlistRecords([]);
+        }
+      }
+    })();
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [user, activeProfile?.id]);
 
   const continueWatchingItems = useMemo<HomeContentItem[]>(() => {
-    return continueWatchRecords.map((record) => ({
-      id: record.contentId,
-      title: record.title,
-      image: record.imageUri ? {uri: record.imageUri} : require('../assets/background.png'),
-      progress: record.progress,
-      videoUrl: record.videoUrl,
-    }));
-  }, [continueWatchRecords]);
+    return continueWatchRecords
+      .map((record) => {
+        const fullItem = findContentById(record.contentId);
+        return {
+          id: record.contentId,
+          maturityRating: fullItem?.maturityRating,
+          title: record.title,
+          image: record.imageUri
+            ? {uri: record.imageUri}
+            : require('../assets/background.png'),
+          progress: record.progress,
+          videoUrl: record.videoUrl,
+        };
+      })
+      .filter((item) => canProfileAccessContent(activeProfile, item));
+  }, [activeProfile, continueWatchRecords]);
 
-  const continueWatchingRow: HomeContentRow | null = continueWatchingItems.length
+  const continueWatchingRow: HomeContentRow | null =
+    continueWatchingItems.length
+      ? {
+          id: 'continue-watching',
+          title: strings.hero.continueWatching,
+          layout: 'horizontal',
+          items: continueWatchingItems,
+        }
+      : null;
+
+  const watchlistItems = useMemo<HomeContentItem[]>(() => {
+    return watchlistRecords
+      .map((record) => {
+        const fullCatalogItem = findContentById(record.contentId);
+        if (fullCatalogItem) {
+          return fullCatalogItem;
+        }
+
+        return {
+          id: record.contentId,
+          maturityRating: undefined,
+          title: record.title,
+          genre: record.genre,
+          image: record.image
+            ? {uri: record.image}
+            : require('../assets/background.png'),
+        };
+      })
+      .filter((item) => canProfileAccessContent(activeProfile, item));
+  }, [activeProfile, watchlistRecords]);
+
+  const watchlistRow: HomeContentRow | null = watchlistItems.length
     ? {
-        id: 'continue-watching',
-        title: strings.hero.continueWatching,
-        layout: 'horizontal',
-        items: continueWatchingItems,
+        id: 'my-list',
+        title: strings.myList.title,
+        layout: 'portrait',
+        items: watchlistItems,
       }
     : null;
 
-  const favouritesItems = useMemo<HomeContentItem[]>(() => {
-    return favouriteRecords.map((record) => ({
-      id: record.contentId,
-      title: record.title,
-      image: record.imageUri ? {uri: record.imageUri} : require('../assets/background.png'),
-      videoUrl: record.videoUrl,
-    }));
-  }, [favouriteRecords]);
-
-  const favouritesRow: HomeContentRow | null = favouritesItems.length
-    ? {
-        id: 'favourites',
-        title: AppDetails.favouritesRow,
-        layout: 'horizontal',
-        items: favouritesItems,
-      }
-    : null;
+  const allowedCatalogRows = useMemo(() => {
+    const rawCatalog = homeContentRows.filter(
+      (row) =>
+        row.id !== 'continue-watching' &&
+        row.id !== 'favourites' &&
+        row.id !== 'my-list',
+    );
+    return filterContentRowsForProfile(activeProfile, rawCatalog);
+  }, [activeProfile]);
 
   const rowsToDisplay = [
     ...(continueWatchingRow ? [continueWatchingRow] : []),
-    ...(favouritesRow ? [favouritesRow] : []),
-    ...homeContentRows.filter(
-      (row) => row.id !== 'continue-watching' && row.id !== 'favourites',
-    ),
+    ...(watchlistRow ? [watchlistRow] : []),
+    ...allowedCatalogRows,
   ];
 
+  const allowedHeroSlides = useMemo(() => {
+    return filterHeroSlidesForProfile(activeProfile, homeHeroSlides);
+  }, [activeProfile]);
+
   const filteredRows = filterContentRows(rowsToDisplay, searchQuery);
-  const filteredHeroSlides = filterHeroSlides(homeHeroSlides, searchQuery);
+  const filteredHeroSlides = filterHeroSlides(allowedHeroSlides, searchQuery);
 
   const handleMenuFocus = () => {
     setIsMenuExpanded(true);

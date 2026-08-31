@@ -27,6 +27,11 @@ export const strings = {
     moviesHeaderTitle: 'Blockbuster Movies',
     moviesHeaderSubtitle:
       'Browse handpicked hit films, trending titles, and critically acclaimed masterpieces.',
+    myListTitle: 'My List',
+    myListDesc: 'Browse and watch movies saved to your personal watchlist.',
+    myListHeaderTitle: 'My List',
+    myListHeaderSubtitle:
+      'Browse handpicked movies saved to your active profile watchlist.',
   },
 
   liveTV: {
@@ -66,6 +71,7 @@ export const strings = {
     home: 'Home',
     movies: 'Movies',
     liveTV: 'Live TV',
+    myList: 'My List',
     series: 'Series',
     categories: 'Categories',
     search: 'Search',
@@ -87,6 +93,9 @@ export const strings = {
     play: 'Play',
     favourite: '♡ Add to Favourites',
     inFavourites: '♥ Remove from Favourites',
+    addToMyList: '+ Add to My List',
+    inMyList: '✓ In My List',
+    removeFromMyList: '✕ Remove from My List',
     pause: 'Pause',
     addWatchlist: '+ Add to Watchlist',
     watchlist: 'x Remove from Watchlist',
@@ -109,6 +118,27 @@ export const strings = {
   toasts: {
     signInToAddFavourites: 'Please sign in to add favourites.',
     signInToRemoveFavourites: 'Please sign in to remove favourites.',
+    signInToAddToWatchlist: 'Please sign in to add to My List.',
+    signInToRemoveFromWatchlist: 'Please sign in to remove from My List.',
+    selectProfileToAddToWatchlist: 'Please select a profile to add to My List.',
+    addedToWatchlist: 'Added to My List',
+    removedFromWatchlist: 'Removed from My List',
+  },
+
+  // My List
+  myList: {
+    title: 'My List',
+    screenTitle: 'LogiXstream • My List',
+    emptyTitle: 'Your Watchlist is empty',
+    emptySubtitle:
+      'Explore blockbuster movies and trending titles to add them to your personal watchlist.',
+    exploreButton: 'Explore Movies',
+    loading: 'Loading your watchlist...',
+    errorTitle: 'Unable to load watchlist',
+    errorSubtitle: 'Please check your connection and try again.',
+    retry: 'Retry',
+    itemCount: (count: number) =>
+      count === 1 ? '1 Saved Title' : `${count} Saved Titles`,
   },
 
   // Auth & Settings
@@ -157,6 +187,68 @@ export const strings = {
     avatarBadge: 'Avatar',
     notSpecified: 'Not specified',
     notAvailable: 'N/A',
+  },
+
+  // Multiple Profiles
+  profiles: {
+    whosWatching: "Who's Watching?",
+    selectProfileSubtitle: 'Choose your profile to start watching',
+    addProfile: 'Add Profile',
+    addProfileSymbol: '+',
+    addNewProfileAccessibility: 'Add New Profile',
+    createProfileTitle: 'Add Profile',
+    createProfileSubtitle: 'Add a viewing profile for your household',
+    createProfileSubmit: 'Create Profile',
+    editProfileTitle: 'Edit Profile',
+    editProfileSubtitle: 'Update your profile name, avatar, and Kids mode',
+    profileNameLabel: 'Profile Name',
+    profileNamePlaceholder: 'e.g. Vihaan',
+    avatarLabel: 'Choose Avatar',
+    avatarOptionAccessibility: (name: string) => `Avatar option ${name}`,
+    profileCardAccessibility: (
+      name: string,
+      isKids: boolean,
+      isActive: boolean,
+    ) =>
+      `Profile ${name}${isKids ? ', Kids Profile' : ''}${
+        isActive ? ', Currently Active' : ''
+      }`,
+    kidsProfileLabel: 'Kids Profile',
+    kidsProfileHint:
+      'Only show family-friendly movies and shows suitable for all ages',
+    kidsProfileShortHint: 'Family-friendly content only',
+    switchProfile: 'Switch Profile',
+    switchProfileHint: 'Switch to a different viewing profile',
+    deleteProfile: 'Delete Profile',
+    deleteProfileHint: 'Remove this profile from your account',
+    deleteProfileConfirmTitle: 'Delete Profile?',
+    deleteProfileConfirmMessage: (name: string) =>
+      `Are you sure you want to delete profile "${name}"? This action cannot be undone.`,
+    deleteProfileGenericConfirmMessage:
+      'Are you sure you want to delete this profile? This action cannot be undone.',
+    deleteProfileConfirmButton: 'Delete Profile',
+    deleteProfileCancelButton: 'Cancel',
+    deleteProfileFailed: 'Failed to delete profile.',
+    confirmDeleteAccessibility: 'Confirm delete profile',
+    cancelDeleteAccessibility: 'Cancel delete',
+    cannotDeleteLastProfile:
+      'You cannot delete this profile because every account must have at least one viewing profile.',
+    maxProfilesReached: 'Maximum of 5 profiles reached for this account.',
+    nameRequired: 'Profile name is required.',
+    nameTooLong: 'Profile name must be at most 20 characters.',
+    nameInvalidChars: 'Profile name contains invalid characters.',
+    enterProfileName: 'Please enter a profile name (1–20 characters).',
+    profileCreatedSuccess: 'Profile created successfully.',
+    profileUpdatedSuccess: 'Profile updated successfully.',
+    profileDeletedSuccess: 'Profile deleted successfully.',
+    kidsBadge: 'KIDS',
+    kidsProfileType: 'Kids Profile',
+    activeBadge: 'ACTIVE',
+    manageProfiles: 'Manage Profiles',
+    loadingProfiles: 'Loading profiles...',
+    errorLoadingProfiles: 'Failed to load profiles. Please try again.',
+    noProfilesTitle: 'No Profiles Found',
+    noProfilesSubtitle: 'Create your first viewing profile to get started.',
   },
 
   common: {
@@ -258,8 +350,80 @@ export const strings = {
     pressOk: 'Press OK',
   },
 
+  // Parental Controls & PIN
+  parentalControls: {
+    title: 'Parental Controls',
+    subtitle:
+      'Manage your Parent PIN and content restrictions for Kids profiles.',
+    settingsSection: 'Parental Controls',
+    settingsHint:
+      'Set a PIN to lock profile switching and manage Kids content limits',
+    setPin: 'Set Parent PIN',
+    changePin: 'Change Parent PIN',
+    removePin: 'Remove Parent PIN',
+    pinStatusEnabled: 'Enabled (4-digit lock active)',
+    pinStatusDisabled: 'Not configured',
+    enterPinTitle: 'Enter Parent PIN',
+    enterPinSubtitle: 'Please enter your 4-digit Parent PIN to continue.',
+    setupPinTitle: 'Set Up Parent PIN',
+    setupPinSubtitle: 'Choose a 4-digit numeric PIN for parental controls.',
+    confirmPinTitle: 'Confirm Parent PIN',
+    confirmPinSubtitle: 'Re-enter your 4-digit PIN to confirm.',
+    changePinTitle: 'Change Parent PIN',
+    changePinSubtitle: 'Enter your new 4-digit PIN.',
+    enterCurrentPinSubtitle: 'Enter your current 4-digit PIN first.',
+    pinMismatch: 'PINs do not match. Please try again.',
+    incorrectPin: 'Incorrect PIN. Access denied.',
+    pinMustBe4Digits: 'PIN must be exactly 4 numeric digits.',
+    pinSetSuccess: 'Parent PIN updated successfully.',
+    pinRemovedSuccess: 'Parent PIN removed.',
+    switchFromKidsLockMessage:
+      'Parent PIN is required to switch from a Kids profile to an adult profile.',
+    profileManagementLockMessage:
+      'Parent PIN is required to manage profiles and change maturity settings.',
+    contentRestrictedTitle: 'Content Restricted',
+    contentRestrictedMessage:
+      'This content is not available for the current profile.',
+    contentRestrictedSubtitle:
+      'Content maturity rating exceeds this profile limit or is unclassified.',
+    maturityLimitLabel: 'Allowed Content Limit',
+    maturityLimitHint: 'Highest maturity rating allowed for this Kids profile',
+    backToHome: 'Back to Home',
+    switchProfileButton: 'Switch Profile',
+    clearPinDigit: 'Clear',
+    submitPin: 'Submit',
+    cancel: 'Cancel',
+  },
+
+  subtitles: {
+    buttonLabel: 'Subtitles',
+    ccBadge: 'CC',
+    subtitlesTitle: 'Subtitles & Audio',
+    selectLanguage: 'Select Subtitles',
+    selectLanguageDesc:
+      'Choose your preferred subtitle language or turn subtitles off.',
+    off: 'Off',
+    english: 'English',
+    englishCC: 'English [CC]',
+    spanish: 'Spanish',
+    telugu: 'Telugu',
+    hindi: 'Hindi',
+    french: 'French',
+    german: 'German',
+    close: 'Close',
+    activeTrack: 'Active',
+    subtitlesDisabled: 'Subtitles: Off',
+    subtitleActive: (label: string) => `Subtitles: ${label}`,
+    tracksAvailable: (count: number) => `${count} Subtitle Languages Available`,
+  },
+
   accessibility: {
     retryVideoPlayback: 'Retry video playback',
     backToHome: 'Back to Home',
+    subtitlesButton: (label: string) =>
+      `Subtitles and closed captions. Currently ${label}`,
+    selectSubtitleTrack: (label: string, isSelected: boolean) =>
+      `${label} subtitle track${isSelected ? ', currently selected' : ''}`,
+    closeSubtitlesModal: 'Close subtitles selection modal',
   },
 } as const;

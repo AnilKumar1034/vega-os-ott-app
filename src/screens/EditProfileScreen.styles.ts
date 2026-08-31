@@ -284,6 +284,23 @@ export const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     marginTop: 'auto',
   },
+  deleteButton: {
+    minWidth: sizes.settingsCancelButtonMinWidth,
+    minHeight: sizes.profileCardMinHeight,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xlarge,
+    marginRight: 'auto',
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.deleteButtonLightBackground,
+    borderWidth: spacing.borderHeavy,
+    borderColor: colors.deleteButtonLightBorder,
+  },
+  deleteButtonText: {
+    color: colors.errorText,
+    fontSize: fontSizes.body,
+    fontWeight: fontWeights.bold,
+  },
   cancelButton: {
     minWidth: sizes.settingsCancelButtonMinWidth,
     minHeight: sizes.profileCardMinHeight,
@@ -328,5 +345,41 @@ export const styles = StyleSheet.create({
   },
   controlDisabled: {
     opacity: 0.55,
+  },
+  maturityGroup: {
+    marginTop: spacing.md,
+    marginBottom: spacing.lg,
+  },
+  maturityGrid: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  maturityOption: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.inputBackground,
+    borderRadius: borderRadius.lg,
+    borderWidth: spacing.borderHeavy,
+    borderColor: colors.transparent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  maturityOptionSelected: {
+    backgroundColor: colors.inputFocusedBackground,
+    borderColor: colors.heroAccent,
+  },
+  maturityOptionText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.small,
+    fontWeight: fontWeights.bold,
+    textAlign: 'center',
+  },
+  maturityOptionAge: {
+    color: colors.heroAccent,
+    fontSize: fontSizes.caption,
+    fontWeight: fontWeights.semibold,
+    marginTop: spacing.xxs,
   },
 });

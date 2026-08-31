@@ -136,6 +136,10 @@ export const styles = StyleSheet.create({
     shadowOpacity: 0.7,
     shadowRadius: spacing.xl,
   },
+  switchButton: {
+    marginTop: spacing.md,
+    backgroundColor: colors.inputBackground,
+  },
   editButtonText: {
     color: colors.textPrimary,
     fontSize: fontSizes.button,

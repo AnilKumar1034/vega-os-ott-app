@@ -30,11 +30,11 @@ class W3CMediaPolyfill {
     global.window.MediaSource = global.MediaSource = MediaSource;
     global.window.TextTrackCue = global.TextTrackCue = TextTrackCue;
     global.window.VTTCue = global.VTTCue = VTTCue;
-    window['TextTrackCue'] = TextTrackCue;
+    window.TextTrackCue = TextTrackCue;
     if (!window.TextTrackCue) {
       console.log('TextTrackCue not polyfilled');
     }
-    window['VTTCue'] = VTTCue;
+    window.VTTCue = VTTCue;
     if (!window.VTTCue) {
       console.log('VTTCue not polyfilled');
     }

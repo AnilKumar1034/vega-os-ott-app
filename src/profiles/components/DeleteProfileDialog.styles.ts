@@ -1,0 +1,116 @@
+import {StyleSheet} from 'react-native';
+import {colors} from '../../theme/colors';
+import {fontSizes, fontWeights, lineHeights} from '../../theme/fonts';
+import {borderRadius, sizes, spacing} from '../../theme/sizes';
+
+export const styles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: colors.overlayDark,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 1000,
+  },
+  dialog: {
+    width: sizes.dialogMaxWidth,
+    backgroundColor: colors.dialogBackground,
+    borderRadius: borderRadius.dialog,
+    borderWidth: spacing.borderThick,
+    borderColor: colors.chipBackground,
+    padding: spacing.colossal,
+    alignItems: 'center',
+    shadowColor: colors.shadowDark,
+    shadowOffset: {width: spacing.none, height: spacing.lg},
+    shadowOpacity: 0.6,
+    shadowRadius: spacing.xlarge,
+    elevation: spacing.xlarge,
+  },
+  avatarCircle: {
+    width: sizes.dialogAvatarDiameter,
+    height: sizes.dialogAvatarDiameter,
+    borderRadius: sizes.dialogAvatarRadius,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xxxl,
+    borderWidth: spacing.borderThick,
+  },
+  avatarMonogram: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.userName,
+    fontWeight: fontWeights.extraBold,
+  },
+  title: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.subheading,
+    fontWeight: fontWeights.extraBold,
+    marginBottom: spacing.xl,
+    textAlign: 'center',
+  },
+  message: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.body,
+    lineHeight: lineHeights.dialogBody,
+    textAlign: 'center',
+    marginBottom: spacing.huge,
+  },
+  warningText: {
+    color: colors.errorText,
+    fontSize: fontSizes.caption,
+    fontWeight: fontWeights.semibold,
+    marginBottom: spacing.xlarge,
+    textAlign: 'center',
+  },
+  actionsRow: {
+    flexDirection: 'row',
+    gap: spacing.xxxl,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  cancelButton: {
+    flex: 1,
+    height: sizes.dialogButtonHeight,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.cardBorder,
+    borderWidth: spacing.borderThick,
+    borderColor: colors.transparent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cancelButtonFocused: {
+    borderColor: colors.textPrimary,
+    backgroundColor: colors.controlBackground,
+    transform: [{scale: 1.04}],
+  },
+  cancelButtonText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.body,
+    fontWeight: fontWeights.boldWeight,
+  },
+  deleteButton: {
+    flex: 1,
+    height: sizes.dialogButtonHeight,
+    borderRadius: borderRadius.xl,
+    backgroundColor: colors.deleteButtonBackground,
+    borderWidth: spacing.borderThick,
+    borderColor: colors.heroAccent,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deleteButtonFocused: {
+    backgroundColor: colors.heroAccent,
+    borderColor: colors.textPrimary,
+    transform: [{scale: 1.04}],
+    shadowColor: colors.heroAccent,
+    shadowOffset: {width: spacing.none, height: spacing.xs},
+    shadowOpacity: 0.5,
+    shadowRadius: spacing.md,
+  },
+  deleteButtonText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.body,
+    fontWeight: fontWeights.boldWeight,
+  },
+  deleteButtonDisabled: {
+    opacity: 0.5,
+  },
+});

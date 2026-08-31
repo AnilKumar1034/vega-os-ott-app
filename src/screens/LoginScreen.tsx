@@ -33,7 +33,11 @@ type RuntimeNetworkCheckResult =
     }
   | {
       ok: false;
-      reason: 'no_network' | 'no_internet' | 'google_blocked' | 'probe_timed_out';
+      reason:
+        | 'no_network'
+        | 'no_internet'
+        | 'google_blocked'
+        | 'probe_timed_out';
       details: {
         networkState: NetInfoState | null;
         internetProbe?: {ok: boolean; status?: number; error?: string};
@@ -80,7 +84,8 @@ const probeUrl = async (url: string, timeoutMs: number) => {
     }
 
     const message =
-      error instanceof TypeError && /Network request failed/i.test(error.message)
+      error instanceof TypeError &&
+      /Network request failed/i.test(error.message)
         ? 'NETWORK_REQUEST_FAILED'
         : error?.message || 'REQUEST_FAILED';
 
@@ -343,10 +348,10 @@ export const LoginScreen = ({navigation}: Props) => {
           activeOpacity={0.85}
           accessibilityRole="button"
           testID="switch-to-register-button">
-              <Text style={styles.switchButtonText}>
-                {strings.actions.registerNow}
-              </Text>
-            </TouchableOpacity>
+          <Text style={styles.switchButtonText}>
+            {strings.actions.registerNow}
+          </Text>
+        </TouchableOpacity>
       </TVFocusGuideView>
     </View>
   );

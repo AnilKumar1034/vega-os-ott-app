@@ -14,16 +14,31 @@ import {DEFAULT_MOCK_VIDEO_URL, HomeContentItem} from '../data/home';
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
+import {useProfile} from '../profiles/hooks/useProfile';
 import {findContentById} from '../utils/deeplink';
 import {
   clearContinueWatchProgress,
   fetchContinueWatchForContent,
   saveContinueWatchProgress,
 } from '../services/watchProgressService';
+import {recordViewingHistory} from '../services/viewingHistoryService';
+import {canProfileAccessContent} from '../utils/contentAccessPolicy';
 import {styles} from './VideoPlayerScreen.styles';
-import type {ShakaPlayer, ShakaPlayerSettings} from '../shakaplayer/ShakaPlayer';
+import type {
+  ShakaPlayer,
+  ShakaPlayerSettings,
+} from '../shakaplayer/ShakaPlayer';
 import {LiveChannelDrmConfig} from '../features/live-tv/models/LiveChannel';
 import {verifyWidevineSupport} from '../utils/widevineDiagnostics';
+import {getSubtitleTracksForContent, SUBTITLE_OFF_ID} from '../data/subtitles';
+import {
+  findActiveSubtitleCue,
+  getSavedSubtitlePreference,
+  saveSubtitlePreference,
+} from '../services/subtitleService';
+import {SubtitleTrack} from '../types/subtitles';
+import {SubtitleOverlay} from '../components/molecules/SubtitleOverlay';
+import {SubtitlesModal} from '../components/molecules/SubtitlesModal';
 
 let KeplerVideoViewComponent: any = View;
 let KeplerVideoSurfaceViewComponent: any = View;
@@ -51,6 +66,7 @@ export const VideoPlayerScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const {user, loading} = useAuth();
+  const {activeProfile} = useProfile();
   const isLive = Boolean(route.params?.isLive);
   const streamType = route.params?.streamType as 'hls' | 'dash' | undefined;
   const isVideoOnly = Boolean(route.params?.isVideoOnly);
@@ -137,6 +153,14 @@ export const VideoPlayerScreen = () => {
   // initial TV focus settles. Keep it from activating the Back button.
   const playerOpenedAtRef = useRef(Date.now());
 
+  const playbackProfileIdRef = useRef<string | null>(activeProfile?.id || null);
+  const historyRecordedForSessionRef = useRef(false);
+  useEffect(() => {
+    if (!playbackProfileIdRef.current && activeProfile?.id) {
+      playbackProfileIdRef.current = activeProfile.id;
+    }
+  }, [activeProfile?.id]);
+
   const backButtonRef = useRef<any>(null);
   const [backButtonNode, setBackButtonNode] = useState<any>(null);
   const [isBackFocused, setIsBackFocused] = useState(false);
@@ -155,6 +179,169 @@ export const VideoPlayerScreen = () => {
 
   const hideControlsTimerRef = useRef<any>(null);
 
+  // --- Subtitles Feature Setup ---
+  const availableSubtitleTracks = useMemo<SubtitleTrack[]>(
+    () =>
+      getSubtitleTracksForContent(
+        movie.id,
+        movie.title,
+        videoUrl,
+        isLive,
+        movie.genre,
+        movie.description,
+      ),
+    [movie.id, movie.title, videoUrl, isLive, movie.genre, movie.description],
+  );
+
+  const [selectedSubtitleTrackId, setSelectedSubtitleTrackId] =
+    useState<string>(() => {
+      const defaultTrack = availableSubtitleTracks.find((t) => t.isDefault);
+      return defaultTrack ? defaultTrack.id : SUBTITLE_OFF_ID;
+    });
+  const [isSubtitlesModalOpen, setIsSubtitlesModalOpen] = useState(false);
+  const [isCCFocused, setIsCCFocused] = useState(false);
+  const [activeSubtitleCueText, setActiveSubtitleCueText] = useState<
+    string | null
+  >(null);
+  const subtitleSyncTimerRef = useRef<any>(null);
+
+  // Load saved subtitle preference for active profile
+  useEffect(() => {
+    let active = true;
+    const loadSubtitlePref = async () => {
+      const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+      const savedPref = await getSavedSubtitlePreference(targetProfileId);
+      if (active && savedPref) {
+        const exists =
+          savedPref === SUBTITLE_OFF_ID ||
+          availableSubtitleTracks.some((t) => t.id === savedPref);
+        if (exists) {
+          setSelectedSubtitleTrackId(savedPref);
+        }
+      }
+    };
+    loadSubtitlePref();
+    return () => {
+      active = false;
+    };
+  }, [activeProfile?.id, availableSubtitleTracks]);
+
+  // Ensure player's native textTracks are populated and trigger addtrack after KeplerVideoView mounts
+  useEffect(() => {
+    if (!player || !isPlayerInitialized) {
+      return;
+    }
+
+    const syncTracksToPlayer = () => {
+      try {
+        if (player.addTextTrack && player.textTracks) {
+          availableSubtitleTracks.forEach((track) => {
+            if (track.id !== SUBTITLE_OFF_ID) {
+              const trackListLen = player.textTracks.length || 0;
+              let foundTrack: any = null;
+              for (let i = 0; i < trackListLen; i++) {
+                const t = player.textTracks[i];
+                if (
+                  t &&
+                  (t.language === track.language ||
+                    t.label === track.label ||
+                    t.id === track.id)
+                ) {
+                  foundTrack = t;
+                  break;
+                }
+              }
+              if (!foundTrack) {
+                foundTrack = player.addTextTrack(
+                  'subtitles',
+                  track.label,
+                  track.language,
+                );
+              }
+              if (foundTrack) {
+                foundTrack.mode =
+                  track.id === selectedSubtitleTrackId ? 'showing' : 'hidden';
+                player.textTracks.emitEvent?.('addtrack', foundTrack);
+              }
+            }
+          });
+        }
+      } catch (e) {
+        console.log('Error syncing text tracks to player:', e);
+      }
+    };
+
+    syncTracksToPlayer();
+    const t1 = setTimeout(syncTracksToPlayer, 300);
+    const t2 = setTimeout(syncTracksToPlayer, 1000);
+    const t3 = setTimeout(syncTracksToPlayer, 2000);
+
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
+    };
+  }, [
+    availableSubtitleTracks,
+    isPlayerInitialized,
+    player,
+    selectedSubtitleTrackId,
+  ]);
+
+  const activeSubtitleTrack = useMemo(() => {
+    if (selectedSubtitleTrackId === SUBTITLE_OFF_ID) {
+      return null;
+    }
+    return (
+      availableSubtitleTracks.find((t) => t.id === selectedSubtitleTrackId) ||
+      null
+    );
+  }, [availableSubtitleTracks, selectedSubtitleTrackId]);
+
+  const updateActiveSubtitle = useCallback(() => {
+    if (!player || !activeSubtitleTrack || !activeSubtitleTrack.cues) {
+      setActiveSubtitleCueText(null);
+      return;
+    }
+    const currentSec = Number(player.currentTime || 0);
+    const cue = findActiveSubtitleCue(activeSubtitleTrack.cues, currentSec);
+    setActiveSubtitleCueText(cue ? cue.text : null);
+  }, [activeSubtitleTrack, player]);
+
+  // Synchronize current subtitle cue with player time
+  useEffect(() => {
+    if (!activeSubtitleTrack || !player) {
+      setActiveSubtitleCueText(null);
+      if (subtitleSyncTimerRef.current) {
+        clearInterval(subtitleSyncTimerRef.current);
+        subtitleSyncTimerRef.current = null;
+      }
+      return;
+    }
+
+    const onTimeUpdate = () => {
+      updateActiveSubtitle();
+    };
+
+    if (player.addEventListener) {
+      player.addEventListener('timeupdate', onTimeUpdate);
+    }
+
+    subtitleSyncTimerRef.current = setInterval(() => {
+      updateActiveSubtitle();
+    }, 250);
+
+    return () => {
+      if (subtitleSyncTimerRef.current) {
+        clearInterval(subtitleSyncTimerRef.current);
+        subtitleSyncTimerRef.current = null;
+      }
+      if (player.removeEventListener) {
+        player.removeEventListener('timeupdate', onTimeUpdate);
+      }
+    };
+  }, [activeSubtitleTrack, player, updateActiveSubtitle]);
+
   const resetHideTimer = useCallback(() => {
     setShowControls(true);
     if (hideControlsTimerRef.current) {
@@ -164,6 +351,63 @@ export const VideoPlayerScreen = () => {
       setShowControls(false);
     }, 8000);
   }, []);
+
+  const handleSelectSubtitleTrack = useCallback(
+    async (trackId: string) => {
+      setSelectedSubtitleTrackId(trackId);
+      const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+      await saveSubtitlePreference(targetProfileId, trackId);
+
+      if (player?.textTracks && player.textTracks.length > 0) {
+        try {
+          if (trackId === SUBTITLE_OFF_ID) {
+            player.captioning = false;
+            for (let i = 0; i < player.textTracks.length; i++) {
+              if (player.textTracks[i]) {
+                player.textTracks[i].mode = 'hidden';
+              }
+            }
+          } else {
+            player.captioning = true;
+            const targetTrack = availableSubtitleTracks.find(
+              (t) => t.id === trackId,
+            );
+            for (let i = 0; i < player.textTracks.length; i++) {
+              const current = player.textTracks[i];
+              if (
+                current &&
+                (current.language === targetTrack?.language ||
+                  current.label === targetTrack?.label ||
+                  current.id === targetTrack?.id)
+              ) {
+                current.mode = 'showing';
+              } else if (current) {
+                current.mode = 'hidden';
+              }
+            }
+          }
+        } catch (e) {
+          console.log('Error syncing player text track mode:', e);
+        }
+      }
+
+      if (shakaPlayerRef.current?.player) {
+        try {
+          if (trackId === SUBTITLE_OFF_ID) {
+            await shakaPlayerRef.current.player.setTextTrackVisibility?.(false);
+          } else {
+            await shakaPlayerRef.current.player.setTextTrackVisibility?.(true);
+          }
+        } catch (e) {
+          console.log('Shaka text track sync error:', e);
+        }
+      }
+
+      setIsSubtitlesModalOpen(false);
+      resetHideTimer();
+    },
+    [activeProfile?.id, availableSubtitleTracks, player, resetHideTimer],
+  );
 
   const startDrmPlayback = useCallback(async () => {
     if (!useShakaPlayer || !player || drmPlaybackStartedRef.current) {
@@ -195,7 +439,9 @@ export const VideoPlayerScreen = () => {
       // Shaka installs several browser/media polyfills at module load time.
       // Keep that work off the app bootstrap path: this screen is registered by
       // the root navigator even when the user never opens adaptive playback.
-      const {ShakaPlayer: ShakaPlayerImplementation} = require('../shakaplayer/ShakaPlayer');
+      const {
+        ShakaPlayer: ShakaPlayerImplementation,
+      } = require('../shakaplayer/ShakaPlayer');
       const shakaPlayer = new ShakaPlayerImplementation(
         player,
         playerSettings,
@@ -284,7 +530,8 @@ export const VideoPlayerScreen = () => {
     let active = true;
 
     const loadResumeTime = async () => {
-      if (!user) {
+      const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+      if (!user || !targetProfileId) {
         if (active) {
           setResumeTime(0);
         }
@@ -292,7 +539,10 @@ export const VideoPlayerScreen = () => {
       }
 
       try {
-        const progressRecord = await fetchContinueWatchForContent(movieId);
+        const progressRecord = await fetchContinueWatchForContent(
+          targetProfileId,
+          movieId,
+        );
         if (active) {
           setResumeTime(progressRecord?.currentTime || 0);
         }
@@ -309,7 +559,7 @@ export const VideoPlayerScreen = () => {
     return () => {
       active = false;
     };
-  }, [isLive, movieId, user]);
+  }, [activeProfile?.id, isLive, movieId, user]);
 
   useEffect(() => {
     if (!player) {
@@ -336,13 +586,59 @@ export const VideoPlayerScreen = () => {
 
     const onLoadedMetadata = () => {
       metadataReadyRef.current = true;
-      if (pendingSeekRef.current !== null) {
+      const requestedSeek = pendingSeekRef.current;
+      if (requestedSeek !== null) {
         try {
-          player.currentTime = pendingSeekRef.current;
+          // Progress can outlive a manifest update.  Do not ask the native
+          // player to seek past the end of the currently loaded VOD asset,
+          // because that is reported as a stream playback error on Vega.
+          const duration = Number(player.duration);
+          const seekTime =
+            Number.isFinite(duration) && duration > 0
+              ? Math.min(requestedSeek, Math.max(0, duration - 1))
+              : requestedSeek;
+
+          if (Number.isFinite(seekTime) && seekTime > 0) {
+            player.currentTime = seekTime;
+          }
         } catch (error) {
           console.log('Resume seek error:', error);
         }
         pendingSeekRef.current = null;
+        shouldApplySeekRef.current = false;
+      }
+    };
+
+    const onCaptioningChange = () => {
+      if (!player) {
+        return;
+      }
+      if (player.captioning === false) {
+        setSelectedSubtitleTrackId(SUBTITLE_OFF_ID);
+        return;
+      }
+      let matchedTrackId: string | null = null;
+      if (player.textTracks && player.textTracks.length > 0) {
+        for (let i = 0; i < player.textTracks.length; i++) {
+          const track = player.textTracks[i];
+          if (track && track.mode === 'showing') {
+            const found = availableSubtitleTracks.find(
+              (t) =>
+                t.language === track.language ||
+                t.label === track.label ||
+                t.id === track.id,
+            );
+            if (found) {
+              matchedTrackId = found.id;
+              break;
+            }
+          }
+        }
+      }
+      if (matchedTrackId) {
+        setSelectedSubtitleTrackId(matchedTrackId);
+      } else {
+        setIsSubtitlesModalOpen(true);
       }
     };
 
@@ -350,13 +646,67 @@ export const VideoPlayerScreen = () => {
       player.addEventListener('loadstart', onLoadStart);
       player.addEventListener('error', onError);
       player.addEventListener('loadedmetadata', onLoadedMetadata);
+      player.addEventListener('captioningchange', onCaptioningChange);
+    }
+
+    if (player?.textTracks?.addEventListener) {
+      player.textTracks.addEventListener('change', onCaptioningChange);
     }
 
     const init = async () => {
       try {
+        if (!isLive && !canProfileAccessContent(activeProfile, movie)) {
+          setVideoError(strings.parentalControls.contentRestrictedMessage);
+          return;
+        }
+
         await Promise.resolve(player.initialize?.());
         if (disposed) {
           return;
+        }
+
+        // Register available subtitle tracks on player instance
+        try {
+          if (player.addTextTrack && player.textTracks) {
+            availableSubtitleTracks.forEach((track) => {
+              if (track.id !== SUBTITLE_OFF_ID) {
+                const trackListLen = player.textTracks.length || 0;
+                let exists = false;
+                let existingTrack: any = null;
+                for (let i = 0; i < trackListLen; i++) {
+                  const t = player.textTracks[i];
+                  if (
+                    t &&
+                    (t.language === track.language || t.label === track.label)
+                  ) {
+                    exists = true;
+                    existingTrack = t;
+                    break;
+                  }
+                }
+                if (!exists) {
+                  const newTrack = player.addTextTrack(
+                    'subtitles',
+                    track.label,
+                    track.language,
+                  );
+                  if (newTrack) {
+                    newTrack.mode =
+                      track.id === selectedSubtitleTrackId
+                        ? 'showing'
+                        : 'hidden';
+                    player.textTracks.emitEvent?.('addtrack', newTrack);
+                  }
+                } else if (existingTrack) {
+                  existingTrack.mode =
+                    track.id === selectedSubtitleTrackId ? 'showing' : 'hidden';
+                  player.textTracks.emitEvent?.('addtrack', existingTrack);
+                }
+              }
+            });
+          }
+        } catch (e) {
+          console.log('Error registering text tracks on player:', e);
         }
 
         if (useShakaPlayer) {
@@ -385,13 +735,12 @@ export const VideoPlayerScreen = () => {
             return;
           }
 
+          // A player instance can be reused after a retry, so metadata from a
+          // previous source must not make a new resume seek run too early.
+          metadataReadyRef.current = false;
           player.src = videoUrl;
           const initialSeek =
-            !isLive && hasExplicitSeek !== null
-              ? hasExplicitSeek
-              : !isLive && resumeTime > 0
-              ? resumeTime
-              : null;
+            !isLive && hasExplicitSeek !== null ? hasExplicitSeek : null;
           if (initialSeek !== null) {
             shouldApplySeekRef.current = true;
             pendingSeekRef.current = initialSeek;
@@ -429,6 +778,10 @@ export const VideoPlayerScreen = () => {
         player.removeEventListener('loadstart', onLoadStart);
         player.removeEventListener('error', onError);
         player.removeEventListener('loadedmetadata', onLoadedMetadata);
+        player.removeEventListener('captioningchange', onCaptioningChange);
+      }
+      if (player?.textTracks?.removeEventListener) {
+        player.textTracks.removeEventListener('change', onCaptioningChange);
       }
 
       const shakaPlayer = shakaPlayerRef.current;
@@ -457,9 +810,7 @@ export const VideoPlayerScreen = () => {
     hasExplicitSeek,
     useShakaPlayer,
     isLive,
-    movieId,
     player,
-    resumeTime,
     startDrmPlayback,
     videoUrl,
   ]);
@@ -473,7 +824,14 @@ export const VideoPlayerScreen = () => {
     shouldApplySeekRef.current = true;
     if (metadataReadyRef.current) {
       try {
-        player.currentTime = resumeTime;
+        const duration = Number(player.duration);
+        const seekTime =
+          Number.isFinite(duration) && duration > 0
+            ? Math.min(resumeTime, Math.max(0, duration - 1))
+            : resumeTime;
+        if (Number.isFinite(seekTime) && seekTime > 0) {
+          player.currentTime = seekTime;
+        }
       } catch (error) {
         console.log('Resume seek error:', error);
       }
@@ -483,13 +841,14 @@ export const VideoPlayerScreen = () => {
   }, [isLive, player, resumeTime]);
 
   const persistProgress = useCallback(async () => {
-    if (isLive || !player || !movie?.id || !user) {
+    const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+    if (isLive || !player || !movie?.id || !user || !targetProfileId) {
       return;
     }
 
     const currentTime = Number(player.currentTime || 0);
     const duration = Number(player.duration || 0);
-    if (!currentTime || currentTime <= 0) {
+    if (!currentTime || currentTime <= 0 || !Number.isFinite(currentTime)) {
       return;
     }
 
@@ -499,11 +858,16 @@ export const VideoPlayerScreen = () => {
 
     lastSavedTimeRef.current = currentTime;
     try {
-      await saveContinueWatchProgress(movie, currentTime, duration);
+      await saveContinueWatchProgress(
+        targetProfileId,
+        movie,
+        currentTime,
+        duration,
+      );
     } catch (error: any) {
       console.log('Save continue watch error:', error);
     }
-  }, [isLive, movie, player, user]);
+  }, [activeProfile?.id, isLive, movie, player, user]);
 
   useEffect(() => {
     if (isLive || !player) {
@@ -515,6 +879,19 @@ export const VideoPlayerScreen = () => {
     };
 
     const onPlaying = () => {
+      const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+      if (
+        !isLive &&
+        targetProfileId &&
+        !historyRecordedForSessionRef.current &&
+        movie?.id
+      ) {
+        historyRecordedForSessionRef.current = true;
+        recordViewingHistory(targetProfileId, movie).catch((err) => {
+          console.log('Record viewing history error:', err);
+        });
+      }
+
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
       }
@@ -527,10 +904,13 @@ export const VideoPlayerScreen = () => {
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
       }
-      try {
-        await clearContinueWatchProgress(movieId);
-      } catch (error) {
-        console.log('Clear continue watch error:', error);
+      const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+      if (targetProfileId) {
+        try {
+          await clearContinueWatchProgress(targetProfileId, movieId);
+        } catch (error) {
+          console.log('Clear continue watch error:', error);
+        }
       }
     };
 
@@ -554,7 +934,7 @@ export const VideoPlayerScreen = () => {
 
       void persistProgress();
     };
-  }, [isLive, movieId, persistProgress, player]);
+  }, [activeProfile?.id, isLive, movieId, persistProgress, player]);
 
   const handleBackFocus = () => {
     resetHideTimer();
@@ -586,7 +966,6 @@ export const VideoPlayerScreen = () => {
     <TVFocusGuideView
       style={styles.container}
       autoFocus
-      destinations={backButtonNode ? [backButtonNode] : []}
       testID="video-player-screen"
       onStartShouldSetResponderCapture={() => {
         resetHideTimer();
@@ -620,10 +999,18 @@ export const VideoPlayerScreen = () => {
           ) : (
             <KeplerVideoViewComponent
               videoPlayer={player}
+              showControls={true}
+              showCaptions={true}
               testID="w3c-video-surface"
             />
           ))}
       </View>
+
+      {/* Active Subtitle Cue Overlay at zIndex: 8 */}
+      <SubtitleOverlay
+        currentCueText={activeSubtitleCueText}
+        isControlsVisible={showControls}
+      />
 
       {videoError && (
         <View style={styles.errorOverlay} testID="video-error-state">
@@ -659,11 +1046,11 @@ export const VideoPlayerScreen = () => {
 
       {/* Header Overlay at zIndex: 10 */}
       {showControls && (
-        <TVFocusGuideView
-          style={styles.overlayContainer}
-          autoFocus
-          destinations={backButtonNode ? [backButtonNode] : []}>
-          <View style={styles.topHeader} pointerEvents="box-none">
+        <View style={styles.overlayContainer} pointerEvents="box-none">
+          <TVFocusGuideView
+            style={styles.topHeader}
+            pointerEvents="box-none"
+            destinations={backButtonNode ? [backButtonNode] : []}>
             <TouchableOpacity
               ref={(node) => {
                 backButtonRef.current = node;
@@ -709,10 +1096,47 @@ export const VideoPlayerScreen = () => {
               )}
             </View>
 
+            {/* Top Subtitles Status Badge - Shows selected language or On / Off */}
+            <TouchableOpacity
+              style={[
+                styles.topSubtitlesBadge,
+                selectedSubtitleTrackId !== SUBTITLE_OFF_ID &&
+                  styles.topSubtitlesBadgeActive,
+                isCCFocused && styles.topSubtitlesBadgeFocused,
+              ]}
+              onFocus={() => {
+                resetHideTimer();
+                setIsCCFocused(true);
+              }}
+              onBlur={() => setIsCCFocused(false)}
+              onPress={() => {
+                resetHideTimer();
+                setIsSubtitlesModalOpen(true);
+              }}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={strings.accessibility.subtitlesButton(
+                selectedSubtitleTrackId === SUBTITLE_OFF_ID
+                  ? strings.subtitles.off
+                  : activeSubtitleTrack?.label || strings.subtitles.english,
+              )}
+              testID="player-subtitles-button">
+              <Text style={styles.ccBadgeText}>
+                {strings.subtitles.ccBadge}
+              </Text>
+              <Text style={styles.ccLabelText}>
+                {selectedSubtitleTrackId === SUBTITLE_OFF_ID
+                  ? `Subtitles: ${strings.subtitles.off}`
+                  : `Subtitles: ${
+                      activeSubtitleTrack?.label || strings.subtitles.english
+                    }`}
+              </Text>
+            </TouchableOpacity>
+
             <View style={styles.qualityBadge} pointerEvents="none">
               <Text style={styles.qualityBadgeText}>{strings.header.uhd}</Text>
             </View>
-          </View>
+          </TVFocusGuideView>
 
           {useShakaPlayer && (
             <View style={styles.bottomControls}>
@@ -743,8 +1167,20 @@ export const VideoPlayerScreen = () => {
               </TouchableOpacity>
             </View>
           )}
-        </TVFocusGuideView>
+        </View>
       )}
+
+      {/* Subtitles Selection Modal */}
+      <SubtitlesModal
+        isOpen={isSubtitlesModalOpen}
+        tracks={availableSubtitleTracks}
+        selectedTrackId={selectedSubtitleTrackId}
+        onSelectTrack={handleSelectSubtitleTrack}
+        onClose={() => {
+          setIsSubtitlesModalOpen(false);
+          resetHideTimer();
+        }}
+      />
     </TVFocusGuideView>
   );
 };

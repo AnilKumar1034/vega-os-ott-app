@@ -8,6 +8,7 @@ export const AppDetails = {
   home: 'Home',
   movies: 'Movies',
   liveTV: 'Live TV',
+  myList: 'My List',
   details: 'Details',
   settings: 'Settings',
 
@@ -42,9 +43,19 @@ export const AppDetails = {
   castLabel: 'Cast:',
   moreLikeThisTitle: 'More Like This',
 
+  // My List
+  myListScreenTitle: 'LogiXstream • My List',
+  myListHeaderTitle: 'My List',
+  myListHeaderSubtitle:
+    'Browse movies and shows saved to your personal profile watchlist.',
+  addToMyList: '+ Add to My List',
+  inMyList: '✓ In My List',
+  removeFromMyList: '✕ Remove from My List',
+
   // Accessibility & TestIDs
   splashTestId: 'splash-screen',
   homeTestId: 'home-screen',
   moviesTestId: 'movies-screen',
+  myListTestId: 'my-list-screen',
   heroBannerTestId: 'hero-banner',
 };

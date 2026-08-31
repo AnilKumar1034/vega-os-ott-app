@@ -1,5 +1,12 @@
 import React, {useRef, useState} from 'react';
-import {NativeSyntheticEvent, Text, TextInput, TextInputChangeEventData, TouchableOpacity, View} from 'react-native';
+import {
+  NativeSyntheticEvent,
+  Text,
+  TextInput,
+  TextInputChangeEventData,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {MenuIcon} from '../atoms/MenuIcon';
 import {colors} from '../../theme/colors';
 import {styles} from './CommonSearch.styles';
@@ -74,9 +81,7 @@ export const CommonSearch = ({
         style={styles.input}
         value={value}
         onChangeText={handleTextChange}
-        onChange={(
-          event: NativeSyntheticEvent<TextInputChangeEventData>,
-        ) => {
+        onChange={(event: NativeSyntheticEvent<TextInputChangeEventData>) => {
           handleTextChange(event.nativeEvent.text);
         }}
         placeholder={placeholder}

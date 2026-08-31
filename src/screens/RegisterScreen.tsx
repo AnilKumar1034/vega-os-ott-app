@@ -24,7 +24,10 @@ const SUBSCRIPTION_OPTIONS = [
 
 type Props = {
   navigation: {
-    navigate: (routeName: (typeof Routes)[keyof typeof Routes] | string, params?: unknown) => void;
+    navigate: (
+      routeName: (typeof Routes)[keyof typeof Routes] | string,
+      params?: unknown,
+    ) => void;
   };
 };
 
@@ -275,10 +278,10 @@ export const RegisterScreen = ({navigation}: Props) => {
             activeOpacity={0.85}
             accessibilityRole="button"
             testID="switch-to-login-button">
-              <Text style={styles.switchButtonText}>
-                {strings.actions.alreadyHaveAccount}
-              </Text>
-            </TouchableOpacity>
+            <Text style={styles.switchButtonText}>
+              {strings.actions.alreadyHaveAccount}
+            </Text>
+          </TouchableOpacity>
         </ScrollView>
       </TVFocusGuideView>
     </View>

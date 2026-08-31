@@ -15,16 +15,16 @@ const mockStorage = new Map<string, string>();
 jest.mock(
   '@amazon-devices/react-native-async-storage__async-storage/lib/commonjs/AsyncStorage.native',
   () => ({
-  __esModule: true,
-  default: {
-    getItem: jest.fn(async (key: string) => mockStorage.get(key) ?? null),
-    setItem: jest.fn(async (key: string, value: string) => {
-      mockStorage.set(key, value);
-    }),
-    removeItem: jest.fn(async (key: string) => {
-      mockStorage.delete(key);
-    }),
-  },
+    __esModule: true,
+    default: {
+      getItem: jest.fn(async (key: string) => mockStorage.get(key) ?? null),
+      setItem: jest.fn(async (key: string, value: string) => {
+        mockStorage.set(key, value);
+      }),
+      removeItem: jest.fn(async (key: string) => {
+        mockStorage.delete(key);
+      }),
+    },
   }),
 );
 

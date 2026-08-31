@@ -11,15 +11,25 @@ import {styles} from '../../screens/MovieDetailScreen.styles';
 interface MovieDetailBodyProps {
   selectedMovie: HomeContentItem;
   recommendations: HomeContentItem[];
-  focusedAction: 'play' | 'list' | 'back' | 'favourites' | 'continueWatch' | null;
+  focusedAction:
+    | 'play'
+    | 'list'
+    | 'back'
+    | 'favourites'
+    | 'continueWatch'
+    | null;
   continueWatchProgress: number | null;
-  isFavourite: boolean;
+  isFavourite?: boolean;
+  isInWatchlist?: boolean;
   toastMessage?: string | null;
-  onFocusAction: (action: 'play' | 'list' | 'back' | 'favourites' | 'continueWatch') => void;
+  onFocusAction: (
+    action: 'play' | 'list' | 'back' | 'favourites' | 'continueWatch',
+  ) => void;
   onBlurAction: () => void;
   onCardFocus: () => void;
-  onAddFavourite: () => void;
-  onRemoveFavourite: () => void;
+  onAddFavourite?: () => void;
+  onRemoveFavourite?: () => void;
+  onToggleWatchlist?: () => void;
   onRemoveContinueWatch: () => void;
 }
 
@@ -28,16 +38,21 @@ export const MovieDetailBody = ({
   recommendations,
   focusedAction,
   continueWatchProgress,
-  isFavourite,
+  isFavourite = false,
+  isInWatchlist = false,
   toastMessage,
   onFocusAction,
   onBlurAction,
   onCardFocus,
   onAddFavourite,
   onRemoveFavourite,
+  onToggleWatchlist,
   onRemoveContinueWatch,
 }: MovieDetailBodyProps) => {
   const navigation = useNavigation<any>();
+  const inList = isInWatchlist || isFavourite;
+  const handleToggleList =
+    onToggleWatchlist || (inList ? onRemoveFavourite : onAddFavourite);
 
   return (
     <View style={styles.mainCardContainer}>
@@ -125,7 +140,7 @@ export const MovieDetailBody = ({
                 navigation.navigate(Routes.VideoPlayer, {
                   movie: selectedMovie,
                   videoUrl: selectedMovie.videoUrl,
-              })
+                })
               }
               hasTVPreferredFocus
               activeOpacity={1}
@@ -161,7 +176,7 @@ export const MovieDetailBody = ({
               </TouchableOpacity>
             )}
 
-            {isFavourite ? (
+            {inList ? (
               <TouchableOpacity
                 style={[
                   styles.secondaryButton,
@@ -170,17 +185,17 @@ export const MovieDetailBody = ({
                 ]}
                 onFocus={() => onFocusAction('favourites')}
                 onBlur={onBlurAction}
-                onPress={onRemoveFavourite}
+                onPress={handleToggleList}
                 activeOpacity={1}
                 accessibilityRole="button"
-                accessibilityLabel={`${strings.actions.removeFavourite} ${selectedMovie.title}`}
-                testID="remove-favourite-button">
+                accessibilityLabel={`${strings.actions.removeFromMyList} ${selectedMovie.title}`}
+                testID="my-list-button">
                 <Text
                   style={[
                     styles.secondaryButtonText,
                     styles.removeFavouriteText,
                   ]}>
-                  {strings.actions.inFavourites}
+                  {strings.actions.inMyList}
                 </Text>
               </TouchableOpacity>
             ) : (
@@ -192,18 +207,14 @@ export const MovieDetailBody = ({
                 ]}
                 onFocus={() => onFocusAction('favourites')}
                 onBlur={onBlurAction}
-                onPress={onAddFavourite}
+                onPress={handleToggleList}
                 activeOpacity={1}
                 accessibilityRole="button"
-                accessibilityLabel={strings.hero.addToListAccessibility(
-                  selectedMovie.title,
-                )}>
+                accessibilityLabel={`${strings.actions.addToMyList} ${selectedMovie.title}`}
+                testID="my-list-button">
                 <Text
-                  style={[
-                    styles.secondaryButtonText,
-                    styles.addFavouriteText,
-                  ]}>
-                  {strings.actions.favourite}
+                  style={[styles.secondaryButtonText, styles.addFavouriteText]}>
+                  {strings.actions.addToMyList}
                 </Text>
               </TouchableOpacity>
             )}

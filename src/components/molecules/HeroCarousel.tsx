@@ -14,11 +14,12 @@ import {AppDetails} from '../../constants/appDetails';
 import {strings} from '../../constants/strings';
 import {HeroMetaTag} from '../atoms/HeroMetaTag';
 import {useAuth} from '../../context/authContext';
+import {useProfile} from '../../profiles/hooks/useProfile';
 import {
-  addFavourite,
-  fetchFavouriteForContent,
-  removeFavourite,
-} from '../../services/favouritesService';
+  addToWatchlist,
+  isInWatchlist,
+  removeFromWatchlist,
+} from '../../services/watchlistService';
 import {styles} from './HeroCarousel.styles';
 
 const MetaSeparator = () => <Text style={styles.metaDot}>•</Text>;
@@ -62,11 +63,19 @@ export const HeroCarousel = ({
 }: HeroCarouselProps) => {
   const navigation = useNavigation<any>();
   const {user} = useAuth();
+  const {activeProfile} = useProfile();
   const [activeIndex, setActiveIndex] = useState(0);
   const [focusedAction, setFocusedAction] = useState<
-    'play' | 'list' | 'prev' | 'next' | 'favourites' | 'continueWatch' | number | null
+    | 'play'
+    | 'list'
+    | 'prev'
+    | 'next'
+    | 'favourites'
+    | 'continueWatch'
+    | number
+    | null
   >(null);
-  const [isFavourite, setIsFavourite] = useState(false);
+  const [isSavedInList, setIsSavedInList] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const isCarouselFocusedRef = useRef(false);
 
@@ -91,33 +100,33 @@ export const HeroCarousel = ({
   useEffect(() => {
     let active = true;
 
-    const loadFavouriteState = async () => {
-      if (!user || !currentSlide) {
+    const loadWatchlistState = async () => {
+      if (!user || !activeProfile?.id || !currentSlide) {
         if (active) {
-          setIsFavourite(false);
+          setIsSavedInList(false);
         }
         return;
       }
 
       try {
-        const record = await fetchFavouriteForContent(currentSlide.id);
+        const inList = await isInWatchlist(activeProfile.id, currentSlide.id);
         if (active) {
-          setIsFavourite(Boolean(record));
+          setIsSavedInList(inList);
         }
       } catch (error) {
-        console.log('Hero favourite load error:', error);
+        console.log('Hero watchlist load error:', error);
         if (active) {
-          setIsFavourite(false);
+          setIsSavedInList(false);
         }
       }
     };
 
-    loadFavouriteState();
+    loadWatchlistState();
 
     return () => {
       active = false;
     };
-  }, [currentSlide, user]);
+  }, [activeProfile?.id, currentSlide, user]);
 
   const handleFocus = (action: 'play' | 'list' | 'prev' | 'next' | number) => {
     isCarouselFocusedRef.current = true;
@@ -159,25 +168,35 @@ export const HeroCarousel = ({
     }
   };
 
-  const toggleFavourite = async () => {
+  const toggleWatchlist = async () => {
     if (!currentSlide || !user) {
-      setToastMsg(strings.hero.signInToAddFavourites);
+      setToastMsg(strings.toasts.signInToAddToWatchlist);
       setTimeout(() => setToastMsg(null), 2500);
       onUnauthenticatedFavourite?.();
       return;
     }
 
+    if (!activeProfile?.id) {
+      setToastMsg(strings.toasts.selectProfileToAddToWatchlist);
+      setTimeout(() => setToastMsg(null), 2500);
+      return;
+    }
+
+    const profileId = activeProfile.id;
     try {
-      if (isFavourite) {
-        await removeFavourite(currentSlide.id);
-        setIsFavourite(false);
+      if (isSavedInList) {
+        await removeFromWatchlist(profileId, currentSlide.id);
+        setIsSavedInList(false);
+        setToastMsg(strings.toasts.removedFromWatchlist);
       } else {
-        await addFavourite(currentSlide);
-        setIsFavourite(true);
+        await addToWatchlist(profileId, currentSlide as any);
+        setIsSavedInList(true);
+        setToastMsg(strings.toasts.addedToWatchlist);
       }
+      setTimeout(() => setToastMsg(null), 2500);
       onLibraryChange?.();
     } catch (error) {
-      console.log('Hero favourite toggle error:', error);
+      console.log('Hero watchlist toggle error:', error);
     }
   };
 
@@ -222,47 +241,47 @@ export const HeroCarousel = ({
         <TVFocusGuideView style={styles.actionsRow} autoFocus>
           <View style={styles.actionsWrap}>
             <View style={styles.actions}>
-            <TouchableOpacity
-              style={[
-                styles.playButton,
-                focusedAction === 'play' && styles.focusedAction,
-              ]}
-              onFocus={() => handleFocus('play')}
-              onBlur={handleBlur}
-              onPress={playVideo}
-              activeOpacity={1}
-              hasTVPreferredFocus={shouldPreferFocus && activeIndex === 0}
-              accessibilityRole="button"
-              accessibilityLabel={strings.hero.playAccessibility(
-                currentSlide.title,
-              )}
-              testID="hero-play-button">
-              <Text style={styles.playButtonText}>{AppDetails.play}</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.playButton,
+                  focusedAction === 'play' && styles.focusedAction,
+                ]}
+                onFocus={() => handleFocus('play')}
+                onBlur={handleBlur}
+                onPress={playVideo}
+                activeOpacity={1}
+                hasTVPreferredFocus={shouldPreferFocus && activeIndex === 0}
+                accessibilityRole="button"
+                accessibilityLabel={strings.hero.playAccessibility(
+                  currentSlide.title,
+                )}
+                testID="hero-play-button">
+                <Text style={styles.playButtonText}>{AppDetails.play}</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.listButton,
-                focusedAction === 'list' && styles.focusedAction,
-              ]}
-              onFocus={() => handleFocus('list')}
-              onBlur={handleBlur}
-              onPress={toggleFavourite}
-              activeOpacity={1}
-              accessibilityRole="button"
-              accessibilityLabel={
-                isFavourite
-                  ? `${AppDetails.removeFavourite} ${currentSlide.title}`
-                  : `${AppDetails.favourite} ${currentSlide.title}`
-              }
-              testID="hero-mylist-button">
-              <Text style={styles.listButtonText}>
-                {isFavourite
-                  ? strings.actions.inFavourites
-                  : strings.actions.favourite}
-              </Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={[
+                  styles.listButton,
+                  focusedAction === 'list' && styles.focusedAction,
+                ]}
+                onFocus={() => handleFocus('list')}
+                onBlur={handleBlur}
+                onPress={toggleWatchlist}
+                activeOpacity={1}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isSavedInList
+                    ? `${strings.actions.removeFromMyList} ${currentSlide.title}`
+                    : `${strings.actions.addToMyList} ${currentSlide.title}`
+                }
+                testID="hero-mylist-button">
+                <Text style={styles.listButtonText}>
+                  {isSavedInList
+                    ? strings.actions.inMyList
+                    : strings.actions.addToMyList}
+                </Text>
+              </TouchableOpacity>
+            </View>
             {toastMsg ? (
               <View style={styles.toast}>
                 <Text style={styles.toastText}>{toastMsg}</Text>

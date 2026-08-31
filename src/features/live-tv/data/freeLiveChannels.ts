@@ -15,7 +15,8 @@ export const liveChannels: LiveChannel[] = [
     language: 'English',
     country: 'Test',
     streamType: 'dash',
-    streamUrl: 'https://storage.googleapis.com/wvmedia/cenc/h264/tears/tears.mpd',
+    streamUrl:
+      'https://storage.googleapis.com/wvmedia/cenc/h264/tears/tears.mpd',
     drm: {
       enabled: true,
       type: 'widevine',
@@ -52,29 +53,30 @@ export const liveChannels: LiveChannel[] = [
     isTestOnly: true,
   },
   {
-  id: 'sintel-widevine-video-test',
-  number: 300,
-  name: 'Sintel Widevine Video Test',
-  category: 'Entertainment',
-  language: 'English',
-  country: 'Test',
+    id: 'sintel-widevine-video-test',
+    number: 300,
+    name: 'Sintel Widevine Video Test',
+    category: 'Entertainment',
+    language: 'English',
+    country: 'Test',
 
-  streamType: 'dash',
+    streamType: 'dash',
 
-  streamUrl: 'https://storage.googleapis.com/shaka-demo-assets/sintel-widevine/dash.mpd',
-  // The current Vega native MSE runtime rejects AAC SourceBuffers. Keep this
-  // DRM validation stream video-only so Widevine can complete its video path.
-  isVideoOnly: true,
+    streamUrl:
+      'https://storage.googleapis.com/shaka-demo-assets/sintel-widevine/dash.mpd',
+    // The current Vega native MSE runtime rejects AAC SourceBuffers. Keep this
+    // DRM validation stream video-only so Widevine can complete its video path.
+    isVideoOnly: true,
 
-  drm: {
-    enabled: true,
-    type: 'widevine',
-    keySystem: 'com.widevine.alpha',
-    licenseUrl: 'https://cwip-shaka-proxy.appspot.com/no_auth',
+    drm: {
+      enabled: true,
+      type: 'widevine',
+      keySystem: 'com.widevine.alpha',
+      licenseUrl: 'https://cwip-shaka-proxy.appspot.com/no_auth',
+    },
+
+    isTestOnly: true,
   },
-
-  isTestOnly: true,
-},
   {
     id: 'bunny-live-drm',
     number: 300,
@@ -86,7 +88,8 @@ export const liveChannels: LiveChannel[] = [
     // on the Vega Virtual Device before the manifest response is delivered.
     streamType: 'hls',
     // streamUrl:'https://drm-test-cf.softvelum.com/live_ezdrm/bunny/playlist.m3u8',
-    streamUrl: 'https://cdn.bitmovin.com/content/assets/art-of-motion_drm/mpds/11331.mpd',  
+    streamUrl:
+      'https://cdn.bitmovin.com/content/assets/art-of-motion_drm/mpds/11331.mpd',
     drm: {
       enabled: true,
       type: 'widevine',

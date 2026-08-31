@@ -12,10 +12,14 @@ import {EditProfileScreen} from '../screens/EditProfileScreen';
 import {SplashScreen} from '../screens/SplashScreen';
 import {LoginScreen} from '../screens/LoginScreen';
 import {RegisterScreen} from '../screens/RegisterScreen';
+import {MyListScreen} from '../screens/MyListScreen';
 import {LiveTVScreen} from '../features/live-tv/screens/LiveTVScreen';
 import {LiveChannelDrmConfig} from '../features/live-tv/models/LiveChannel';
 import {createStackNavigator} from './StackNavigator';
 import {AuthProvider} from '../context/AuthProvider';
+import {ProfileProvider} from '../profiles/context/ProfileProvider';
+import {ProfileSelectionScreen} from '../profiles/screens/ProfileSelectionScreen';
+import {CreateProfileScreen} from '../profiles/screens/CreateProfileScreen';
 import {DEEPLINK_PREFIX, DeeplinkRoutes} from '../utils/deeplink';
 
 export type RootStackParamList = {
@@ -23,11 +27,14 @@ export type RootStackParamList = {
   [Routes.Home]: undefined;
   [Routes.Movies]: undefined;
   [Routes.LiveTV]: undefined;
+  [Routes.MyList]: undefined;
   [Routes.Search]: {q?: string};
   [Routes.Details]: undefined;
   [Routes.Settings]: undefined;
   [Routes.Profile]: undefined;
   [Routes.EditProfile]: undefined;
+  [Routes.ProfileSelection]: undefined;
+  [Routes.CreateProfile]: undefined;
   [Routes.MovieDetail]: {movie?: any};
   [Routes.VideoPlayer]: {
     movie?: any;
@@ -71,6 +78,7 @@ const linking: LinkingOptions<RootStackParamList> = {
       [Routes.Home]: DeeplinkRoutes.Home,
       [Routes.Movies]: DeeplinkRoutes.Movies,
       [Routes.LiveTV]: DeeplinkRoutes.LiveTV,
+      [Routes.MyList]: DeeplinkRoutes.MyList,
       [Routes.Search]: {
         path: DeeplinkRoutes.Search,
         parse: {
@@ -88,6 +96,8 @@ const linking: LinkingOptions<RootStackParamList> = {
       [Routes.Settings]: DeeplinkRoutes.Settings,
       [Routes.Profile]: DeeplinkRoutes.Profile,
       [Routes.EditProfile]: 'edit-profile',
+      [Routes.ProfileSelection]: DeeplinkRoutes.Profiles,
+      [Routes.CreateProfile]: 'create-profile',
       [Routes.Login]: 'login',
       [Routes.Register]: 'register',
     },
@@ -97,35 +107,49 @@ const linking: LinkingOptions<RootStackParamList> = {
 export const AppNavigator = () => {
   return (
     <AuthProvider>
-      <NavigationContainer linking={linking}>
-        <Stack.Navigator
-          initialRouteName={Routes.Splash}
-          screenOptions={{headerShown: false}}>
-          <Stack.Screen name={Routes.Splash} component={SplashScreen} />
-          <Stack.Screen name={Routes.Home} component={HomeScreen} />
-          <Stack.Screen name={Routes.Movies} component={MoviesScreen} />
-          <Stack.Screen name={Routes.LiveTV} component={LiveTVScreen} />
-          <Stack.Screen name={Routes.Search} component={SearchScreen} />
-          <Stack.Screen name={Routes.Details} component={DetailsScreen} />
-          <Stack.Screen
-            name={Routes.MovieDetail}
-            component={MovieDetailScreen}
-          />
-          <Stack.Screen
-            name={Routes.VideoPlayer}
-            component={VideoPlayerRoute}
-          />
-          <Stack.Screen name={Routes.PlayerTest} component={PlayerTestRoute} />
-          <Stack.Screen name={Routes.Settings} component={SettingsScreen} />
-          <Stack.Screen name={Routes.Profile} component={ProfileScreen} />
-          <Stack.Screen
-            name={Routes.EditProfile}
-            component={EditProfileScreen}
-          />
-          <Stack.Screen name={Routes.Login} component={LoginScreen} />
-          <Stack.Screen name={Routes.Register} component={RegisterScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
+      <ProfileProvider>
+        <NavigationContainer linking={linking}>
+          <Stack.Navigator
+            initialRouteName={Routes.Splash}
+            screenOptions={{headerShown: false}}>
+            <Stack.Screen name={Routes.Splash} component={SplashScreen} />
+            <Stack.Screen name={Routes.Home} component={HomeScreen} />
+            <Stack.Screen name={Routes.Movies} component={MoviesScreen} />
+            <Stack.Screen name={Routes.LiveTV} component={LiveTVScreen} />
+            <Stack.Screen name={Routes.MyList} component={MyListScreen} />
+            <Stack.Screen name={Routes.Search} component={SearchScreen} />
+            <Stack.Screen name={Routes.Details} component={DetailsScreen} />
+            <Stack.Screen
+              name={Routes.MovieDetail}
+              component={MovieDetailScreen}
+            />
+            <Stack.Screen
+              name={Routes.VideoPlayer}
+              component={VideoPlayerRoute}
+            />
+            <Stack.Screen
+              name={Routes.PlayerTest}
+              component={PlayerTestRoute}
+            />
+            <Stack.Screen name={Routes.Settings} component={SettingsScreen} />
+            <Stack.Screen name={Routes.Profile} component={ProfileScreen} />
+            <Stack.Screen
+              name={Routes.EditProfile}
+              component={EditProfileScreen}
+            />
+            <Stack.Screen
+              name={Routes.ProfileSelection}
+              component={ProfileSelectionScreen}
+            />
+            <Stack.Screen
+              name={Routes.CreateProfile}
+              component={CreateProfileScreen}
+            />
+            <Stack.Screen name={Routes.Login} component={LoginScreen} />
+            <Stack.Screen name={Routes.Register} component={RegisterScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+      </ProfileProvider>
     </AuthProvider>
   );
 };

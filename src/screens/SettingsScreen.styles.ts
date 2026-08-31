@@ -45,6 +45,13 @@ export const styles = StyleSheet.create({
     fontSize: fontSizes.userName,
     fontWeight: fontWeights.bold,
   },
+  kidsBadgeText: {
+    color: colors.kidsGreenText,
+    fontSize: fontSizes.rating,
+    fontWeight: fontWeights.extraBold,
+    letterSpacing: 0.5,
+    marginTop: spacing.xxs,
+  },
   userEmail: {
     color: colors.textSecondary,
     fontSize: fontSizes.caption,

@@ -10,7 +10,9 @@ export const DeeplinkRoutes = {
   Details: 'movie',
   Player: 'play',
   Profile: 'profile',
+  Profiles: 'profiles',
   Settings: 'settings',
+  MyList: 'my-list',
 } as const;
 
 export const findContentById = (contentId?: string): HomeContentItem | null => {
@@ -21,6 +23,7 @@ export const findContentById = (contentId?: string): HomeContentItem | null => {
   const allItems = [
     ...homeHeroSlides.map((slide) => ({
       id: slide.id,
+      maturityRating: slide.maturityRating,
       title: slide.title,
       image: slide.image,
       badge: slide.badge,
@@ -35,9 +38,7 @@ export const findContentById = (contentId?: string): HomeContentItem | null => {
     ...homeContentRows.flatMap((row) => row.items),
   ];
 
-  return (
-    allItems.find((item) => item.id === contentId) || null
-  );
+  return allItems.find((item) => item.id === contentId) || null;
 };
 
 export const buildDeeplinkUrl = (path: string) =>

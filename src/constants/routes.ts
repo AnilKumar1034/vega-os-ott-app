@@ -11,8 +11,11 @@ export const Routes = {
   PlayerTest: 'PlayerTest',
   Profile: 'Profile',
   EditProfile: 'EditProfile',
+  ProfileSelection: 'ProfileSelection',
+  CreateProfile: 'CreateProfile',
   Login: 'Login',
   Register: 'Register',
+  MyList: 'MyList',
 } as const;
 
 export type RouteName = (typeof Routes)[keyof typeof Routes];
