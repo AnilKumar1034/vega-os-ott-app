@@ -68,14 +68,19 @@ export const PROFILE_AVATARS: ProfileAvatarConfig[] = [
 export const DEFAULT_AVATAR_ID = 'avatar-1';
 export const DEFAULT_KIDS_AVATAR_ID = 'avatar-kids-1';
 
-export const getProfileAvatarById = (avatarId?: string): ProfileAvatarConfig => {
+export const getProfileAvatarById = (
+  avatarId?: string,
+): ProfileAvatarConfig => {
   return (
     PROFILE_AVATARS.find((avatar) => avatar.id === avatarId) ||
     PROFILE_AVATARS[0]
   );
 };
 
-export const getAvatarMonogram = (avatarId: string | undefined, name: string): string => {
+export const getAvatarMonogram = (
+  avatarId: string | undefined,
+  name: string,
+): string => {
   const avatar = getProfileAvatarById(avatarId);
   if (name && name.trim().length > 0) {
     const words = name.trim().split(/\s+/);

@@ -127,7 +127,10 @@ export const AppNavigator = () => {
               name={Routes.VideoPlayer}
               component={VideoPlayerRoute}
             />
-            <Stack.Screen name={Routes.PlayerTest} component={PlayerTestRoute} />
+            <Stack.Screen
+              name={Routes.PlayerTest}
+              component={PlayerTestRoute}
+            />
             <Stack.Screen name={Routes.Settings} component={SettingsScreen} />
             <Stack.Screen name={Routes.Profile} component={ProfileScreen} />
             <Stack.Screen

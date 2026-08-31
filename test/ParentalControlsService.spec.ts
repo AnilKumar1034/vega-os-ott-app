@@ -160,7 +160,10 @@ describe('Parental Controls & PIN Crypto Service', () => {
         }),
       } as any);
 
-      const isMatch = await parentalControlsService.verifyPin('user-123', '9999');
+      const isMatch = await parentalControlsService.verifyPin(
+        'user-123',
+        '9999',
+      );
       expect(isMatch).toBe(true);
     });
 

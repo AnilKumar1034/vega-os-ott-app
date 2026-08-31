@@ -348,9 +348,9 @@ describe('ProfileContext & ProfileProvider', () => {
       expect(screen.getByTestId('loading-state').props.children).toBe('ready');
     });
 
-    await expect(
-      latestProfileContext?.deleteProfile('prof-1'),
-    ).rejects.toThrow('CANNOT_DELETE_ONLY_PROFILE');
+    await expect(latestProfileContext?.deleteProfile('prof-1')).rejects.toThrow(
+      'CANNOT_DELETE_ONLY_PROFILE',
+    );
   });
 
   it('deletes active profile and clears local active profile ID', async () => {

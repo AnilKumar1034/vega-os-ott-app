@@ -137,7 +137,9 @@ export const ProfileSelectionScreen = () => {
               accessibilityRole="button"
               accessibilityLabel={strings.actions.retry}
               testID="retry-profiles-button">
-              <Text style={styles.retryButtonText}>{strings.actions.retry}</Text>
+              <Text style={styles.retryButtonText}>
+                {strings.actions.retry}
+              </Text>
             </TouchableOpacity>
           </View>
         ) : (

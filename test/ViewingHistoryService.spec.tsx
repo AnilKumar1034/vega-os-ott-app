@@ -32,8 +32,11 @@ const mockMovie: HomeContentItem = {
   title: 'Kalki 2898 AD',
   genre: 'Sci-Fi',
   rating: '⭐ 7.7 / 10',
-  image: {uri: 'https://image.tmdb.org/t/p/w780/rstcAnBeCkxNQjNp3YXrF6IP1tW.jpg'},
-  videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+  image: {
+    uri: 'https://image.tmdb.org/t/p/w780/rstcAnBeCkxNQjNp3YXrF6IP1tW.jpg',
+  },
+  videoUrl:
+    'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
 };
 
 describe('viewingHistoryService (Profile-Specific Viewing History)', () => {
@@ -177,9 +180,7 @@ describe('viewingHistoryService (Profile-Specific Viewing History)', () => {
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, options] = mockFetch.mock.calls[0];
-    expect(url).toContain(
-      `/users/${uid}/profiles/profile-anil/history/kalki`,
-    );
+    expect(url).toContain(`/users/${uid}/profiles/profile-anil/history/kalki`);
     expect(options.method).toBe('DELETE');
   });
 

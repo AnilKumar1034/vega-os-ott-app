@@ -1,9 +1,6 @@
 import {firebaseConfig} from '../config/firebaseConfig';
 import {HomeContentItem} from '../data/home';
-import {
-  authenticatedFirestoreFetch,
-  getStoredSession,
-} from './authService';
+import {authenticatedFirestoreFetch, getStoredSession} from './authService';
 
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1';
 const FAVOURITES_COLLECTION = 'favourites';

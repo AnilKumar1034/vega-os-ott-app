@@ -180,7 +180,9 @@ export const ProfileScreen = () => {
               onPress={() => navigation.navigate(Routes.ProfileSelection)}
               activeOpacity={1}
               accessibilityRole="button"
-              accessibilityLabel={strings.profiles?.switchProfile || 'Switch Profile'}
+              accessibilityLabel={
+                strings.profiles?.switchProfile || 'Switch Profile'
+              }
               testID="profile-switch-button">
               <Text style={styles.editButtonText}>
                 {strings.profiles?.switchProfile || 'Switch Profile'}
@@ -234,7 +236,9 @@ export const ProfileScreen = () => {
               <PreferenceRow
                 label={strings.auth.notificationsLabel}
                 hint={strings.auth.notificationsHint}
-                value={notificationsEnabled ? strings.common.on : strings.common.off}
+                value={
+                  notificationsEnabled ? strings.common.on : strings.common.off
+                }
                 enabled={notificationsEnabled}
               />
               <PreferenceRow

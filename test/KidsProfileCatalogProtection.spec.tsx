@@ -70,7 +70,9 @@ describe('Kids Profile Catalog Protection & Access Enforcement', () => {
   });
 
   beforeEach(() => {
-    jest.spyOn(watchProgressService, 'fetchContinueWatchItems').mockResolvedValue([]);
+    jest
+      .spyOn(watchProgressService, 'fetchContinueWatchItems')
+      .mockResolvedValue([]);
     jest.spyOn(watchlistService, 'fetchWatchlist').mockResolvedValue([]);
     jest.spyOn(authContext, 'useAuth').mockReturnValue({
       user: {uid: 'user-123'} as any,
@@ -116,9 +118,7 @@ describe('Kids Profile Catalog Protection & Access Enforcement', () => {
         expect(screen.queryByTestId('content-card-summit')).toBeNull();
         expect(screen.queryByTestId('content-card-trending-4')).toBeNull();
         // Kids content should be visible
-        expect(
-          screen.queryByTestId('content-card-the-lion-king'),
-        ).toBeTruthy();
+        expect(screen.queryByTestId('content-card-the-lion-king')).toBeTruthy();
       });
     });
   });

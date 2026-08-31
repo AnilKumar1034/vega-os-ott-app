@@ -109,12 +109,12 @@ export class ShakaPlayer extends PlayerBase {
       console.log('W3cMediaApp::shakaplayer: in the request filter LICENSE');
       // Modify the license request URL based on our cookie.
       if (request.uris[0].includes('wv') && this.lastUplynkPrefix) {
-        console.log(`shakaplayer in the request filter LICENSE WV`);
+        console.log('shakaplayer in the request filter LICENSE WV');
         request.uris[0] = this.lastUplynkPrefix.concat('/wv');
       } else if (request.uris[0].includes('ck') && this.lastUplynkPrefix) {
         request.uris[0] = this.lastUplynkPrefix.concat('/ck');
       } else if (request.uris[0].includes('pr') && this.lastUplynkPrefix) {
-        console.log(`shakaplayer in the request filter LICENSE PR`);
+        console.log('shakaplayer in the request filter LICENSE PR');
         request.uris[0] = this.lastUplynkPrefix.concat('/pr');
       }
     }
@@ -176,7 +176,7 @@ export class ShakaPlayer extends PlayerBase {
       drmInfo?.keySystem.includes('playready') &&
       drmInfo?.licenseServerUri.includes('uplynk')
     ) {
-      console.log(`Playready uplynk. need to manipulate PSSH`);
+      console.log('Playready uplynk. need to manipulate PSSH');
       let newInitData = new Uint8Array(initData.byteLength + 10);
       newInitData.set(
         [
@@ -285,7 +285,7 @@ export class ShakaPlayer extends PlayerBase {
   // Function to listen player state Events.
   registerStatesEvents(listener?: any) {
     if (!this.player) {
-      console.info(`W3cMediaApp::shakaplayer: Not initialized`);
+      console.info('W3cMediaApp::shakaplayer: Not initialized');
       return;
     }
 
@@ -416,7 +416,7 @@ export class ShakaPlayer extends PlayerBase {
    */
   registerTimedMetadataEvent(listener: any) {
     if (!this.player) {
-      console.info(`W3cMediaApp::shakaplayer: Not initialized`);
+      console.info('W3cMediaApp::shakaplayer: Not initialized');
       return;
     }
 
@@ -438,7 +438,9 @@ export class ShakaPlayer extends PlayerBase {
           console.info(
             `W3cMediaApp::shakaplayer:Metadata ${text} is Active and playback time is ${playbackTime}`,
           );
-          if (listener) listener(text, (event.target as VTTCue).id, true);
+          if (listener) {
+            listener(text, (event.target as VTTCue).id, true);
+          }
         });
 
         cue.addEventListener('exit', (event: Event) => {
@@ -447,7 +449,9 @@ export class ShakaPlayer extends PlayerBase {
           console.info(
             `W3cMediaApp::shakaplayer:Metadata ${text} is In-Active and playback time is ${playbackTime}`,
           );
-          if (listener) listener(text, (event.target as VTTCue).id, false);
+          if (listener) {
+            listener(text, (event.target as VTTCue).id, false);
+          }
         });
       }
     };
@@ -1073,7 +1077,7 @@ export class ShakaPlayer extends PlayerBase {
   override addPlayerEventListener(type: string, listener: any, options?: any) {
     if (!this.player) {
       console.log(
-        `W3cMediaApp::shakaplayer: addPlayerEventListener, called when not initialized`,
+        'W3cMediaApp::shakaplayer: addPlayerEventListener, called when not initialized',
       );
       return;
     }
@@ -1113,7 +1117,7 @@ export class ShakaPlayer extends PlayerBase {
   ) {
     if (!this.player) {
       console.log(
-        `W3cMediaApp::shakaplayer: removePlayerEventListener, called when not initialized`,
+        'W3cMediaApp::shakaplayer: removePlayerEventListener, called when not initialized',
       );
       return;
     }

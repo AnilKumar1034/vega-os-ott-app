@@ -119,7 +119,9 @@ export const PinEntryDialog = ({
   );
 
   const handleClear = useCallback(() => {
-    if (isVerifying) return;
+    if (isVerifying) {
+      return;
+    }
     setErrorMessage(null);
     setCurrentPin('');
   }, [isVerifying]);
@@ -165,7 +167,9 @@ export const PinEntryDialog = ({
 
         {isConfirmMode && (
           <Text style={styles.stepIndicator}>
-            {isConfirmingStep ? 'Step 2 of 2: Confirm' : 'Step 1 of 2: Enter PIN'}
+            {isConfirmingStep
+              ? 'Step 2 of 2: Confirm'
+              : 'Step 1 of 2: Enter PIN'}
           </Text>
         )}
 

@@ -1,10 +1,7 @@
 import React, {useState} from 'react';
 import {Text, TouchableOpacity, View} from 'react-native';
 import {strings} from '../../constants/strings';
-import {
-  getAvatarMonogram,
-  getProfileAvatarById,
-} from '../data/profileAvatars';
+import {getAvatarMonogram, getProfileAvatarById} from '../data/profileAvatars';
 import {UserProfile} from '../types/Profile';
 import {styles} from './ProfileCard.styles';
 
@@ -94,7 +91,9 @@ export const ProfileCard = ({
           </View>
           {profile.isKids && (
             <View style={styles.kidsBadge}>
-              <Text style={styles.kidsBadgeText}>{strings.profiles.kidsBadge}</Text>
+              <Text style={styles.kidsBadgeText}>
+                {strings.profiles.kidsBadge}
+              </Text>
             </View>
           )}
         </View>

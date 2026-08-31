@@ -104,9 +104,15 @@ describe('Content Access Policy & Maturity Filtering', () => {
     it('has strictly increasing hierarchical levels from ALL to 18_PLUS', () => {
       expect(MATURITY_LEVELS.ALL).toBeLessThan(MATURITY_LEVELS.KIDS);
       expect(MATURITY_LEVELS.KIDS).toBeLessThan(MATURITY_LEVELS['7_PLUS']);
-      expect(MATURITY_LEVELS['7_PLUS']).toBeLessThan(MATURITY_LEVELS['13_PLUS']);
-      expect(MATURITY_LEVELS['13_PLUS']).toBeLessThan(MATURITY_LEVELS['16_PLUS']);
-      expect(MATURITY_LEVELS['16_PLUS']).toBeLessThan(MATURITY_LEVELS['18_PLUS']);
+      expect(MATURITY_LEVELS['7_PLUS']).toBeLessThan(
+        MATURITY_LEVELS['13_PLUS'],
+      );
+      expect(MATURITY_LEVELS['13_PLUS']).toBeLessThan(
+        MATURITY_LEVELS['16_PLUS'],
+      );
+      expect(MATURITY_LEVELS['16_PLUS']).toBeLessThan(
+        MATURITY_LEVELS['18_PLUS'],
+      );
     });
 
     it('validates known rating strings and rejects invalid values', () => {
@@ -140,28 +146,52 @@ describe('Content Access Policy & Maturity Filtering', () => {
   describe('canProfileAccessContent policy', () => {
     it('returns false for null or undefined content', () => {
       expect(canProfileAccessContent(adultProfile, null)).toBe(false);
-      expect(canProfileAccessContent(kidsProfileDefault, undefined)).toBe(false);
+      expect(canProfileAccessContent(kidsProfileDefault, undefined)).toBe(
+        false,
+      );
     });
 
     it('allows adult profiles to access ALL content, including mature and unclassified', () => {
-      expect(canProfileAccessContent(adultProfile, contentItems.allAges)).toBe(true);
-      expect(canProfileAccessContent(adultProfile, contentItems.kidsOnly)).toBe(true);
-      expect(canProfileAccessContent(adultProfile, contentItems.sevenPlus)).toBe(true);
-      expect(canProfileAccessContent(adultProfile, contentItems.thirteenPlus)).toBe(true);
-      expect(canProfileAccessContent(adultProfile, contentItems.sixteenPlus)).toBe(true);
-      expect(canProfileAccessContent(adultProfile, contentItems.eighteenPlus)).toBe(true);
-      expect(canProfileAccessContent(adultProfile, contentItems.unclassified)).toBe(true);
+      expect(canProfileAccessContent(adultProfile, contentItems.allAges)).toBe(
+        true,
+      );
+      expect(canProfileAccessContent(adultProfile, contentItems.kidsOnly)).toBe(
+        true,
+      );
+      expect(
+        canProfileAccessContent(adultProfile, contentItems.sevenPlus),
+      ).toBe(true);
+      expect(
+        canProfileAccessContent(adultProfile, contentItems.thirteenPlus),
+      ).toBe(true);
+      expect(
+        canProfileAccessContent(adultProfile, contentItems.sixteenPlus),
+      ).toBe(true);
+      expect(
+        canProfileAccessContent(adultProfile, contentItems.eighteenPlus),
+      ).toBe(true);
+      expect(
+        canProfileAccessContent(adultProfile, contentItems.unclassified),
+      ).toBe(true);
     });
 
     it('allows guest/null profile to access content by default', () => {
       expect(canProfileAccessContent(null, contentItems.kidsOnly)).toBe(true);
-      expect(canProfileAccessContent(undefined, contentItems.eighteenPlus)).toBe(true);
+      expect(
+        canProfileAccessContent(undefined, contentItems.eighteenPlus),
+      ).toBe(true);
     });
 
     it('blocks unclassified content for Kids profile (safe default)', () => {
-      expect(canProfileAccessContent(kidsProfileDefault, contentItems.unclassified)).toBe(false);
-      expect(canProfileAccessContent(kidsProfile7Plus, contentItems.unclassified)).toBe(false);
-      expect(canProfileAccessContent(kidsProfile13Plus, contentItems.unclassified)).toBe(false);
+      expect(
+        canProfileAccessContent(kidsProfileDefault, contentItems.unclassified),
+      ).toBe(false);
+      expect(
+        canProfileAccessContent(kidsProfile7Plus, contentItems.unclassified),
+      ).toBe(false);
+      expect(
+        canProfileAccessContent(kidsProfile13Plus, contentItems.unclassified),
+      ).toBe(false);
       expect(
         canProfileAccessContent(kidsProfileDefault, {
           ...contentItems.kidsOnly,
@@ -180,36 +210,74 @@ describe('Content Access Policy & Maturity Filtering', () => {
     });
 
     it('enforces limit for default Kids profile (KIDS limit: ALL and KIDS only)', () => {
-      expect(canProfileAccessContent(kidsProfileDefault, contentItems.allAges)).toBe(true);
-      expect(canProfileAccessContent(kidsProfileDefault, contentItems.kidsOnly)).toBe(true);
-      expect(canProfileAccessContent(kidsProfileDefault, contentItems.sevenPlus)).toBe(false);
-      expect(canProfileAccessContent(kidsProfileDefault, contentItems.thirteenPlus)).toBe(false);
-      expect(canProfileAccessContent(kidsProfileDefault, contentItems.sixteenPlus)).toBe(false);
-      expect(canProfileAccessContent(kidsProfileDefault, contentItems.eighteenPlus)).toBe(false);
+      expect(
+        canProfileAccessContent(kidsProfileDefault, contentItems.allAges),
+      ).toBe(true);
+      expect(
+        canProfileAccessContent(kidsProfileDefault, contentItems.kidsOnly),
+      ).toBe(true);
+      expect(
+        canProfileAccessContent(kidsProfileDefault, contentItems.sevenPlus),
+      ).toBe(false);
+      expect(
+        canProfileAccessContent(kidsProfileDefault, contentItems.thirteenPlus),
+      ).toBe(false);
+      expect(
+        canProfileAccessContent(kidsProfileDefault, contentItems.sixteenPlus),
+      ).toBe(false);
+      expect(
+        canProfileAccessContent(kidsProfileDefault, contentItems.eighteenPlus),
+      ).toBe(false);
     });
 
     it('enforces limit for 7_PLUS Kids profile (allows ALL, KIDS, and 7_PLUS)', () => {
-      expect(canProfileAccessContent(kidsProfile7Plus, contentItems.allAges)).toBe(true);
-      expect(canProfileAccessContent(kidsProfile7Plus, contentItems.kidsOnly)).toBe(true);
-      expect(canProfileAccessContent(kidsProfile7Plus, contentItems.sevenPlus)).toBe(true);
-      expect(canProfileAccessContent(kidsProfile7Plus, contentItems.thirteenPlus)).toBe(false);
-      expect(canProfileAccessContent(kidsProfile7Plus, contentItems.sixteenPlus)).toBe(false);
-      expect(canProfileAccessContent(kidsProfile7Plus, contentItems.eighteenPlus)).toBe(false);
+      expect(
+        canProfileAccessContent(kidsProfile7Plus, contentItems.allAges),
+      ).toBe(true);
+      expect(
+        canProfileAccessContent(kidsProfile7Plus, contentItems.kidsOnly),
+      ).toBe(true);
+      expect(
+        canProfileAccessContent(kidsProfile7Plus, contentItems.sevenPlus),
+      ).toBe(true);
+      expect(
+        canProfileAccessContent(kidsProfile7Plus, contentItems.thirteenPlus),
+      ).toBe(false);
+      expect(
+        canProfileAccessContent(kidsProfile7Plus, contentItems.sixteenPlus),
+      ).toBe(false);
+      expect(
+        canProfileAccessContent(kidsProfile7Plus, contentItems.eighteenPlus),
+      ).toBe(false);
     });
 
     it('enforces limit for 13_PLUS Kids profile (allows ALL, KIDS, 7_PLUS, 13_PLUS)', () => {
-      expect(canProfileAccessContent(kidsProfile13Plus, contentItems.allAges)).toBe(true);
-      expect(canProfileAccessContent(kidsProfile13Plus, contentItems.kidsOnly)).toBe(true);
-      expect(canProfileAccessContent(kidsProfile13Plus, contentItems.sevenPlus)).toBe(true);
-      expect(canProfileAccessContent(kidsProfile13Plus, contentItems.thirteenPlus)).toBe(true);
-      expect(canProfileAccessContent(kidsProfile13Plus, contentItems.sixteenPlus)).toBe(false);
-      expect(canProfileAccessContent(kidsProfile13Plus, contentItems.eighteenPlus)).toBe(false);
+      expect(
+        canProfileAccessContent(kidsProfile13Plus, contentItems.allAges),
+      ).toBe(true);
+      expect(
+        canProfileAccessContent(kidsProfile13Plus, contentItems.kidsOnly),
+      ).toBe(true);
+      expect(
+        canProfileAccessContent(kidsProfile13Plus, contentItems.sevenPlus),
+      ).toBe(true);
+      expect(
+        canProfileAccessContent(kidsProfile13Plus, contentItems.thirteenPlus),
+      ).toBe(true);
+      expect(
+        canProfileAccessContent(kidsProfile13Plus, contentItems.sixteenPlus),
+      ).toBe(false);
+      expect(
+        canProfileAccessContent(kidsProfile13Plus, contentItems.eighteenPlus),
+      ).toBe(false);
     });
   });
 
   describe('filterContentForProfile', () => {
     it('returns empty array when input is null or empty', () => {
-      expect(filterContentForProfile(kidsProfileDefault, [] as any)).toEqual([]);
+      expect(filterContentForProfile(kidsProfileDefault, [] as any)).toEqual(
+        [],
+      );
       expect(filterContentForProfile(adultProfile, null as any)).toEqual([]);
     });
 
@@ -274,7 +342,10 @@ describe('Content Access Policy & Maturity Filtering', () => {
     ];
 
     it('filters items within rows and omits rows that become completely empty', () => {
-      const filteredRows = filterContentRowsForProfile(kidsProfileDefault, rows);
+      const filteredRows = filterContentRowsForProfile(
+        kidsProfileDefault,
+        rows,
+      );
       // row-adult-only should be dropped because all items are restricted!
       expect(filteredRows.length).toBe(2);
       expect(filteredRows[0].id).toBe('row-mixed');

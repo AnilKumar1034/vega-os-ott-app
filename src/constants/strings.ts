@@ -205,10 +205,17 @@ export const strings = {
     profileNamePlaceholder: 'e.g. Vihaan',
     avatarLabel: 'Choose Avatar',
     avatarOptionAccessibility: (name: string) => `Avatar option ${name}`,
-    profileCardAccessibility: (name: string, isKids: boolean, isActive: boolean) =>
-      `Profile ${name}${isKids ? ', Kids Profile' : ''}${isActive ? ', Currently Active' : ''}`,
+    profileCardAccessibility: (
+      name: string,
+      isKids: boolean,
+      isActive: boolean,
+    ) =>
+      `Profile ${name}${isKids ? ', Kids Profile' : ''}${
+        isActive ? ', Currently Active' : ''
+      }`,
     kidsProfileLabel: 'Kids Profile',
-    kidsProfileHint: 'Only show family-friendly movies and shows suitable for all ages',
+    kidsProfileHint:
+      'Only show family-friendly movies and shows suitable for all ages',
     kidsProfileShortHint: 'Family-friendly content only',
     switchProfile: 'Switch Profile',
     switchProfileHint: 'Switch to a different viewing profile',
@@ -346,9 +353,11 @@ export const strings = {
   // Parental Controls & PIN
   parentalControls: {
     title: 'Parental Controls',
-    subtitle: 'Manage your Parent PIN and content restrictions for Kids profiles.',
+    subtitle:
+      'Manage your Parent PIN and content restrictions for Kids profiles.',
     settingsSection: 'Parental Controls',
-    settingsHint: 'Set a PIN to lock profile switching and manage Kids content limits',
+    settingsHint:
+      'Set a PIN to lock profile switching and manage Kids content limits',
     setPin: 'Set Parent PIN',
     changePin: 'Change Parent PIN',
     removePin: 'Remove Parent PIN',
@@ -386,8 +395,35 @@ export const strings = {
     cancel: 'Cancel',
   },
 
+  subtitles: {
+    buttonLabel: 'Subtitles',
+    ccBadge: 'CC',
+    subtitlesTitle: 'Subtitles & Audio',
+    selectLanguage: 'Select Subtitles',
+    selectLanguageDesc:
+      'Choose your preferred subtitle language or turn subtitles off.',
+    off: 'Off',
+    english: 'English',
+    englishCC: 'English [CC]',
+    spanish: 'Spanish',
+    telugu: 'Telugu',
+    hindi: 'Hindi',
+    french: 'French',
+    german: 'German',
+    close: 'Close',
+    activeTrack: 'Active',
+    subtitlesDisabled: 'Subtitles: Off',
+    subtitleActive: (label: string) => `Subtitles: ${label}`,
+    tracksAvailable: (count: number) => `${count} Subtitle Languages Available`,
+  },
+
   accessibility: {
     retryVideoPlayback: 'Retry video playback',
     backToHome: 'Back to Home',
+    subtitlesButton: (label: string) =>
+      `Subtitles and closed captions. Currently ${label}`,
+    selectSubtitleTrack: (label: string, isSelected: boolean) =>
+      `${label} subtitle track${isSelected ? ', currently selected' : ''}`,
+    closeSubtitlesModal: 'Close subtitles selection modal',
   },
 } as const;

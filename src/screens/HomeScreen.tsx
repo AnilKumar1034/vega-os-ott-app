@@ -24,9 +24,7 @@ import {
   ContinueWatchRecord,
   fetchContinueWatchItems,
 } from '../services/watchProgressService';
-import {
-  fetchWatchlist,
-} from '../services/watchlistService';
+import {fetchWatchlist} from '../services/watchlistService';
 import {WatchlistItem} from '../types/watchlist';
 import {
   canProfileAccessContent,

@@ -70,7 +70,12 @@ const PreferenceToggle = ({
 
 export const EditProfileScreen = () => {
   const navigation = useNavigation<any>();
-  const {user, userProfile, updateProfile: updateAccountProfile, loading: authLoading} = useAuth();
+  const {
+    user,
+    userProfile,
+    updateProfile: updateAccountProfile,
+    loading: authLoading,
+  } = useAuth();
   const {
     activeProfile,
     profiles,
@@ -295,7 +300,8 @@ export const EditProfileScreen = () => {
             <View style={styles.formRow}>
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>
-                  {strings.profiles?.profileNameLabel || strings.auth.usernameLabel}
+                  {strings.profiles?.profileNameLabel ||
+                    strings.auth.usernameLabel}
                 </Text>
                 <TextInput
                   style={[styles.input]}
@@ -317,7 +323,9 @@ export const EditProfileScreen = () => {
                   <Text style={styles.readOnlyText} numberOfLines={1}>
                     {email}
                   </Text>
-                  <Text style={styles.lockedLabel}>{strings.common.locked}</Text>
+                  <Text style={styles.lockedLabel}>
+                    {strings.common.locked}
+                  </Text>
                 </View>
               </View>
             </View>
@@ -336,7 +344,9 @@ export const EditProfileScreen = () => {
             </TVFocusGuideView>
 
             {isKids && (
-              <View style={styles.maturityGroup} testID="kids-maturity-selector">
+              <View
+                style={styles.maturityGroup}
+                testID="kids-maturity-selector">
                 <Text style={styles.label}>
                   {strings.parentalControls.maturityLimitLabel}
                 </Text>

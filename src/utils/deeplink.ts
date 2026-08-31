@@ -38,9 +38,7 @@ export const findContentById = (contentId?: string): HomeContentItem | null => {
     ...homeContentRows.flatMap((row) => row.items),
   ];
 
-  return (
-    allItems.find((item) => item.id === contentId) || null
-  );
+  return allItems.find((item) => item.id === contentId) || null;
 };
 
 export const buildDeeplinkUrl = (path: string) =>

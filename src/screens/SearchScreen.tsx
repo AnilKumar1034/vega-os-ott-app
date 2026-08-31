@@ -5,10 +5,7 @@ import {CommonHeader} from '../components/molecules/CommonHeader';
 import {ContentRow} from '../components/molecules/ContentRow';
 import {SideMenu} from '../components/molecules/SideMenu';
 import {Routes} from '../constants/routes';
-import {
-  homeContentRows,
-  HomeContentRow,
-} from '../data/home';
+import {homeContentRows, HomeContentRow} from '../data/home';
 import {AppDetails} from '../constants/appDetails';
 import {useProfile} from '../profiles/hooks/useProfile';
 import {filterContentRowsForProfile} from '../utils/contentAccessPolicy';
@@ -24,7 +21,10 @@ export const SearchScreen = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
 
-  const allowedRows = filterContentRowsForProfile(activeProfile, homeContentRows);
+  const allowedRows = filterContentRowsForProfile(
+    activeProfile,
+    homeContentRows,
+  );
   const filteredRows = filterContentRows(allowedRows, searchQuery);
 
   const handleMenuFocus = () => {

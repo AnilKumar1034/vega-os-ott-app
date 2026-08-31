@@ -33,7 +33,7 @@ describe('ProfileSelectionScreen', () => {
     },
   ];
 
-  it('renders Who\'s Watching title and profile cards', () => {
+  it("renders Who's Watching title and profile cards", () => {
     (useProfile as jest.Mock).mockReturnValue({
       profiles: mockProfiles,
       activeProfile: mockProfiles[0],

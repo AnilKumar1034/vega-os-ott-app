@@ -159,7 +159,9 @@ export const CreateProfileScreen = () => {
                   onChangeText={(text) => {
                     if (text.length <= PROFILE_NAME_MAX_LENGTH) {
                       setName(text);
-                      if (errorMsg) setErrorMsg(null);
+                      if (errorMsg) {
+                        setErrorMsg(null);
+                      }
                     }
                   }}
                   onFocus={() => setFocusedField('name')}
@@ -217,7 +219,9 @@ export const CreateProfileScreen = () => {
               </TouchableOpacity>
 
               {isKids && (
-                <View style={styles.maturityGroup} testID="create-kids-maturity-selector">
+                <View
+                  style={styles.maturityGroup}
+                  testID="create-kids-maturity-selector">
                   <Text style={styles.label}>
                     {strings.parentalControls.maturityLimitLabel}
                   </Text>
@@ -232,7 +236,8 @@ export const CreateProfileScreen = () => {
                       ] as const
                     ).map((option) => {
                       const isSelected = kidsMaturityLimit === option.id;
-                      const isFocused = focusedField === `create-maturity-${option.id}`;
+                      const isFocused =
+                        focusedField === `create-maturity-${option.id}`;
                       return (
                         <TouchableOpacity
                           key={option.id}
@@ -241,7 +246,9 @@ export const CreateProfileScreen = () => {
                             isSelected && styles.maturityOptionSelected,
                             isFocused && styles.maturityOptionFocused,
                           ]}
-                          onFocus={() => setFocusedField(`create-maturity-${option.id}`)}
+                          onFocus={() =>
+                            setFocusedField(`create-maturity-${option.id}`)
+                          }
                           onBlur={() => setFocusedField(null)}
                           onPress={() => setKidsMaturityLimit(option.id)}
                           activeOpacity={1}

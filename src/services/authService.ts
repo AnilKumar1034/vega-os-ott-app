@@ -107,8 +107,7 @@ const decodeProfile = (doc: any): UserProfileData | null => {
     country: decodeString(fields.country),
     avatar: decodeString(fields.avatar) || 'initial',
     themePreference: decodeString(fields.themePreference) || 'cinematic',
-    notificationsEnabled:
-      fields.notificationsEnabled?.booleanValue ?? true,
+    notificationsEnabled: fields.notificationsEnabled?.booleanValue ?? true,
     autoplayEnabled: fields.autoplayEnabled?.booleanValue ?? true,
     createdAt: decodeString(fields.createdAt) || undefined,
   };
@@ -127,11 +126,11 @@ const mergeProfile = (
   city: updates.city ?? existing?.city ?? '',
   country: updates.country ?? existing?.country ?? '',
   avatar: updates.avatar ?? existing?.avatar ?? 'initial',
-  themePreference: updates.themePreference ?? existing?.themePreference ?? 'cinematic',
+  themePreference:
+    updates.themePreference ?? existing?.themePreference ?? 'cinematic',
   notificationsEnabled:
     updates.notificationsEnabled ?? existing?.notificationsEnabled ?? true,
-  autoplayEnabled:
-    updates.autoplayEnabled ?? existing?.autoplayEnabled ?? true,
+  autoplayEnabled: updates.autoplayEnabled ?? existing?.autoplayEnabled ?? true,
   createdAt: existing?.createdAt ?? new Date().toISOString(),
 });
 
@@ -193,7 +192,10 @@ const summarizeBody = (body: Record<string, unknown>) => ({
 });
 
 const describeFetchError = (error: unknown) => {
-  if (error instanceof TypeError && /Network request failed/i.test(error.message)) {
+  if (
+    error instanceof TypeError &&
+    /Network request failed/i.test(error.message)
+  ) {
     return {
       message: 'NETWORK_REQUEST_FAILED',
       kind: 'network_request_failed',
@@ -202,14 +204,17 @@ const describeFetchError = (error: unknown) => {
   }
 
   return {
-    message: error instanceof Error && error.message ? error.message : 'REQUEST_FAILED',
+    message:
+      error instanceof Error && error.message
+        ? error.message
+        : 'REQUEST_FAILED',
     kind: 'request_failed',
     originalMessage:
       error instanceof Error
         ? error.message
         : typeof error === 'string'
-          ? error
-          : String(error),
+        ? error
+        : String(error),
   };
 };
 

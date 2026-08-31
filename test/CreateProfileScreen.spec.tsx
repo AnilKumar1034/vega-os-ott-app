@@ -100,9 +100,7 @@ describe('CreateProfileScreen', () => {
     });
 
     const screen = render(<CreateProfileScreen />);
-    expect(
-      screen.getByText(strings.profiles.maxProfilesReached),
-    ).toBeTruthy();
+    expect(screen.getByText(strings.profiles.maxProfilesReached)).toBeTruthy();
     expect(screen.getByTestId('limit-back-button')).toBeTruthy();
   });
 });

@@ -2,10 +2,7 @@ import React, {useState} from 'react';
 import {ActivityIndicator, Text, TouchableOpacity, View} from 'react-native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {strings} from '../../constants/strings';
-import {
-  getAvatarMonogram,
-  getProfileAvatarById,
-} from '../data/profileAvatars';
+import {getAvatarMonogram, getProfileAvatarById} from '../data/profileAvatars';
 import {UserProfile} from '../types/Profile';
 import {colors} from '../../theme/colors';
 import {styles} from './DeleteProfileDialog.styles';

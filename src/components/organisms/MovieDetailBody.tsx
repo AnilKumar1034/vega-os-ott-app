@@ -11,12 +11,20 @@ import {styles} from '../../screens/MovieDetailScreen.styles';
 interface MovieDetailBodyProps {
   selectedMovie: HomeContentItem;
   recommendations: HomeContentItem[];
-  focusedAction: 'play' | 'list' | 'back' | 'favourites' | 'continueWatch' | null;
+  focusedAction:
+    | 'play'
+    | 'list'
+    | 'back'
+    | 'favourites'
+    | 'continueWatch'
+    | null;
   continueWatchProgress: number | null;
   isFavourite?: boolean;
   isInWatchlist?: boolean;
   toastMessage?: string | null;
-  onFocusAction: (action: 'play' | 'list' | 'back' | 'favourites' | 'continueWatch') => void;
+  onFocusAction: (
+    action: 'play' | 'list' | 'back' | 'favourites' | 'continueWatch',
+  ) => void;
   onBlurAction: () => void;
   onCardFocus: () => void;
   onAddFavourite?: () => void;
@@ -43,7 +51,8 @@ export const MovieDetailBody = ({
 }: MovieDetailBodyProps) => {
   const navigation = useNavigation<any>();
   const inList = isInWatchlist || isFavourite;
-  const handleToggleList = onToggleWatchlist || (inList ? onRemoveFavourite : onAddFavourite);
+  const handleToggleList =
+    onToggleWatchlist || (inList ? onRemoveFavourite : onAddFavourite);
 
   return (
     <View style={styles.mainCardContainer}>
@@ -131,7 +140,7 @@ export const MovieDetailBody = ({
                 navigation.navigate(Routes.VideoPlayer, {
                   movie: selectedMovie,
                   videoUrl: selectedMovie.videoUrl,
-              })
+                })
               }
               hasTVPreferredFocus
               activeOpacity={1}
@@ -204,10 +213,7 @@ export const MovieDetailBody = ({
                 accessibilityLabel={`${strings.actions.addToMyList} ${selectedMovie.title}`}
                 testID="my-list-button">
                 <Text
-                  style={[
-                    styles.secondaryButtonText,
-                    styles.addFavouriteText,
-                  ]}>
+                  style={[styles.secondaryButtonText, styles.addFavouriteText]}>
                   {strings.actions.addToMyList}
                 </Text>
               </TouchableOpacity>

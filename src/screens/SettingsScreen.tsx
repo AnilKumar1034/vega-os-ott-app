@@ -283,10 +283,7 @@ export const SettingsScreen = () => {
           <View style={styles.card}>
             <View style={styles.accountPanel}>
               <View style={styles.accountHeader}>
-                <ProfileAvatar
-                  avatar={avatar}
-                  displayName={displayName}
-                />
+                <ProfileAvatar avatar={avatar} displayName={displayName} />
                 <View style={styles.accountHeaderCopy}>
                   <Text style={styles.userName} numberOfLines={1}>
                     {displayName}
@@ -368,7 +365,10 @@ export const SettingsScreen = () => {
                 <ActionButton
                   id="switch-profile"
                   label={strings.profiles?.switchProfile || 'Switch Profile'}
-                  hint={strings.profiles?.switchProfileHint || 'Switch to another viewing profile'}
+                  hint={
+                    strings.profiles?.switchProfileHint ||
+                    'Switch to another viewing profile'
+                  }
                   focusedId={focusedId}
                   onFocus={setFocusedId}
                   onPress={handleSwitchProfile}
@@ -401,7 +401,9 @@ export const SettingsScreen = () => {
                   </Text>
                 </View>
                 <Text style={styles.saveStatus}>
-                  {savingPreference ? strings.common.saving : strings.common.autoSaved}
+                  {savingPreference
+                    ? strings.common.saving
+                    : strings.common.autoSaved}
                 </Text>
               </View>
 
@@ -444,7 +446,9 @@ export const SettingsScreen = () => {
                           styles.themeState,
                           isSelected && styles.themeStateSelected,
                         ]}>
-                        {isSelected ? strings.common.selected : strings.common.select}
+                        {isSelected
+                          ? strings.common.selected
+                          : strings.common.select}
                       </Text>
                     </TouchableOpacity>
                   );

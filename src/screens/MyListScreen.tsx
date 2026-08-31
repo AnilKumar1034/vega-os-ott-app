@@ -1,5 +1,11 @@
 import React, {useCallback, useEffect, useMemo, useState} from 'react';
-import {FlatList, ImageBackground, Text, TouchableOpacity, View} from 'react-native';
+import {
+  FlatList,
+  ImageBackground,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {CommonHeader} from '../components/molecules/CommonHeader';
@@ -30,26 +36,29 @@ export const MyListScreen = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const loadWatchlistData = useCallback(async (profileId?: string) => {
-    if (!user || !profileId) {
-      setWatchlistItems([]);
-      setIsLoading(false);
-      return;
-    }
+  const loadWatchlistData = useCallback(
+    async (profileId?: string) => {
+      if (!user || !profileId) {
+        setWatchlistItems([]);
+        setIsLoading(false);
+        return;
+      }
 
-    setIsLoading(true);
-    setErrorMessage(null);
-    try {
-      const items = await fetchWatchlist(profileId);
-      setWatchlistItems(items);
-    } catch (error: any) {
-      console.log('Error loading watchlist:', error);
-      setErrorMessage(error?.message || strings.myList.errorTitle);
-      setWatchlistItems([]);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [user]);
+      setIsLoading(true);
+      setErrorMessage(null);
+      try {
+        const items = await fetchWatchlist(profileId);
+        setWatchlistItems(items);
+      } catch (error: any) {
+        console.log('Error loading watchlist:', error);
+        setErrorMessage(error?.message || strings.myList.errorTitle);
+        setWatchlistItems([]);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [user],
+  );
 
   useEffect(() => {
     let isCurrent = true;
@@ -158,7 +167,9 @@ export const MyListScreen = () => {
       return (
         <View style={styles.centerContainer} testID="my-list-error-state">
           <Text style={styles.stateTitle}>{strings.myList.errorTitle}</Text>
-          <Text style={styles.stateSubtitle}>{strings.myList.errorSubtitle}</Text>
+          <Text style={styles.stateSubtitle}>
+            {strings.myList.errorSubtitle}
+          </Text>
           <View style={styles.actionsContainer}>
             <TouchableOpacity
               style={[
@@ -176,7 +187,9 @@ export const MyListScreen = () => {
               accessibilityRole="button"
               accessibilityLabel={strings.myList.retry}
               testID="my-list-retry-button">
-              <Text style={styles.actionButtonText}>{strings.myList.retry}</Text>
+              <Text style={styles.actionButtonText}>
+                {strings.myList.retry}
+              </Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -222,7 +235,8 @@ export const MyListScreen = () => {
                 <TouchableOpacity
                   style={[
                     styles.actionButton,
-                    focusedAction === 'clear-search' && styles.actionButtonFocused,
+                    focusedAction === 'clear-search' &&
+                      styles.actionButtonFocused,
                   ]}
                   onFocus={() => {
                     collapseMenu();
@@ -332,7 +346,9 @@ export const MyListScreen = () => {
             ListHeaderComponent={
               <View style={styles.headerSection}>
                 <View style={styles.titleRow}>
-                  <Text style={styles.title}>{strings.nav.myListHeaderTitle}</Text>
+                  <Text style={styles.title}>
+                    {strings.nav.myListHeaderTitle}
+                  </Text>
                   {filteredItems.length > 0 && (
                     <Text style={styles.countBadge}>
                       {strings.myList.itemCount(filteredItems.length)}

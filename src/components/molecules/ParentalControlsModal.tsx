@@ -11,18 +11,19 @@ export interface ParentalControlsModalProps {
   onClose: () => void;
 }
 
-type DialogStep = 'none' | 'setup_new' | 'verify_before_change' | 'change_new' | 'verify_before_remove';
+type DialogStep =
+  | 'none'
+  | 'setup_new'
+  | 'verify_before_change'
+  | 'change_new'
+  | 'verify_before_remove';
 
 export const ParentalControlsModal = ({
   visible,
   onClose,
 }: ParentalControlsModalProps) => {
-  const {
-    parentalSettings,
-    setParentPin,
-    removeParentPin,
-    verifyParentPin,
-  } = useProfile();
+  const {parentalSettings, setParentPin, removeParentPin, verifyParentPin} =
+    useProfile();
 
   const [dialogStep, setDialogStep] = useState<DialogStep>('none');
   const [focusedId, setFocusedId] = useState<string | null>('opt-primary');
@@ -87,7 +88,9 @@ export const ParentalControlsModal = ({
             <Text style={styles.iconText}>🛡️</Text>
           </View>
           <Text style={styles.title}>{strings.parentalControls.title}</Text>
-          <Text style={styles.subtitle}>{strings.parentalControls.subtitle}</Text>
+          <Text style={styles.subtitle}>
+            {strings.parentalControls.subtitle}
+          </Text>
         </View>
 
         {feedbackMessage && (

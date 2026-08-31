@@ -66,7 +66,14 @@ export const HeroCarousel = ({
   const {activeProfile} = useProfile();
   const [activeIndex, setActiveIndex] = useState(0);
   const [focusedAction, setFocusedAction] = useState<
-    'play' | 'list' | 'prev' | 'next' | 'favourites' | 'continueWatch' | number | null
+    | 'play'
+    | 'list'
+    | 'prev'
+    | 'next'
+    | 'favourites'
+    | 'continueWatch'
+    | number
+    | null
   >(null);
   const [isSavedInList, setIsSavedInList] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
@@ -234,47 +241,47 @@ export const HeroCarousel = ({
         <TVFocusGuideView style={styles.actionsRow} autoFocus>
           <View style={styles.actionsWrap}>
             <View style={styles.actions}>
-            <TouchableOpacity
-              style={[
-                styles.playButton,
-                focusedAction === 'play' && styles.focusedAction,
-              ]}
-              onFocus={() => handleFocus('play')}
-              onBlur={handleBlur}
-              onPress={playVideo}
-              activeOpacity={1}
-              hasTVPreferredFocus={shouldPreferFocus && activeIndex === 0}
-              accessibilityRole="button"
-              accessibilityLabel={strings.hero.playAccessibility(
-                currentSlide.title,
-              )}
-              testID="hero-play-button">
-              <Text style={styles.playButtonText}>{AppDetails.play}</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.playButton,
+                  focusedAction === 'play' && styles.focusedAction,
+                ]}
+                onFocus={() => handleFocus('play')}
+                onBlur={handleBlur}
+                onPress={playVideo}
+                activeOpacity={1}
+                hasTVPreferredFocus={shouldPreferFocus && activeIndex === 0}
+                accessibilityRole="button"
+                accessibilityLabel={strings.hero.playAccessibility(
+                  currentSlide.title,
+                )}
+                testID="hero-play-button">
+                <Text style={styles.playButtonText}>{AppDetails.play}</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={[
-                styles.listButton,
-                focusedAction === 'list' && styles.focusedAction,
-              ]}
-              onFocus={() => handleFocus('list')}
-              onBlur={handleBlur}
-              onPress={toggleWatchlist}
-              activeOpacity={1}
-              accessibilityRole="button"
-              accessibilityLabel={
-                isSavedInList
-                  ? `${strings.actions.removeFromMyList} ${currentSlide.title}`
-                  : `${strings.actions.addToMyList} ${currentSlide.title}`
-              }
-              testID="hero-mylist-button">
-              <Text style={styles.listButtonText}>
-                {isSavedInList
-                  ? strings.actions.inMyList
-                  : strings.actions.addToMyList}
-              </Text>
-            </TouchableOpacity>
-          </View>
+              <TouchableOpacity
+                style={[
+                  styles.listButton,
+                  focusedAction === 'list' && styles.focusedAction,
+                ]}
+                onFocus={() => handleFocus('list')}
+                onBlur={handleBlur}
+                onPress={toggleWatchlist}
+                activeOpacity={1}
+                accessibilityRole="button"
+                accessibilityLabel={
+                  isSavedInList
+                    ? `${strings.actions.removeFromMyList} ${currentSlide.title}`
+                    : `${strings.actions.addToMyList} ${currentSlide.title}`
+                }
+                testID="hero-mylist-button">
+                <Text style={styles.listButtonText}>
+                  {isSavedInList
+                    ? strings.actions.inMyList
+                    : strings.actions.addToMyList}
+                </Text>
+              </TouchableOpacity>
+            </View>
             {toastMsg ? (
               <View style={styles.toast}>
                 <Text style={styles.toastText}>{toastMsg}</Text>

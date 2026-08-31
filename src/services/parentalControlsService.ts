@@ -110,16 +110,24 @@ const encodeUserDocParentalPayload = (settings: ParentalControlsSettings) => ({
       mapValue: {
         fields: {
           pinEnabled: encodeBoolean(settings.pinEnabled),
-          ...(settings.pinHash ? {pinHash: encodeString(settings.pinHash)} : {}),
-          ...(settings.createdAt ? {createdAt: encodeString(settings.createdAt)} : {}),
-          updatedAt: encodeString(settings.updatedAt || new Date().toISOString()),
+          ...(settings.pinHash
+            ? {pinHash: encodeString(settings.pinHash)}
+            : {}),
+          ...(settings.createdAt
+            ? {createdAt: encodeString(settings.createdAt)}
+            : {}),
+          updatedAt: encodeString(
+            settings.updatedAt || new Date().toISOString(),
+          ),
         },
       },
     },
   },
 });
 
-const decodeUserDocParentalSettings = (doc: any): ParentalControlsSettings | null => {
+const decodeUserDocParentalSettings = (
+  doc: any,
+): ParentalControlsSettings | null => {
   const mapFields = doc?.fields?.parentalControls?.mapValue?.fields;
   if (!mapFields) {
     return null;
@@ -133,14 +141,18 @@ const decodeUserDocParentalSettings = (doc: any): ParentalControlsSettings | nul
 };
 
 export const parentalControlsService = {
-  getSettings: async (uid: string): Promise<ParentalControlsSettings | null> => {
+  getSettings: async (
+    uid: string,
+  ): Promise<ParentalControlsSettings | null> => {
     if (!uid || !uid.trim()) {
       return null;
     }
 
     try {
       // 1. Try primary path: users/{uid}/parentalControls/settings
-      const response = await authenticatedFirestoreFetch(getSettingsDocUrl(uid));
+      const response = await authenticatedFirestoreFetch(
+        getSettingsDocUrl(uid),
+      );
       if (response && response.ok) {
         const json = await readJson(response);
         const decoded = decodeDocument(json);
@@ -150,7 +162,9 @@ export const parentalControlsService = {
         }
       } else if (response && response.status === 403) {
         // 2. If 403, try reading from user document: users/{uid}
-        const userDocResponse = await authenticatedFirestoreFetch(getUserDocUrl(uid));
+        const userDocResponse = await authenticatedFirestoreFetch(
+          getUserDocUrl(uid),
+        );
         if (userDocResponse && userDocResponse.ok) {
           const json = await readJson(userDocResponse);
           const decoded = decodeUserDocParentalSettings(json);
@@ -193,13 +207,16 @@ export const parentalControlsService = {
 
     try {
       // Try primary path: users/{uid}/parentalControls/settings
-      const response = await authenticatedFirestoreFetch(getSettingsDocUrl(uid), {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await authenticatedFirestoreFetch(
+        getSettingsDocUrl(uid),
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(encodeDocument(updatedSettings)),
         },
-        body: JSON.stringify(encodeDocument(updatedSettings)),
-      });
+      );
 
       if (response && response.ok) {
         return;
@@ -207,7 +224,9 @@ export const parentalControlsService = {
 
       // If 403 or permission denied, write to user document with updateMask
       if (response && response.status === 403) {
-        const userDocUrl = `${getUserDocUrl(uid)}?updateMask.fieldPaths=parentalControls`;
+        const userDocUrl = `${getUserDocUrl(
+          uid,
+        )}?updateMask.fieldPaths=parentalControls`;
         const userDocResponse = await authenticatedFirestoreFetch(userDocUrl, {
           method: 'PATCH',
           headers: {
@@ -253,20 +272,25 @@ export const parentalControlsService = {
     await saveLocalSettings(uid, updatedSettings);
 
     try {
-      const response = await authenticatedFirestoreFetch(getSettingsDocUrl(uid), {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await authenticatedFirestoreFetch(
+        getSettingsDocUrl(uid),
+        {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(encodeDocument(updatedSettings)),
         },
-        body: JSON.stringify(encodeDocument(updatedSettings)),
-      });
+      );
 
       if (response && response.ok) {
         return;
       }
 
       if (response && response.status === 403) {
-        const userDocUrl = `${getUserDocUrl(uid)}?updateMask.fieldPaths=parentalControls`;
+        const userDocUrl = `${getUserDocUrl(
+          uid,
+        )}?updateMask.fieldPaths=parentalControls`;
         await authenticatedFirestoreFetch(userDocUrl, {
           method: 'PATCH',
           headers: {

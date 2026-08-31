@@ -33,8 +33,11 @@ const mockMovieA: HomeContentItem = {
   title: 'Kalki 2898 AD',
   genre: 'Sci-Fi',
   rating: '⭐ 7.7 / 10',
-  image: {uri: 'https://image.tmdb.org/t/p/w780/rstcAnBeCkxNQjNp3YXrF6IP1tW.jpg'},
-  videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+  image: {
+    uri: 'https://image.tmdb.org/t/p/w780/rstcAnBeCkxNQjNp3YXrF6IP1tW.jpg',
+  },
+  videoUrl:
+    'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
 };
 
 const mockMovieB: HomeContentItem = {
@@ -42,8 +45,11 @@ const mockMovieB: HomeContentItem = {
   title: 'Jawan',
   genre: 'Action',
   rating: '⭐ 7.0 / 10',
-  image: {uri: 'https://image.tmdb.org/t/p/w780/jFt1gS4BGHlK8xt76Y81Alp4dbt.jpg'},
-  videoUrl: 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+  image: {
+    uri: 'https://image.tmdb.org/t/p/w780/jFt1gS4BGHlK8xt76Y81Alp4dbt.jpg',
+  },
+  videoUrl:
+    'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
 };
 
 describe('watchlistService (Profile-Specific Watchlist / My List)', () => {
@@ -75,9 +81,7 @@ describe('watchlistService (Profile-Specific Watchlist / My List)', () => {
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, options] = mockFetch.mock.calls[0];
-    expect(url).toContain(
-      `/users/${uid}/profiles/profile-a/watchlist/kalki`,
-    );
+    expect(url).toContain(`/users/${uid}/profiles/profile-a/watchlist/kalki`);
     expect(options.method).toBe('PATCH');
 
     const body = JSON.parse(options.body);
@@ -97,9 +101,7 @@ describe('watchlistService (Profile-Specific Watchlist / My List)', () => {
     await addToWatchlist('profile-a', mockMovieA);
 
     const [url] = mockFetch.mock.calls[0];
-    expect(url).toContain(
-      `/users/${uid}/profiles/profile-a/watchlist/kalki`,
-    );
+    expect(url).toContain(`/users/${uid}/profiles/profile-a/watchlist/kalki`);
   });
 
   it('3. Profile A removes Movie A from Firestore', async () => {
@@ -113,9 +115,7 @@ describe('watchlistService (Profile-Specific Watchlist / My List)', () => {
 
     expect(mockFetch).toHaveBeenCalledTimes(1);
     const [url, options] = mockFetch.mock.calls[0];
-    expect(url).toContain(
-      `/users/${uid}/profiles/profile-a/watchlist/kalki`,
-    );
+    expect(url).toContain(`/users/${uid}/profiles/profile-a/watchlist/kalki`);
     expect(options.method).toBe('DELETE');
   });
 

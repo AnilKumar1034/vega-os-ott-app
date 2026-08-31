@@ -53,7 +53,10 @@ export const MovieDetailScreen = () => {
     homeContentRows[0].items[0];
   const resolvedMovie =
     route.params?.movie || findContentById(route.params?.movieId);
-  const isContentAllowed = canProfileAccessContent(activeProfile, selectedMovie);
+  const isContentAllowed = canProfileAccessContent(
+    activeProfile,
+    selectedMovie,
+  );
 
   const allRecommendations =
     homeContentRows[1]?.items || homeContentRows[0].items;

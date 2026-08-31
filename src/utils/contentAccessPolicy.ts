@@ -18,7 +18,10 @@ export const isValidMaturityRating = (
 export const getEffectiveKidsMaturityLimit = (
   profile?: UserProfile | null,
 ): ContentMaturityRating => {
-  if (profile?.kidsMaturityLimit && isValidMaturityRating(profile.kidsMaturityLimit)) {
+  if (
+    profile?.kidsMaturityLimit &&
+    isValidMaturityRating(profile.kidsMaturityLimit)
+  ) {
     return profile.kidsMaturityLimit;
   }
   return DEFAULT_KIDS_MATURITY_LIMIT;
@@ -38,7 +41,10 @@ export const canProfileAccessContent = (
   }
 
   // Kids profile: content MUST have a valid maturity rating
-  if (!content.maturityRating || !isValidMaturityRating(content.maturityRating)) {
+  if (
+    !content.maturityRating ||
+    !isValidMaturityRating(content.maturityRating)
+  ) {
     // Unclassified content is blocked by default for Kids profiles
     return false;
   }
@@ -51,7 +57,7 @@ export const canProfileAccessContent = (
 };
 
 export const filterContentForProfile = <
-  T extends {maturityRating?: ContentMaturityRating | string}
+  T extends {maturityRating?: ContentMaturityRating | string},
 >(
   profile: UserProfile | null | undefined,
   items: T[],

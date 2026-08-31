@@ -149,12 +149,13 @@ export const ProfileProvider = ({children}: {children: ReactNode}) => {
     return loadProfilesForUser(user.uid);
   };
 
-  const refreshParentalSettings = async (): Promise<ParentalControlsSettings | null> => {
-    if (!user) {
-      return null;
-    }
-    return loadParentalSettingsForUser(user.uid);
-  };
+  const refreshParentalSettings =
+    async (): Promise<ParentalControlsSettings | null> => {
+      if (!user) {
+        return null;
+      }
+      return loadParentalSettingsForUser(user.uid);
+    };
 
   const verifyParentPin = async (pin: string): Promise<boolean> => {
     if (!user) {
