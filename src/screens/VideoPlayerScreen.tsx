@@ -39,6 +39,14 @@ import {
 import {SubtitleTrack} from '../types/subtitles';
 import {SubtitleOverlay} from '../components/molecules/SubtitleOverlay';
 import {SubtitlesModal} from '../components/molecules/SubtitlesModal';
+import {getAudioTracksForContent} from '../data/audioTracks';
+import {
+  findMatchingAudioTrack,
+  getSavedAudioPreference,
+  saveAudioPreference,
+} from '../services/audioTrackService';
+import {AudioTrack} from '../types/audioTracks';
+import {AudioTracksModal} from '../components/molecules/AudioTracksModal';
 
 let KeplerVideoViewComponent: any = View;
 let KeplerVideoSurfaceViewComponent: any = View;
@@ -68,13 +76,6 @@ export const VideoPlayerScreen = () => {
   const {user, loading} = useAuth();
   const {activeProfile} = useProfile();
   const isLive = Boolean(route.params?.isLive);
-  const streamType = route.params?.streamType as 'hls' | 'dash' | undefined;
-  const isVideoOnly = Boolean(route.params?.isVideoOnly);
-  const drm = route.params?.drm as LiveChannelDrmConfig | undefined;
-  const isDrmContent = Boolean(drm?.enabled);
-  // DASH requires MSE/Shaka even when it is clear content. Keeping this path
-  // available lets us verify the MSE pipeline independently from Widevine.
-  const useShakaPlayer = streamType === 'dash' || isDrmContent;
 
   const screenDimensions = Dimensions.get('window');
   const screenWidth = screenDimensions.width || 1920;
@@ -98,6 +99,23 @@ export const VideoPlayerScreen = () => {
 
   const videoUrl =
     route.params?.videoUrl || movie.videoUrl || DEFAULT_MOCK_VIDEO_URL;
+  const streamType =
+    (route.params?.streamType as 'hls' | 'dash' | undefined) ||
+    (videoUrl?.includes('.mpd')
+      ? 'dash'
+      : videoUrl?.includes('.m3u8')
+      ? 'hls'
+      : undefined);
+  const isVideoOnly = Boolean(route.params?.isVideoOnly);
+  const drm = route.params?.drm as LiveChannelDrmConfig | undefined;
+  const isDrmContent = Boolean(drm?.enabled);
+  // DASH and multi-audio adaptive streams require MSE/Shaka to switch audio
+  // elementary streams dynamically on Vega OS.
+  const useShakaPlayer =
+    streamType === 'dash' ||
+    isDrmContent ||
+    Boolean(videoUrl?.includes('angel-one')) ||
+    Boolean(videoUrl?.includes('storage.googleapis.com/shaka-demo-assets'));
   const deeplinkSeek = Number(route.params?.seek);
   const hasExplicitSeek =
     Number.isFinite(deeplinkSeek) && deeplinkSeek >= 0 ? deeplinkSeek : null;
@@ -149,6 +167,8 @@ export const VideoPlayerScreen = () => {
   const movieId = movie.id;
   const shakaPlayerRef = useRef<ShakaPlayer | null>(null);
   const drmPlaybackStartedRef = useRef(false);
+  const surfaceReadyRef = useRef(false);
+  const shakaLoadedRef = useRef(false);
   // A D-pad Select that opens the player can be delivered once more as the
   // initial TV focus settles. Keep it from activating the Back button.
   const playerOpenedAtRef = useRef(Date.now());
@@ -164,8 +184,6 @@ export const VideoPlayerScreen = () => {
   const backButtonRef = useRef<any>(null);
   const [backButtonNode, setBackButtonNode] = useState<any>(null);
   const [isBackFocused, setIsBackFocused] = useState(false);
-  const [isPlaybackControlFocused, setIsPlaybackControlFocused] =
-    useState(false);
   const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
@@ -298,6 +316,66 @@ export const VideoPlayerScreen = () => {
     );
   }, [availableSubtitleTracks, selectedSubtitleTrackId]);
 
+  // --- Audio Tracks Feature Setup ---
+  const availableAudioTracks = useMemo<AudioTrack[]>(
+    () =>
+      getAudioTracksForContent(
+        movie.id,
+        movie.title,
+        videoUrl,
+        isLive,
+        movie.genre,
+        movie.description,
+      ),
+    [movie.id, movie.title, videoUrl, isLive, movie.genre, movie.description],
+  );
+
+  const [selectedAudioTrackId, setSelectedAudioTrackId] = useState<string>(
+    () => {
+      const defaultTrack = availableAudioTracks.find((t) => t.isDefault);
+      return defaultTrack
+        ? defaultTrack.id
+        : availableAudioTracks[0]?.id || 'audio-default';
+    },
+  );
+  const [isAudioTracksModalOpen, setIsAudioTracksModalOpen] = useState(false);
+  const [isAudioFocused, setIsAudioFocused] = useState(false);
+
+  // Load saved audio preference for active profile
+  useEffect(() => {
+    let active = true;
+    const loadAudioPref = async () => {
+      const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+      const savedPref = await getSavedAudioPreference(targetProfileId);
+      if (active && savedPref) {
+        const matching = findMatchingAudioTrack(
+          availableAudioTracks,
+          savedPref,
+        );
+        if (matching) {
+          setSelectedAudioTrackId(matching.id);
+        }
+      }
+    };
+    loadAudioPref();
+    return () => {
+      active = false;
+    };
+  }, [activeProfile?.id, availableAudioTracks]);
+
+  const activeAudioTrack = useMemo(() => {
+    return (
+      availableAudioTracks.find((t) => t.id === selectedAudioTrackId) ||
+      availableAudioTracks[0] ||
+      null
+    );
+  }, [availableAudioTracks, selectedAudioTrackId]);
+
+  const selectedAudioLanguageRef = useRef<string | null>(null);
+  useEffect(() => {
+    selectedAudioLanguageRef.current = activeAudioTrack?.language || null;
+  }, [activeAudioTrack?.language]);
+
   const updateActiveSubtitle = useCallback(() => {
     if (!player || !activeSubtitleTrack || !activeSubtitleTrack.cues) {
       setActiveSubtitleCueText(null);
@@ -409,6 +487,119 @@ export const VideoPlayerScreen = () => {
     [activeProfile?.id, availableSubtitleTracks, player, resetHideTimer],
   );
 
+  const handleSelectAudioTrack = useCallback(
+    async (trackId: string) => {
+      setSelectedAudioTrackId(trackId);
+      const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+      await saveAudioPreference(targetProfileId, trackId);
+
+      const targetTrack = availableAudioTracks.find((t) => t.id === trackId);
+      if (!targetTrack) {
+        setIsAudioTracksModalOpen(false);
+        resetHideTimer();
+        return;
+      }
+
+      // 1. Sync with native W3C media element audioTracks if matching track exists
+      if (player?.audioTracks && player.audioTracks.length > 0) {
+        try {
+          let hasMatchingNativeTrack = false;
+          for (let i = 0; i < player.audioTracks.length; i++) {
+            const current = player.audioTracks[i];
+            if (
+              current &&
+              (current.language?.toLowerCase() ===
+                targetTrack.language.toLowerCase() ||
+                current.label?.toLowerCase() ===
+                  targetTrack.label.toLowerCase() ||
+                current.id === targetTrack.id)
+            ) {
+              hasMatchingNativeTrack = true;
+              break;
+            }
+          }
+
+          if (hasMatchingNativeTrack) {
+            for (let i = 0; i < player.audioTracks.length; i++) {
+              const current = player.audioTracks[i];
+              if (current) {
+                const matches =
+                  current.language?.toLowerCase() ===
+                    targetTrack.language.toLowerCase() ||
+                  current.label?.toLowerCase() ===
+                    targetTrack.label.toLowerCase() ||
+                  current.id === targetTrack.id;
+                current.enabled = matches;
+              }
+            }
+            player.audioTracks.emitEvent?.('change');
+          }
+        } catch (e) {
+          console.log('Notice syncing player audio track:', e);
+        }
+      }
+
+      // 2. Sync if player has selectAudioLanguage method
+      if (typeof player?.selectAudioLanguage === 'function') {
+        try {
+          player.selectAudioLanguage(targetTrack.language);
+        } catch (e) {
+          console.log('Notice calling player.selectAudioLanguage:', e);
+        }
+      }
+
+      // 3. Sync with Shaka player instance if active
+      if (shakaPlayerRef.current) {
+        try {
+          const shakaInst = shakaPlayerRef.current;
+          const targetLang = targetTrack.language.toLowerCase();
+          console.log('Shaka selecting audio track language:', targetLang);
+
+          shakaInst.selectAudioLanguage?.(targetTrack.language);
+          if (shakaInst.player?.selectAudioLanguage) {
+            shakaInst.player.selectAudioLanguage(targetTrack.language);
+          }
+
+          // If variant tracks are available, select matching variant and clear audio buffer
+          const rawPlayer = shakaInst.player;
+          if (rawPlayer && typeof rawPlayer.getVariantTracks === 'function') {
+            const variants = rawPlayer.getVariantTracks();
+            if (Array.isArray(variants)) {
+              const match = variants.find(
+                (v: any) =>
+                  v.language?.toLowerCase() === targetLang ||
+                  v.language?.toLowerCase().startsWith(targetLang) ||
+                  targetLang.startsWith(v.language?.toLowerCase() || ''),
+              );
+              if (match && typeof rawPlayer.selectVariantTrack === 'function') {
+                console.log('Shaka activating variant track:', match);
+                rawPlayer.selectVariantTrack(match, true);
+              }
+            }
+          }
+        } catch (e) {
+          console.log('Notice Shaka audio track selection:', e);
+        }
+      }
+
+      setIsAudioTracksModalOpen(false);
+      resetHideTimer();
+    },
+    [activeProfile?.id, availableAudioTracks, player, resetHideTimer],
+  );
+
+  const startAdaptivePlayback = useCallback(() => {
+    if (!player) {
+      return;
+    }
+    Promise.resolve(player?.play?.()).catch((error) => {
+      console.log('Adaptive playback start error:', error);
+      setVideoError(
+        error?.message || strings.errors.videoPlaybackUnavailable,
+      );
+    });
+  }, [player]);
+
   const startDrmPlayback = useCallback(async () => {
     if (!useShakaPlayer || !player || drmPlaybackStartedRef.current) {
       return;
@@ -447,6 +638,7 @@ export const VideoPlayerScreen = () => {
         playerSettings,
       ) as ShakaPlayer;
       shakaPlayerRef.current = shakaPlayer;
+      const initialAudioLang = selectedAudioLanguageRef.current;
       const source = {
         secure: isDrmContent ? 'true' : 'false',
         uri: videoUrl,
@@ -455,6 +647,9 @@ export const VideoPlayerScreen = () => {
         vcodec: 'avc1',
         ...(isVideoOnly ? {} : {acodec: 'mp4a'}),
         ...(isVideoOnly ? {video_only: 'true'} : {}),
+        ...(initialAudioLang
+          ? {preferredAudioLanguage: initialAudioLang}
+          : {}),
         ...(isDrmContent && drm
           ? {
               drm_scheme: drm.keySystem,
@@ -464,8 +659,66 @@ export const VideoPlayerScreen = () => {
       };
 
       await shakaPlayer.load(source, true);
+      shakaLoadedRef.current = true;
+
+      // Sync any text tracks discovered by Shaka into player.textTracks so default player controls display them
+      try {
+        const rawPlayer = shakaPlayer.player;
+        if (rawPlayer && typeof rawPlayer.getTextTracks === 'function') {
+          const shakaTracks = rawPlayer.getTextTracks();
+          if (
+            Array.isArray(shakaTracks) &&
+            player.addTextTrack &&
+            player.textTracks
+          ) {
+            shakaTracks.forEach((st: any) => {
+              const lang = st.language || 'en';
+              const label = st.label || st.language || 'Subtitle';
+              const trackListLen = player.textTracks.length || 0;
+              let exists = false;
+              for (let i = 0; i < trackListLen; i++) {
+                const t = player.textTracks[i];
+                if (t && (t.language === lang || t.label === label)) {
+                  exists = true;
+                  break;
+                }
+              }
+              if (!exists) {
+                const newTrack = player.addTextTrack('subtitles', label, lang);
+                if (newTrack) {
+                  newTrack.mode = 'hidden';
+                  player.textTracks.emitEvent?.('addtrack', newTrack);
+                }
+              }
+            });
+          }
+        }
+      } catch (err) {
+        console.log('Shaka text track sync notice:', err);
+      }
+
+      if (initialAudioLang) {
+        try {
+          shakaPlayer.selectAudioLanguage?.(initialAudioLang);
+        } catch (err) {
+          console.log('Shaka initial audio track selection notice:', err);
+        }
+      }
+
+      const isSurfaceReady =
+        surfaceReadyRef.current || Boolean(player?.surfaceHandle);
+      if (isSurfaceReady) {
+        startAdaptivePlayback();
+      } else {
+        setTimeout(() => {
+          if (shakaLoadedRef.current) {
+            startAdaptivePlayback();
+          }
+        }, 500);
+      }
     } catch (error: any) {
       drmPlaybackStartedRef.current = false;
+      shakaLoadedRef.current = false;
       console.log('DRM playback initialization error:', error);
       setVideoError(error?.message || strings.errors.videoPlaybackUnavailable);
       throw error;
@@ -477,6 +730,7 @@ export const VideoPlayerScreen = () => {
     player,
     screenHeight,
     screenWidth,
+    startAdaptivePlayback,
     streamType,
     useShakaPlayer,
     videoUrl,
@@ -498,19 +752,35 @@ export const VideoPlayerScreen = () => {
       }
 
       player?.setSurfaceHandle?.(surfaceHandle);
-      // Shaka begins loading immediately after media initialization, matching
-      // the Vega sample lifecycle.  At this point the adaptive source may
-      // already be loading; the surface callback only attaches the native
-      // target and starts presentation.
-      Promise.resolve(player?.play?.()).catch((error) => {
-        console.log('Adaptive playback start error:', error);
-        setVideoError(
-          error?.message || strings.errors.videoPlaybackUnavailable,
-        );
-      });
+      surfaceReadyRef.current = true;
+      if (shakaLoadedRef.current) {
+        startAdaptivePlayback();
+      }
     },
-    [player],
+    [player, startAdaptivePlayback],
   );
+
+  // Intercept player.setSurfaceHandle to integrate Shaka playback with KeplerVideoView's surface
+  useEffect(() => {
+    if (!player) {
+      return;
+    }
+    const originalSetSurfaceHandle = player.setSurfaceHandle?.bind(player);
+    player.setSurfaceHandle = (surfaceHandle: string) => {
+      originalSetSurfaceHandle?.(surfaceHandle);
+      if (surfaceHandle && useShakaPlayer) {
+        surfaceReadyRef.current = true;
+        if (shakaLoadedRef.current) {
+          startAdaptivePlayback();
+        }
+      }
+    };
+    return () => {
+      if (originalSetSurfaceHandle) {
+        player.setSurfaceHandle = originalSetSurfaceHandle;
+      }
+    };
+  }, [player, startAdaptivePlayback, useShakaPlayer]);
 
   useEffect(() => {
     resetHideTimer();
@@ -615,6 +885,13 @@ export const VideoPlayerScreen = () => {
       }
       if (player.captioning === false) {
         setSelectedSubtitleTrackId(SUBTITLE_OFF_ID);
+        if (shakaPlayerRef.current?.player) {
+          try {
+            shakaPlayerRef.current.player.setTextTrackVisibility?.(false);
+          } catch (e) {
+            console.log('Shaka caption visibility sync error:', e);
+          }
+        }
         return;
       }
       let matchedTrackId: string | null = null;
@@ -639,6 +916,13 @@ export const VideoPlayerScreen = () => {
         setSelectedSubtitleTrackId(matchedTrackId);
       } else {
         setIsSubtitlesModalOpen(true);
+      }
+      if (shakaPlayerRef.current?.player) {
+        try {
+          shakaPlayerRef.current.player.setTextTrackVisibility?.(true);
+        } catch (e) {
+          console.log('Shaka caption visibility sync error:', e);
+        }
       }
     };
 
@@ -770,6 +1054,8 @@ export const VideoPlayerScreen = () => {
       disposed = true;
       setIsPlayerInitialized(false);
       drmPlaybackStartedRef.current = false;
+      shakaLoadedRef.current = false;
+      surfaceReadyRef.current = false;
       if (sourceTimerRef.current) {
         clearTimeout(sourceTimerRef.current);
         sourceTimerRef.current = null;
@@ -875,10 +1161,12 @@ export const VideoPlayerScreen = () => {
     }
 
     const onPause = () => {
+      setIsPlaybackPaused(true);
       void persistProgress();
     };
 
     const onPlaying = () => {
+      setIsPlaybackPaused(false);
       const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
       if (
         !isLive &&
@@ -984,26 +1272,15 @@ export const VideoPlayerScreen = () => {
           styles.videoSurface,
           {width: screenWidth, height: screenHeight},
         ])}>
-        {isPlayerInitialized &&
-          (useShakaPlayer ? (
-            <View style={styles.shakaSurfaceContainer}>
-              <KeplerVideoSurfaceViewComponent
-                style={[
-                  styles.shakaVideoSurface,
-                  {width: shakaSurfaceWidth, height: shakaSurfaceHeight},
-                ]}
-                onSurfaceViewCreated={handleDrmSurfaceCreated}
-                testID="w3c-drm-video-surface"
-              />
-            </View>
-          ) : (
-            <KeplerVideoViewComponent
-              videoPlayer={player}
-              showControls={true}
-              showCaptions={true}
-              testID="w3c-video-surface"
-            />
-          ))}
+        {isPlayerInitialized && (
+          <KeplerVideoViewComponent
+            videoPlayer={player}
+            showControls={true}
+            showCaptions={true}
+            scalingmode="fit"
+            testID="w3c-video-surface"
+          />
+        )}
       </View>
 
       {/* Active Subtitle Cue Overlay at zIndex: 8 */}
@@ -1133,40 +1410,44 @@ export const VideoPlayerScreen = () => {
               </Text>
             </TouchableOpacity>
 
+            {/* Top Audio Status Badge - Shows selected audio track / language */}
+            <TouchableOpacity
+              style={[
+                styles.topAudioBadge,
+                styles.topAudioBadgeActive,
+                isAudioFocused && styles.topAudioBadgeFocused,
+              ]}
+              onFocus={() => {
+                resetHideTimer();
+                setIsAudioFocused(true);
+              }}
+              onBlur={() => setIsAudioFocused(false)}
+              onPress={() => {
+                resetHideTimer();
+                setIsAudioTracksModalOpen(true);
+              }}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={strings.accessibility.audioTracksButton(
+                activeAudioTrack?.label || strings.audioTracks.original,
+              )}
+              testID="player-audio-button">
+              <Text style={styles.audioBadgeText}>
+                {strings.audioTracks.audioBadge}
+              </Text>
+              <Text style={styles.audioLabelText}>
+                {`Audio: ${
+                  activeAudioTrack?.label || strings.audioTracks.original
+                }`}
+              </Text>
+            </TouchableOpacity>
+
             <View style={styles.qualityBadge} pointerEvents="none">
               <Text style={styles.qualityBadgeText}>{strings.header.uhd}</Text>
             </View>
           </TVFocusGuideView>
 
-          {useShakaPlayer && (
-            <View style={styles.bottomControls}>
-              <TouchableOpacity
-                style={[
-                  styles.playbackControl,
-                  isPlaybackControlFocused && styles.playbackControlFocused,
-                ]}
-                onFocus={() => {
-                  resetHideTimer();
-                  setIsPlaybackControlFocused(true);
-                }}
-                onBlur={() => setIsPlaybackControlFocused(false)}
-                onPress={togglePlayback}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  isPlaybackPaused
-                    ? strings.actions.play
-                    : strings.actions.pause
-                }
-                testID="shaka-playback-control">
-                <Text style={styles.playbackControlText}>
-                  {isPlaybackPaused
-                    ? `▶ ${strings.actions.play}`
-                    : `Ⅱ ${strings.actions.pause}`}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+
         </View>
       )}
 
@@ -1178,6 +1459,18 @@ export const VideoPlayerScreen = () => {
         onSelectTrack={handleSelectSubtitleTrack}
         onClose={() => {
           setIsSubtitlesModalOpen(false);
+          resetHideTimer();
+        }}
+      />
+
+      {/* Audio Tracks Selection Modal */}
+      <AudioTracksModal
+        isOpen={isAudioTracksModalOpen}
+        tracks={availableAudioTracks}
+        selectedTrackId={selectedAudioTrackId}
+        onSelectTrack={handleSelectAudioTrack}
+        onClose={() => {
+          setIsAudioTracksModalOpen(false);
           resetHideTimer();
         }}
       />

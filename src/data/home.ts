@@ -4,14 +4,17 @@ import {ImageSourcePropType} from 'react-native';
 export type CardLayoutType = 'horizontal' | 'portrait' | 'grid';
 
 export const WORKING_VIDEO_URLS = [
-  'https://vjs.zencdn.net/v/oceans.mp4',
+  'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+  'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+  // 'https://vjs.zencdn.net/v/oceans.mp4',
   'https://media.w3.org/2010/05/sintel/trailer.mp4',
   'https://media.w3.org/2010/05/bunny/trailer.mp4',
-  'https://media.w3.org/2010/05/video/movie_300.mp4',
+  // 'https://media.w3.org/2010/05/video/movie_300.mp4',
+  'https://media.axprod.net/TestVectors/v7-Clear/Manifest_1080p.mpd',
   'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
 ];
 
-export const DEFAULT_MOCK_VIDEO_URL = WORKING_VIDEO_URLS[0];
+export const DEFAULT_MOCK_VIDEO_URL = WORKING_VIDEO_URLS[1];
 
 export interface HomeContentItem {
   id: string;
@@ -54,6 +57,44 @@ export interface HeroSlide {
 
 export const homeHeroSlides: HeroSlide[] = [
   {
+    id: 'angel-one-hls',
+    eyebrow: 'HLS MULTI-AUDIO SPECIAL • 5 SPOKEN LANGUAGES',
+    title: 'Angel One (HLS Multi-Audio Edition)',
+    maturityRating: '13_PLUS',
+    description:
+      'Official HLS stream featuring 5 distinct audio tracks (English, German, Spanish, French, Italian). Switch audio tracks in the player to experience seamless HLS language switching!',
+    meta: ['2024', 'HLS STREAM', '5 LANGUAGES', '4K UHD', 'IMDb 8.9'],
+    image: {
+      uri: 'https://image.tmdb.org/t/p/w1280/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg',
+    },
+    badge: 'HLS • 5 AUDIO TRACKS',
+    rating: '⭐ 8.9 / 10',
+    genre: 'Sci-Fi • Adventure • Multi-Audio HLS',
+    director: 'Gene Roddenberry',
+    cast: 'Patrick Stewart, Jonathan Frakes, LeVar Burton, Marina Sirtis',
+    videoUrl:
+      'https://storage.googleapis.com/shaka-demo-assets/angel-one-hls/hls.m3u8',
+  },
+  {
+    id: 'angel-one',
+    eyebrow: 'DASH MULTI-AUDIO SPECIAL • 5 SPOKEN LANGUAGES',
+    title: 'Angel One (DASH Multi-Audio Edition)',
+    maturityRating: '13_PLUS',
+    description:
+      'Experience true multi-audio streaming with 5 distinct language tracks (English, German, Spanish, French, Italian). Switch tracks in the player to hear the spoken voices change in real-time!',
+    meta: ['2024', 'DASH STREAM', '5 LANGUAGES', '4K UHD', 'IMDb 8.9'],
+    image: {
+      uri: 'https://image.tmdb.org/t/p/w1280/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg',
+    },
+    badge: 'DASH • 5 AUDIO TRACKS',
+    rating: '⭐ 8.9 / 10',
+    genre: 'Sci-Fi • Adventure • Multi-Audio Demo',
+    director: 'Gene Roddenberry',
+    cast: 'Patrick Stewart, Jonathan Frakes, LeVar Burton, Marina Sirtis',
+    videoUrl:
+      'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+  },
+  {
     id: 'the-lion-king-hero',
     eyebrow: 'DISNEY CLASSIC • KIDS SPECIAL',
     title: 'The Lion King',
@@ -73,41 +114,50 @@ export const homeHeroSlides: HeroSlide[] = [
       'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
   },
   {
-    id: 'horizon',
-    eyebrow: 'TELUGU SUPERHIT • RRR',
-    title: 'The Last Horizon',
-    maturityRating: '13_PLUS',
-    description:
-      'A fearless revolutionary and a dedicated officer in British India form an unshakeable bond to battle colonial tyranny.',
-    meta: ['2022', 'TELUGU', '3h 07m', '4K UHD', 'IMDb 7.9', 'OSCAR WINNER'],
-    image: {
-      uri: 'https://image.tmdb.org/t/p/w1280/u0XUBNQWlOvrh0Gd97ARGpIkL0.jpg',
-    },
-    badge: 'OSCAR WINNER',
-    rating: '⭐ 7.9 / 10',
-    genre: 'Action • Drama • Historical',
-    director: 'S. S. Rajamouli',
-    cast: 'N. T. Rama Rao Jr., Ram Charan, Ajay Devgn, Alia Bhatt',
-    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
-  },
-  {
     id: 'kalki',
-    eyebrow: 'TELUGU SCI-FI EPIC',
+    eyebrow: 'MULTI-AUDIO BLOCKBUSTER • TELUGU • HINDI • ENGLISH',
     title: 'Kalki 2898 AD',
     maturityRating: '13_PLUS',
     description:
-      'In a post-apocalyptic dystopian world, a heroic warrior awakens to protect the unborn savior of mankind.',
-    meta: ['2024', 'TELUGU', '3h 01m', '4K UHD', 'IMDb 7.7'],
+      'Experience the futuristic sci-fi epic with multiple audio tracks in Telugu (Original), Hindi, and English. Switch audio tracks in the player to enjoy in your preferred language!',
+    meta: ['2024', 'TELUGU', 'HINDI', 'ENGLISH', '4K UHD', 'IMDb 7.7'],
     image: {
       uri: 'https://image.tmdb.org/t/p/w1280/rstcAnBeCkxNQjNp3YXrF6IP1tW.jpg',
     },
-    badge: 'TELUGU BLOCKBUSTER',
+    badge: 'TELUGU • HINDI • ENGLISH',
     rating: '⭐ 7.7 / 10',
-    genre: 'Sci-Fi • Action • Mythology',
+    genre: 'Sci-Fi • Action • Multi-Audio',
     director: 'Nag Ashwin',
     cast: 'Prabhas, Amitabh Bachchan, Kamal Haasan, Deepika Padukone',
     videoUrl:
-      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+      'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+  },
+  {
+    id: 'horizon',
+    eyebrow: 'MULTI-AUDIO SPECIAL • TELUGU • HINDI • ENGLISH',
+    title: 'RRR: Multi-Audio Edition',
+    maturityRating: '13_PLUS',
+    description:
+      'The Oscar-winning global blockbuster featuring multi-language audio in Telugu (Original), Hindi, and English. Switch audio in real-time!',
+    meta: [
+      '2022',
+      'TELUGU',
+      'HINDI',
+      'ENGLISH',
+      '4K UHD',
+      'IMDb 7.9',
+      'OSCAR WINNER',
+    ],
+    image: {
+      uri: 'https://image.tmdb.org/t/p/w1280/u0XUBNQWlOvrh0Gd97ARGpIkL0.jpg',
+    },
+    badge: 'TELUGU • HINDI • ENGLISH',
+    rating: '⭐ 7.9 / 10',
+    genre: 'Action • Drama • Multi-Audio',
+    director: 'S. S. Rajamouli',
+    cast: 'N. T. Rama Rao Jr., Ram Charan, Ajay Devgn, Alia Bhatt',
+    videoUrl:
+      'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
   },
   {
     id: 'kgf-2',
@@ -125,8 +175,9 @@ export const homeHeroSlides: HeroSlide[] = [
     genre: 'Action • Crime • Drama',
     director: 'Prashanth Neel',
     cast: 'Yash, Sanjay Dutt, Raveena Tandon, Srinidhi Shetty',
-    videoUrl:
-      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    videoUrl: 'https://media.axprod.net/TestVectors/v7-Clear/Manifest_1080p.mpd'
+    // videoUrl:
+    //   'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
   },
   {
     id: 'jawan',
@@ -503,6 +554,57 @@ export const homeContentRows: HomeContentRow[] = [
     title: 'Trending Now',
     layout: 'portrait',
     items: [
+      {
+        id: 'angel-one-hls',
+        title: 'Angel One (HLS Multi-Audio)',
+        maturityRating: '13_PLUS',
+        description:
+          'Official HLS stream featuring 5 distinct audio tracks (English, German, Spanish, French, Italian). Switch audio tracks in the player to experience seamless HLS language switching!',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg',
+        },
+        badge: 'HLS • 5 AUDIO TRACKS',
+        rating: '⭐ 8.9 / 10',
+        genre: 'Sci-Fi • Multi-Audio HLS',
+        director: 'Gene Roddenberry',
+        cast: 'Patrick Stewart, Jonathan Frakes, LeVar Burton',
+        videoUrl:
+          'https://storage.googleapis.com/shaka-demo-assets/angel-one-hls/hls.m3u8',
+      },
+      {
+        id: 'angel-one',
+        title: 'Angel One (DASH Multi-Audio)',
+        maturityRating: '13_PLUS',
+        description:
+          'Experience true multi-audio streaming with 5 distinct language tracks (English, German, Spanish, French, Italian). Switch tracks in the player to hear the spoken voices change in real-time!',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg',
+        },
+        badge: 'DASH • 5 AUDIO TRACKS',
+        rating: '⭐ 8.9 / 10',
+        genre: 'Sci-Fi • Multi-Audio Demo',
+        director: 'Gene Roddenberry',
+        cast: 'Patrick Stewart, Jonathan Frakes, LeVar Burton',
+        videoUrl:
+          'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+      },
+      {
+        id: 'kalki',
+        title: 'Kalki 2898 AD (Telugu • Hindi • English)',
+        maturityRating: '13_PLUS',
+        description:
+          'Futuristic epic with Telugu (Original), Hindi, and English audio tracks. Switch tracks in the video player!',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/rstcAnBeCkxNQjNp3YXrF6IP1tW.jpg',
+        },
+        badge: 'TELUGU • HINDI • ENGLISH',
+        rating: '⭐ 7.7 / 10',
+        genre: 'Sci-Fi • Action • Multi-Audio',
+        director: 'Nag Ashwin',
+        cast: 'Prabhas, Amitabh Bachchan, Kamal Haasan, Deepika Padukone',
+        videoUrl:
+          'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+      },
       {
         id: 'summit',
         title: 'The Dark Knight',

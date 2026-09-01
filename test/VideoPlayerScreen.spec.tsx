@@ -44,21 +44,39 @@ jest.mock('@amazon-devices/react-native-w3cmedia', () => {
   };
 });
 
+let mockRouteParams: any = {
+  params: {
+    movie: {
+      id: 'test-movie',
+      title: 'Test Feature Movie',
+      genre: 'Action',
+    },
+  },
+};
+
+const mockShakaLoad = jest.fn().mockResolvedValue(undefined);
+const mockShakaDestroy = jest.fn().mockResolvedValue(undefined);
+
+jest.mock('../src/shakaplayer/ShakaPlayer', () => ({
+  ShakaPlayer: jest.fn().mockImplementation(() => ({
+    load: mockShakaLoad,
+    destroy: mockShakaDestroy,
+    player: {
+      getTextTracks: jest.fn().mockReturnValue([]),
+      getVariantTracks: jest.fn().mockReturnValue([]),
+      setTextTrackVisibility: jest.fn(),
+      selectAudioLanguage: jest.fn(),
+    },
+  })),
+}));
+
 const mockNavigate = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
   useNavigation: () => ({
     navigate: mockNavigate,
   }),
-  useRoute: () => ({
-    params: {
-      movie: {
-        id: 'test-movie',
-        title: 'Test Feature Movie',
-        genre: 'Action',
-      },
-    },
-  }),
+  useRoute: () => mockRouteParams,
 }));
 
 describe('VideoPlayerScreen', () => {
@@ -97,6 +115,30 @@ describe('VideoPlayerScreen', () => {
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('Home');
+    });
+  });
+
+  it('enables default player controls and settings for Shaka player (DASH stream)', async () => {
+    mockRouteParams = {
+      params: {
+        movie: {
+          id: 'shaka-movie',
+          title: 'Shaka Test Movie',
+          genre: 'Sci-Fi',
+        },
+        streamType: 'dash',
+        videoUrl:
+          'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+      },
+    };
+
+    const screen = render(<VideoPlayerScreen />);
+
+    await waitFor(() => {
+      const surface = screen.getByTestId('w3c-video-surface');
+      expect(surface.props.showControls).toBe(true);
+      expect(surface.props.showCaptions).toBe(true);
+      expect(mockInitialize).toHaveBeenCalled();
     });
   });
 });

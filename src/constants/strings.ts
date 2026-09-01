@@ -417,6 +417,23 @@ export const strings = {
     tracksAvailable: (count: number) => `${count} Subtitle Languages Available`,
   },
 
+  audioTracks: {
+    buttonLabel: 'Audio',
+    audioBadge: 'AUDIO',
+    audioTracksTitle: 'Audio Languages',
+    selectAudioTrack: 'Select Audio Track',
+    selectAudioTrackDesc:
+      'Choose your preferred audio language and sound format.',
+    original: 'Original',
+    activeTrack: 'Active',
+    close: 'Close',
+    audioActive: (label: string) => `Audio: ${label}`,
+    tracksAvailable: (count: number) => `${count} Audio Tracks Available`,
+    stereo: 'Stereo 2.0',
+    surround51: '5.1 Surround',
+    dolbyAtmos: 'Dolby Atmos',
+  },
+
   accessibility: {
     retryVideoPlayback: 'Retry video playback',
     backToHome: 'Back to Home',
@@ -425,5 +442,10 @@ export const strings = {
     selectSubtitleTrack: (label: string, isSelected: boolean) =>
       `${label} subtitle track${isSelected ? ', currently selected' : ''}`,
     closeSubtitlesModal: 'Close subtitles selection modal',
+    audioTracksButton: (label: string) =>
+      `Audio track selection. Currently ${label}`,
+    selectAudioTrack: (label: string, isSelected: boolean) =>
+      `${label} audio track${isSelected ? ', currently selected' : ''}`,
+    closeAudioTracksModal: 'Close audio tracks selection modal',
   },
 } as const;
