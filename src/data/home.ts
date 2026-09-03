@@ -3,6 +3,45 @@ import {ImageSourcePropType} from 'react-native';
 
 export type CardLayoutType = 'horizontal' | 'portrait' | 'grid';
 
+export type SeekbarType = 'markers' | 'break-markers' | 'limits';
+
+export const getSeekbarTypeForContent = (item?: any): SeekbarType => {
+  if (item?.seekbarType) {
+    return item.seekbarType;
+  }
+  const id = String(item?.id || '').toLowerCase();
+  if (
+    id.includes('hls') ||
+    id.includes('kalki') ||
+    id.includes('jawan') ||
+    id.includes('summit') ||
+    id.includes('inception') ||
+    id.includes('markers')
+  ) {
+    return 'markers';
+  }
+  if (
+    id.includes('dash') ||
+    id.includes('angel') ||
+    id.includes('horizon') ||
+    id.includes('rrr') ||
+    id.includes('interstellar') ||
+    id.includes('pushpa') ||
+    id.includes('avatar')
+  ) {
+    return 'break-markers';
+  }
+  if (
+    id.includes('lion') ||
+    id.includes('kgf') ||
+    id.includes('dune') ||
+    id.includes('limits')
+  ) {
+    return 'limits';
+  }
+  return 'markers';
+};
+
 export const WORKING_VIDEO_URLS = [
   'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
   'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
@@ -30,6 +69,7 @@ export interface HomeContentItem {
   cast?: string;
   director?: string;
   videoUrl?: string;
+  seekbarType?: SeekbarType;
 }
 
 export interface HomeContentRow {
@@ -53,6 +93,7 @@ export interface HeroSlide {
   cast?: string;
   director?: string;
   videoUrl?: string;
+  seekbarType?: SeekbarType;
 }
 
 export const homeHeroSlides: HeroSlide[] = [
@@ -74,6 +115,7 @@ export const homeHeroSlides: HeroSlide[] = [
     cast: 'Patrick Stewart, Jonathan Frakes, LeVar Burton, Marina Sirtis',
     videoUrl:
       'https://storage.googleapis.com/shaka-demo-assets/angel-one-hls/hls.m3u8',
+    seekbarType: 'markers',
   },
   {
     id: 'angel-one',
@@ -93,6 +135,7 @@ export const homeHeroSlides: HeroSlide[] = [
     cast: 'Patrick Stewart, Jonathan Frakes, LeVar Burton, Marina Sirtis',
     videoUrl:
       'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+    seekbarType: 'break-markers',
   },
   {
     id: 'the-lion-king-hero',
@@ -112,6 +155,7 @@ export const homeHeroSlides: HeroSlide[] = [
     cast: 'Donald Glover, Beyoncé, Seth Rogen, Chiwetel Ejiofor',
     videoUrl:
       'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    seekbarType: 'limits',
   },
   {
     id: 'kalki',
@@ -131,6 +175,7 @@ export const homeHeroSlides: HeroSlide[] = [
     cast: 'Prabhas, Amitabh Bachchan, Kamal Haasan, Deepika Padukone',
     videoUrl:
       'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+    seekbarType: 'markers',
   },
   {
     id: 'horizon',
@@ -158,6 +203,7 @@ export const homeHeroSlides: HeroSlide[] = [
     cast: 'N. T. Rama Rao Jr., Ram Charan, Ajay Devgn, Alia Bhatt',
     videoUrl:
       'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+    seekbarType: 'break-markers',
   },
   {
     id: 'kgf-2',
@@ -175,9 +221,9 @@ export const homeHeroSlides: HeroSlide[] = [
     genre: 'Action • Crime • Drama',
     director: 'Prashanth Neel',
     cast: 'Yash, Sanjay Dutt, Raveena Tandon, Srinidhi Shetty',
-    videoUrl: 'https://media.axprod.net/TestVectors/v7-Clear/Manifest_1080p.mpd'
-    // videoUrl:
-    //   'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    videoUrl:
+      'https://media.axprod.net/TestVectors/v7-Clear/Manifest_1080p.mpd',
+    seekbarType: 'limits',
   },
   {
     id: 'jawan',
@@ -197,6 +243,7 @@ export const homeHeroSlides: HeroSlide[] = [
     cast: 'Shah Rukh Khan, Nayanthara, Vijay Sethupathi, Deepika Padukone',
     videoUrl:
       'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    seekbarType: 'markers',
   },
   {
     id: 'interstellar',
@@ -216,6 +263,7 @@ export const homeHeroSlides: HeroSlide[] = [
     cast: 'Matthew McConaughey, Anne Hathaway, Jessica Chastain, Michael Caine',
     videoUrl:
       'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    seekbarType: 'break-markers',
   },
 ];
 

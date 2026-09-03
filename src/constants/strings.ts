@@ -448,4 +448,22 @@ export const strings = {
       `${label} audio track${isSelected ? ', currently selected' : ''}`,
     closeAudioTracksModal: 'Close audio tracks selection modal',
   },
+
+  // Player controls
+  playerControls: {
+    removeMarker: '- Remove Marker',
+    addMarker: '+ Add Marker',
+    removeSegment: '- Remove Segment',
+    addSegment: '+ Add Segment',
+    removeBreakMarker: '- Remove Break Marker',
+    addBreakMarker: '+ Add Break Marker',
+    removeBreakSegment: '- Remove Break Segment',
+    addBreakSegment: '+ Add Break Segment',
+    removeMarkerSegment: '- Remove Marker Segment',
+    markers: '● Markers',
+    limits: '⇥ Limits ⇤',
+    pauseAction: '▶',
+    playAction: '❚❚',
+    breakSegments: '❖ Breaks & Segments',
+  }
 } as const;

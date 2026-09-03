@@ -10,7 +10,15 @@ import {
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
-import {DEFAULT_MOCK_VIDEO_URL, HomeContentItem} from '../data/home';
+import {
+  DEFAULT_MOCK_VIDEO_URL,
+  getSeekbarTypeForContent,
+  HomeContentItem,
+} from '../data/home';
+import {
+  PlayerSeekBar,
+  SeekbarType,
+} from '../components/molecules/PlayerSeekBar';
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
@@ -196,6 +204,20 @@ export const VideoPlayerScreen = () => {
   const shouldApplySeekRef = useRef(false);
 
   const hideControlsTimerRef = useRef<any>(null);
+
+  const [playbackTime, setPlaybackTime] = useState(0);
+  const [playbackDuration, setPlaybackDuration] = useState(0);
+  const [activeSeekbarType, setActiveSeekbarType] = useState<SeekbarType>(
+    () => {
+      return route.params?.seekbarType || getSeekbarTypeForContent(movie);
+    },
+  );
+
+  useEffect(() => {
+    const determinedType =
+      route.params?.seekbarType || getSeekbarTypeForContent(movie);
+    setActiveSeekbarType(determinedType);
+  }, [movie, route.params?.seekbarType]);
 
   // --- Subtitles Feature Setup ---
   const availableSubtitleTracks = useMemo<SubtitleTrack[]>(
@@ -594,9 +616,7 @@ export const VideoPlayerScreen = () => {
     }
     Promise.resolve(player?.play?.()).catch((error) => {
       console.log('Adaptive playback start error:', error);
-      setVideoError(
-        error?.message || strings.errors.videoPlaybackUnavailable,
-      );
+      setVideoError(error?.message || strings.errors.videoPlaybackUnavailable);
     });
   }, [player]);
 
@@ -647,9 +667,7 @@ export const VideoPlayerScreen = () => {
         vcodec: 'avc1',
         ...(isVideoOnly ? {} : {acodec: 'mp4a'}),
         ...(isVideoOnly ? {video_only: 'true'} : {}),
-        ...(initialAudioLang
-          ? {preferredAudioLanguage: initialAudioLang}
-          : {}),
+        ...(initialAudioLang ? {preferredAudioLanguage: initialAudioLang} : {}),
         ...(isDrmContent && drm
           ? {
               drm_scheme: drm.keySystem,
@@ -854,8 +872,33 @@ export const VideoPlayerScreen = () => {
       }
     };
 
+    const onPlayerTimeUpdate = () => {
+      if (!disposed && player) {
+        if (
+          player.currentTime !== undefined &&
+          Number.isFinite(player.currentTime)
+        ) {
+          setPlaybackTime(player.currentTime);
+        }
+        if (
+          player.duration !== undefined &&
+          Number.isFinite(player.duration) &&
+          player.duration > 0
+        ) {
+          setPlaybackDuration(player.duration);
+        }
+      }
+    };
+
     const onLoadedMetadata = () => {
       metadataReadyRef.current = true;
+      if (
+        player?.duration !== undefined &&
+        Number.isFinite(player.duration) &&
+        player.duration > 0
+      ) {
+        setPlaybackDuration(player.duration);
+      }
       const requestedSeek = pendingSeekRef.current;
       if (requestedSeek !== null) {
         try {
@@ -930,6 +973,7 @@ export const VideoPlayerScreen = () => {
       player.addEventListener('loadstart', onLoadStart);
       player.addEventListener('error', onError);
       player.addEventListener('loadedmetadata', onLoadedMetadata);
+      player.addEventListener('timeupdate', onPlayerTimeUpdate);
       player.addEventListener('captioningchange', onCaptioningChange);
     }
 
@@ -1064,6 +1108,7 @@ export const VideoPlayerScreen = () => {
         player.removeEventListener('loadstart', onLoadStart);
         player.removeEventListener('error', onError);
         player.removeEventListener('loadedmetadata', onLoadedMetadata);
+        player.removeEventListener('timeupdate', onPlayerTimeUpdate);
         player.removeEventListener('captioningchange', onCaptioningChange);
       }
       if (player?.textTracks?.removeEventListener) {
@@ -1154,6 +1199,29 @@ export const VideoPlayerScreen = () => {
       console.log('Save continue watch error:', error);
     }
   }, [activeProfile?.id, isLive, movie, player, user]);
+
+  const handleUserSeek = useCallback(
+    (targetSeconds: number) => {
+      resetHideTimer();
+      if (!player || !Number.isFinite(targetSeconds) || targetSeconds < 0) {
+        return;
+      }
+      try {
+        const duration = Number(player.duration);
+        const clampedSeek =
+          Number.isFinite(duration) && duration > 0
+            ? Math.min(targetSeconds, Math.max(0, duration - 1))
+            : targetSeconds;
+
+        player.currentTime = clampedSeek;
+        setPlaybackTime(clampedSeek);
+        void persistProgress();
+      } catch (err) {
+        console.log('Player seek error:', err);
+      }
+    },
+    [persistProgress, player, resetHideTimer],
+  );
 
   useEffect(() => {
     if (isLive || !player) {
@@ -1445,9 +1513,35 @@ export const VideoPlayerScreen = () => {
             <View style={styles.qualityBadge} pointerEvents="none">
               <Text style={styles.qualityBadgeText}>{strings.header.uhd}</Text>
             </View>
+
+            <View
+              style={styles.seekbarBadge}
+              pointerEvents="none"
+              testID="player-seekbar-type-badge">
+              <Text style={styles.seekbarBadgeText}>
+                {activeSeekbarType === 'markers'
+                  ? 'SEEKBAR: MARKERS'
+                  : activeSeekbarType === 'break-markers'
+                  ? 'SEEKBAR: BREAK MARKERS & SEGMENTS'
+                  : 'SEEKBAR: SEEKING LIMITS'}
+              </Text>
+            </View>
           </TVFocusGuideView>
 
-
+          {/* Bottom Controls Bar with PlayerSeekBar */}
+          <PlayerSeekBar
+            type={activeSeekbarType}
+            currentTime={playbackTime}
+            duration={playbackDuration}
+            isPaused={isPlaybackPaused}
+            onSeek={handleUserSeek}
+            onTogglePlayPause={togglePlayback}
+            onTypeChange={(newType) => {
+              setActiveSeekbarType(newType);
+              resetHideTimer();
+            }}
+            onInteraction={resetHideTimer}
+          />
         </View>
       )}
 

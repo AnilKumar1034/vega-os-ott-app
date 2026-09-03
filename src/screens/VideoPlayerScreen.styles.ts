@@ -93,6 +93,21 @@ export const styles = StyleSheet.create({
     fontSize: fontSizes.small,
     letterSpacing: 1,
   },
+  seekbarBadge: {
+    backgroundColor: 'rgba(0, 173, 225, 0.25)',
+    borderColor: '#00ADE1',
+    borderWidth: 1.5,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.xs,
+    marginLeft: spacing.lg,
+  },
+  seekbarBadgeText: {
+    color: colors.textPrimary,
+    fontWeight: fontWeights.bold,
+    fontSize: fontSizes.small,
+    letterSpacing: 1,
+  },
   ccButton: {
     flexDirection: 'row',
     alignItems: 'center',
