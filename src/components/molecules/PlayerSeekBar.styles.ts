@@ -1,6 +1,6 @@
 import {StyleSheet, ViewStyle} from 'react-native';
 import {SEEKBAR_COLORS} from '../../constants/seekbarColors';
-import { colors } from '../../theme/colors';
+import {colors} from '../../theme/colors';
 
 const TICK_SIZE = 8;
 const THUMB_SIZE = 36;
@@ -46,7 +46,7 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: colors.controlFocusedBackground
+    borderColor: colors.controlFocusedBackground,
   },
   playPauseButtonFocused: {
     backgroundColor: SEEKBAR_COLORS.PRIMARY_BLUE,
@@ -204,5 +204,152 @@ export const styles = StyleSheet.create({
     position: 'relative',
     top: -10,
     left: '-50%',
+  },
+  fastForwardRewindImage: {
+    height: 24,
+    width: 24,
+  },
+  fastForwardRewindLabel: {
+    fontSize: 20,
+    fontWeight: '700',
+    lineHeight: 24,
+    letterSpacing: 0.8,
+    color: SEEKBAR_COLORS.WHITE,
+    marginHorizontal: 4,
+  },
+  aboveThumb: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 80,
+    width: 120,
+    display: 'flex',
+    flexDirection: 'row',
+  },
+  longPressBadge: {
+    backgroundColor: colors.seekBarLimitsBadge,
+    borderColor: SEEKBAR_COLORS.PRIMARY_BLUE,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  longPressBadgeText: {
+    color: SEEKBAR_COLORS.PRIMARY_BLUE,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  skipControlsGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  skipButton: {
+    backgroundColor: colors.seekBarActionButton,
+    borderColor: SEEKBAR_COLORS.PRIMARY_BLUE,
+    borderWidth: 1.5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  skipButtonFocused: {
+    backgroundColor: SEEKBAR_COLORS.PRIMARY_BLUE,
+    borderColor: SEEKBAR_COLORS.WHITE,
+    transform: [{scale: 1.05}],
+  },
+  skipButtonText: {
+    color: SEEKBAR_COLORS.WHITE,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(229, 9, 20, 0.2)',
+    borderColor: colors.heroAccent,
+    borderWidth: 1.5,
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginLeft: 14,
+    gap: 6,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.heroAccent,
+  },
+  liveBadgeText: {
+    color: SEEKBAR_COLORS.WHITE,
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  liveInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  liveTimeText: {
+    color: colors.heroAccent,
+    fontSize: 15,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    marginLeft: 10,
+  },
+  liveBar: {
+    height: SEEKBAR_HEIGHT,
+  },
+  liveThumb: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.heroAccent,
+    borderWidth: 2,
+    borderColor: SEEKBAR_COLORS.WHITE,
+  },
+  liveBroadcastTag: {
+    backgroundColor: 'rgba(229, 9, 20, 0.15)',
+    borderColor: colors.heroAccent,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  liveBroadcastText: {
+    color: colors.heroAccent,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+  },
+  belowLabel: {
+    position: 'absolute',
+    height: 30,
+    width: 80,
+    borderRadius: 20,
+    top: 30,
+    backgroundColor: SEEKBAR_COLORS.SEGMENT_BLUE_1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  belowLabelText: {
+    color: SEEKBAR_COLORS.WHITE,
+    fontSize: 14,
+    fontWeight: '700',
+    letterSpacing: 0.6,
+  },
+  thumbnailBadge: {
+    backgroundColor: colors.seekBarLimitsBadge,
+    borderColor: SEEKBAR_COLORS.PRIMARY_BLUE,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  thumbnailBadgeText: {
+    color: SEEKBAR_COLORS.PRIMARY_BLUE,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.4,
   },
 });

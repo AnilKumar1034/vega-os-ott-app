@@ -199,6 +199,7 @@ export const VideoPlayerScreen = () => {
   const [resumeTime, setResumeTime] = useState<number>(0);
   const lastSavedTimeRef = useRef<number>(0);
   const progressTimerRef = useRef<any>(null);
+  const timeSyncTimerRef = useRef<any>(null);
   const pendingSeekRef = useRef<number | null>(null);
   const metadataReadyRef = useRef(false);
   const shouldApplySeekRef = useRef(false);
@@ -1203,7 +1204,12 @@ export const VideoPlayerScreen = () => {
   const handleUserSeek = useCallback(
     (targetSeconds: number) => {
       resetHideTimer();
-      if (!player || !Number.isFinite(targetSeconds) || targetSeconds < 0) {
+      if (
+        isLive ||
+        !player ||
+        !Number.isFinite(targetSeconds) ||
+        targetSeconds < 0
+      ) {
         return;
       }
       try {
@@ -1220,7 +1226,7 @@ export const VideoPlayerScreen = () => {
         console.log('Player seek error:', err);
       }
     },
-    [persistProgress, player, resetHideTimer],
+    [isLive, persistProgress, player, resetHideTimer],
   );
 
   useEffect(() => {
@@ -1230,6 +1236,10 @@ export const VideoPlayerScreen = () => {
 
     const onPause = () => {
       setIsPlaybackPaused(true);
+      if (timeSyncTimerRef.current) {
+        clearInterval(timeSyncTimerRef.current);
+        timeSyncTimerRef.current = null;
+      }
       void persistProgress();
     };
 
@@ -1254,11 +1264,28 @@ export const VideoPlayerScreen = () => {
       progressTimerRef.current = setInterval(() => {
         void persistProgress();
       }, 8000);
+
+      if (timeSyncTimerRef.current) {
+        clearInterval(timeSyncTimerRef.current);
+      }
+      timeSyncTimerRef.current = setInterval(() => {
+        if (
+          player &&
+          player.currentTime !== undefined &&
+          Number.isFinite(player.currentTime)
+        ) {
+          setPlaybackTime(player.currentTime);
+        }
+      }, 500);
     };
 
     const onEnded = async () => {
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
+      }
+      if (timeSyncTimerRef.current) {
+        clearInterval(timeSyncTimerRef.current);
+        timeSyncTimerRef.current = null;
       }
       const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
       if (targetProfileId) {
@@ -1280,6 +1307,11 @@ export const VideoPlayerScreen = () => {
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
         progressTimerRef.current = null;
+      }
+
+      if (timeSyncTimerRef.current) {
+        clearInterval(timeSyncTimerRef.current);
+        timeSyncTimerRef.current = null;
       }
 
       if (player.removeEventListener) {
@@ -1519,11 +1551,19 @@ export const VideoPlayerScreen = () => {
               pointerEvents="none"
               testID="player-seekbar-type-badge">
               <Text style={styles.seekbarBadgeText}>
-                {activeSeekbarType === 'markers'
+                {isLive
+                  ? 'LIVE STREAM'
+                  : activeSeekbarType === 'markers'
                   ? 'SEEKBAR: MARKERS'
                   : activeSeekbarType === 'break-markers'
                   ? 'SEEKBAR: BREAK MARKERS & SEGMENTS'
-                  : 'SEEKBAR: SEEKING LIMITS'}
+                  : activeSeekbarType === 'limits'
+                  ? 'SEEKBAR: SEEKING LIMITS'
+                  : activeSeekbarType === 'long-press'
+                  ? 'SEEKBAR: LONG PRESS'
+                  : activeSeekbarType === 'fast-forward-rewind'
+                  ? 'SEEKBAR: FAST FORWARD / REWIND'
+                  : 'SEEKBAR: THUMBNAIL IMAGES'}
               </Text>
             </View>
           </TVFocusGuideView>
@@ -1534,8 +1574,19 @@ export const VideoPlayerScreen = () => {
             currentTime={playbackTime}
             duration={playbackDuration}
             isPaused={isPlaybackPaused}
+            isLive={isLive}
+            enableThumbnails={!isLive}
+            videoUrl={videoUrl}
+            movie={movie}
+            player={shakaPlayerRef.current?.player}
             onSeek={handleUserSeek}
             onTogglePlayPause={togglePlayback}
+            onFastForwardPress={() => {
+              resetHideTimer();
+            }}
+            onRewindPress={() => {
+              resetHideTimer();
+            }}
             onTypeChange={(newType) => {
               setActiveSeekbarType(newType);
               resetHideTimer();

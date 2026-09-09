@@ -1,15 +1,46 @@
 import {ContentMaturityRating} from '../types/maturity';
 import {ImageSourcePropType} from 'react-native';
+import {
+  MOVIE_EXACT_THUMBNAILS,
+  ANGEL_ONE_EXACT_VIDEO_FRAMES,
+  getMovieExactDynamicFrames,
+} from '../constants/movieThumbnails';
 
 export type CardLayoutType = 'horizontal' | 'portrait' | 'grid';
 
-export type SeekbarType = 'markers' | 'break-markers' | 'limits';
+export type SeekbarType =
+  | 'markers'
+  | 'break-markers'
+  | 'limits'
+  | 'long-press'
+  | 'fast-forward-rewind'
+  | 'thumbnail-images'
+  | 'thumbnails';
 
 export const getSeekbarTypeForContent = (item?: any): SeekbarType => {
   if (item?.seekbarType) {
     return item.seekbarType;
   }
   const id = String(item?.id || '').toLowerCase();
+  if (
+    id.includes('thumbnail') ||
+    id.includes('preview') ||
+    id.includes('mock') ||
+    id.includes('trickplay')
+  ) {
+    return 'thumbnail-images';
+  }
+  if (id.includes('long-press') || id.includes('longpress')) {
+    return 'long-press';
+  }
+  if (
+    id.includes('fast-forward') ||
+    id.includes('fastforward') ||
+    id.includes('rewind') ||
+    id.includes('skip')
+  ) {
+    return 'fast-forward-rewind';
+  }
   if (
     id.includes('hls') ||
     id.includes('kalki') ||
@@ -70,6 +101,7 @@ export interface HomeContentItem {
   director?: string;
   videoUrl?: string;
   seekbarType?: SeekbarType;
+  thumbnails?: string[];
 }
 
 export interface HomeContentRow {
@@ -94,9 +126,31 @@ export interface HeroSlide {
   director?: string;
   videoUrl?: string;
   seekbarType?: SeekbarType;
+  thumbnails?: string[];
 }
 
 export const homeHeroSlides: HeroSlide[] = [
+  {
+    id: 'mock-video-seek-preview',
+    eyebrow: '1:1 FRAME-ACCURATE SEEKBAR PREVIEW • EXACT VIDEO THUMBNAILS',
+    title: 'Angel One (Multi-Audio Edition)',
+    maturityRating: '13_PLUS',
+    description:
+      'Official demo mock video featuring authentic, 1:1 progressive video preview thumbnails extracted directly from the video stream URL itself for every seek position along the playback timeline.',
+    meta: ['2024', 'FRAME-ACCURATE', 'DASH STREAM', 'EXACT THUMBNAILS', 'HD'],
+    image: {
+      uri: 'https://image.tmdb.org/t/p/w1280/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg',
+    },
+    badge: 'EXACT VIDEO THUMBNAILS',
+    rating: '⭐ 9.5 / 10',
+    genre: 'Sci-Fi • Dynamic Seek Preview',
+    director: 'Vega Video Player Team',
+    cast: 'Patrick Stewart, Jonathan Frakes, LeVar Burton, Marina Sirtis',
+    videoUrl:
+      'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+    seekbarType: 'thumbnail-images',
+    thumbnails: ANGEL_ONE_EXACT_VIDEO_FRAMES,
+  },
   {
     id: 'angel-one-hls',
     eyebrow: 'HLS MULTI-AUDIO SPECIAL • 5 SPOKEN LANGUAGES',
@@ -116,6 +170,7 @@ export const homeHeroSlides: HeroSlide[] = [
     videoUrl:
       'https://storage.googleapis.com/shaka-demo-assets/angel-one-hls/hls.m3u8',
     seekbarType: 'markers',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['angel-one-hls'],
   },
   {
     id: 'angel-one',
@@ -136,6 +191,7 @@ export const homeHeroSlides: HeroSlide[] = [
     videoUrl:
       'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
     seekbarType: 'break-markers',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['angel-one'],
   },
   {
     id: 'the-lion-king-hero',
@@ -156,6 +212,7 @@ export const homeHeroSlides: HeroSlide[] = [
     videoUrl:
       'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
     seekbarType: 'limits',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['the-lion-king-hero'],
   },
   {
     id: 'kalki',
@@ -175,7 +232,8 @@ export const homeHeroSlides: HeroSlide[] = [
     cast: 'Prabhas, Amitabh Bachchan, Kamal Haasan, Deepika Padukone',
     videoUrl:
       'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
-    seekbarType: 'markers',
+    seekbarType: 'long-press',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['kalki'],
   },
   {
     id: 'horizon',
@@ -204,6 +262,7 @@ export const homeHeroSlides: HeroSlide[] = [
     videoUrl:
       'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
     seekbarType: 'break-markers',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['horizon'],
   },
   {
     id: 'kgf-2',
@@ -224,6 +283,7 @@ export const homeHeroSlides: HeroSlide[] = [
     videoUrl:
       'https://media.axprod.net/TestVectors/v7-Clear/Manifest_1080p.mpd',
     seekbarType: 'limits',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['kgf-2'],
   },
   {
     id: 'jawan',
@@ -244,6 +304,7 @@ export const homeHeroSlides: HeroSlide[] = [
     videoUrl:
       'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
     seekbarType: 'markers',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['jawan'],
   },
   {
     id: 'interstellar',
@@ -263,7 +324,8 @@ export const homeHeroSlides: HeroSlide[] = [
     cast: 'Matthew McConaughey, Anne Hathaway, Jessica Chastain, Michael Caine',
     videoUrl:
       'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
-    seekbarType: 'break-markers',
+    seekbarType: 'fast-forward-rewind',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['interstellar'],
   },
 ];
 
@@ -275,6 +337,26 @@ export const homeContentRows: HomeContentRow[] = [
     title: 'Continue Watching',
     layout: 'horizontal',
     items: [
+      {
+        id: 'mock-video-seek-preview',
+        title: 'Mock Video (Exact Seek Thumbnails)',
+        maturityRating: '13_PLUS',
+        description:
+          'Demo mock video featuring authentic, 1:1 progressive video preview thumbnails extracted directly from the video stream URL itself for every seek position along the playback timeline.',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg',
+        },
+        progress: 0.35,
+        badge: 'EXACT VIDEO THUMBNAILS',
+        rating: '⭐ 9.5 / 10',
+        genre: 'Sci-Fi • Dynamic Seek Preview',
+        director: 'Vega Video Player Team',
+        cast: 'Patrick Stewart, Jonathan Frakes, LeVar Burton, Marina Sirtis',
+        videoUrl:
+          'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+        seekbarType: 'thumbnail-images',
+        thumbnails: ANGEL_ONE_EXACT_VIDEO_FRAMES,
+      },
       {
         id: 'horizon',
         title: 'RRR',
@@ -1781,13 +1863,19 @@ export const homeContentRows: HomeContentRow[] = [
 ];
 
 homeHeroSlides.forEach((slide, index) => {
-  slide.videoUrl = WORKING_VIDEO_URLS[index % WORKING_VIDEO_URLS.length];
+  slide.videoUrl = slide.videoUrl || WORKING_VIDEO_URLS[index % WORKING_VIDEO_URLS.length];
+  if (!slide.thumbnails || slide.thumbnails.length === 0) {
+    slide.thumbnails = getMovieExactDynamicFrames(slide, slide.videoUrl);
+  }
 });
 
 homeContentRows.forEach((row) => {
   row.items.forEach((item, index) => {
     if (!item.videoUrl) {
       item.videoUrl = WORKING_VIDEO_URLS[index % WORKING_VIDEO_URLS.length];
+    }
+    if (!item.thumbnails || item.thumbnails.length === 0) {
+      item.thumbnails = getMovieExactDynamicFrames(item, item.videoUrl);
     }
   });
 });

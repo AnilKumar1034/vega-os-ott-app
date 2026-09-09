@@ -465,5 +465,14 @@ export const strings = {
     pauseAction: '▶',
     playAction: '❚❚',
     breakSegments: '❖ Breaks & Segments',
-  }
+    longPress: '⏩ Long Press',
+    fastForwardRewind: '⏪ FF / REW ⏩',
+    rewindButton: '⏪ -10s',
+    fastForwardButton: '+10s ⏩',
+    longPressBadge: 'Long Press: Speed Acceleration (1x, 2x, 3x, 4x, 5x)',
+    fastForwardRewindBadge: 'Skip Acceleration (1x, 2x, 3x...)',
+    thumbnails: '🖼 Thumbnails',
+    thumbnailBadge: 'Thumbnail Images: Video Preview During Seeking',
+    thumbnailPreview: 'Preview',
+  },
 } as const;

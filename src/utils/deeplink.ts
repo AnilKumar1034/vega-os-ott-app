@@ -34,6 +34,8 @@ export const findContentById = (contentId?: string): HomeContentItem | null => {
       videoUrl: slide.videoUrl,
       description: slide.description,
       meta: slide.meta,
+      seekbarType: slide.seekbarType,
+      thumbnails: slide.thumbnails,
     })),
     ...homeContentRows.flatMap((row) => row.items),
   ];

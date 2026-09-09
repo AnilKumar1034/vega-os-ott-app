@@ -432,7 +432,6 @@ export const LiveTVScreen = () => {
             </TouchableOpacity>
           </View>
         )}
-        {/* <ProgramDetails program={focusedProgram} now={now} /> */}
       </View>
       <Modal
         transparent
