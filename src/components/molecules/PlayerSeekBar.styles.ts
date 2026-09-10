@@ -352,4 +352,28 @@ export const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.4,
   },
+  quickPlaybackControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginLeft: 16,
+  },
+  quickActionButton: {
+    backgroundColor: colors.seekBarActionButton,
+    borderColor: SEEKBAR_COLORS.PRIMARY_BLUE,
+    borderWidth: 1.5,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+  },
+  quickActionButtonFocused: {
+    backgroundColor: SEEKBAR_COLORS.PRIMARY_BLUE,
+    borderColor: SEEKBAR_COLORS.WHITE,
+    transform: [{scale: 1.05}],
+  },
+  quickActionButtonText: {
+    color: SEEKBAR_COLORS.WHITE,
+    fontSize: 13,
+    fontWeight: '700',
+  },
 });

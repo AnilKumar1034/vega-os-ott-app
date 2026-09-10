@@ -1587,6 +1587,12 @@ export const VideoPlayerScreen = () => {
             onRewindPress={() => {
               resetHideTimer();
             }}
+            onSkipIntroPress={() => {
+              resetHideTimer();
+            }}
+            onStartFromBeginningPress={() => {
+              resetHideTimer();
+            }}
             onTypeChange={(newType) => {
               setActiveSeekbarType(newType);
               resetHideTimer();

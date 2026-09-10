@@ -447,6 +447,8 @@ export const strings = {
     selectAudioTrack: (label: string, isSelected: boolean) =>
       `${label} audio track${isSelected ? ', currently selected' : ''}`,
     closeAudioTracksModal: 'Close audio tracks selection modal',
+    skipIntroButton: 'Skip intro, forward a few seconds',
+    startFromBeginningButton: 'Start video playback from the beginning',
   },
 
   // Player controls
@@ -469,6 +471,9 @@ export const strings = {
     fastForwardRewind: '⏪ FF / REW ⏩',
     rewindButton: '⏪ -10s',
     fastForwardButton: '+10s ⏩',
+    skipIntro: 'Skip Intro',
+    startFromBeginning: 'Start from Beginning',
+    startFromBegining: 'Start from Beginning',
     longPressBadge: 'Long Press: Speed Acceleration (1x, 2x, 3x, 4x, 5x)',
     fastForwardRewindBadge: 'Skip Acceleration (1x, 2x, 3x...)',
     thumbnails: '🖼 Thumbnails',

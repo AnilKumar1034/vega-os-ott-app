@@ -38,6 +38,11 @@ export interface PlayerSeekBarProps {
   onInteraction?: () => void;
   onFastForwardPress?: () => void;
   onRewindPress?: () => void;
+  onSkipIntroPress?: () => void;
+  onStartFromBeginningPress?: () => void;
+  onSkipIntro?: (newTime: number) => void;
+  onStartFromBeginning?: () => void;
+  skipIntroSeconds?: number;
   testID?: string;
   enableThumbnails?: boolean;
   thumbnailImageSource?: ((thumbValue: number) => any) | any;
@@ -297,6 +302,11 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
   onInteraction,
   onFastForwardPress,
   onRewindPress,
+  onSkipIntroPress,
+  onStartFromBeginningPress,
+  onSkipIntro,
+  onStartFromBeginning,
+  skipIntroSeconds,
   testID = 'player-seekbar-container',
   enableThumbnails = true,
   thumbnailImageSource,
@@ -598,10 +608,62 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
     onRewindPress?.();
   }, [isLive, onInteraction, onRewindPress, onSeek]);
 
+  const handleStartFromBeginning = useCallback(() => {
+    if (isLive) {
+      return;
+    }
+    onInteraction?.();
+    const newPos = 0;
+    currentScrubPositionRef.current = newPos;
+    setScrubPosition(newPos);
+    setSelectedProgress(0.001);
+    setIsScrubbing(false);
+    if (onStartFromBeginning) {
+      onStartFromBeginning();
+    } else {
+      onSeek(newPos);
+    }
+    onStartFromBeginningPress?.();
+  }, [
+    isLive,
+    onInteraction,
+    onSeek,
+    onStartFromBeginning,
+    onStartFromBeginningPress,
+  ]);
+
+  const handleSkipIntro = useCallback(() => {
+    if (isLive) {
+      return;
+    }
+    onInteraction?.();
+    const current = currentScrubPositionRef.current;
+    const skipAmount = skipIntroSeconds ?? movie?.introDuration ?? 10;
+    const newPos = Math.min(safeDuration, current + skipAmount);
+    currentScrubPositionRef.current = newPos;
+    setScrubPosition(newPos);
+    setSelectedProgress(newPos + 0.001);
+    setIsScrubbing(false);
+    if (onSkipIntro) {
+      onSkipIntro(newPos);
+    } else {
+      onSeek(newPos);
+    }
+    onSkipIntroPress?.();
+  }, [
+    isLive,
+    movie?.introDuration,
+    onInteraction,
+    onSeek,
+    onSkipIntro,
+    onSkipIntroPress,
+    safeDuration,
+    skipIntroSeconds,
+  ]);
+
   const stepValue = Math.max(1, Math.round(safeDuration / 60));
 
-  const isThumbnailType =
-    type === 'thumbnail-images' || type === 'thumbnails';
+  const isThumbnailType = type === 'thumbnail-images' || type === 'thumbnails';
 
   const defaultThumbnailSource = useCallback(
     (thumbVal: number) =>
@@ -663,9 +725,55 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
               </Text>
             </View>
           ) : (
-            <Text style={styles.timeText} testID="player-time-display">
-              {formatTime(effectiveCurrentTime)} / {formatTime(safeDuration)}
-            </Text>
+            <>
+              <Text style={styles.timeText} testID="player-time-display">
+                {formatTime(effectiveCurrentTime)} / {formatTime(safeDuration)}
+              </Text>
+
+              <View
+                style={styles.quickPlaybackControls}
+                testID="player-quick-playback-controls">
+                <TouchableOpacity
+                  style={[
+                    styles.quickActionButton,
+                    focusedButton === 'startFromBeginning' &&
+                      styles.quickActionButtonFocused,
+                  ]}
+                  onFocus={() => {
+                    onInteraction?.();
+                    setFocusedButton('startFromBeginning');
+                  }}
+                  onBlur={() => setFocusedButton(null)}
+                  onPress={handleStartFromBeginning}
+                  accessibilityRole="button"
+                  accessibilityLabel={strings.playerControls.startFromBeginning}
+                  testID="player-start-from-beginning-button">
+                  <Text style={styles.quickActionButtonText}>
+                    {strings.playerControls.startFromBeginning}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.quickActionButton,
+                    focusedButton === 'skipIntro' &&
+                      styles.quickActionButtonFocused,
+                  ]}
+                  onFocus={() => {
+                    onInteraction?.();
+                    setFocusedButton('skipIntro');
+                  }}
+                  onBlur={() => setFocusedButton(null)}
+                  onPress={handleSkipIntro}
+                  accessibilityRole="button"
+                  accessibilityLabel={strings.playerControls.skipIntro}
+                  testID="player-skip-intro-button">
+                  <Text style={styles.quickActionButtonText}>
+                    {strings.playerControls.skipIntro}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </>
           )}
         </View>
 

@@ -913,11 +913,15 @@ describe('PlayerSeekBar - Markers, Break Markers & Segments, Seeking Limits', ()
       clearThumbnailCache();
 
       const mockPlayer = {
-        getImageTracks: jest.fn().mockReturnValue([
-          {id: 99, width: 320, height: 180, bandwidth: 50000},
-        ]),
+        getImageTracks: jest
+          .fn()
+          .mockReturnValue([
+            {id: 99, width: 320, height: 180, bandwidth: 50000},
+          ]),
         getThumbnails: jest.fn().mockResolvedValue({
-          uris: ['https://stream-provider.com/dynamic-thumb-track-99-time-45.jpg'],
+          uris: [
+            'https://stream-provider.com/dynamic-thumb-track-99-time-45.jpg',
+          ],
           startTime: 40,
           endTime: 50,
         }),
@@ -1005,13 +1009,17 @@ describe('PlayerSeekBar - Markers, Break Markers & Segments, Seeking Limits', ()
         movie: {
           id: 'kalki',
           title: 'Kalki 2898 AD',
-          image: {uri: 'https://image.tmdb.org/t/p/w1280/rstcAnBeCkxNQjNp3YXrF6IP1tW.jpg'},
+          image: {
+            uri: 'https://image.tmdb.org/t/p/w1280/rstcAnBeCkxNQjNp3YXrF6IP1tW.jpg',
+          },
         },
       });
 
       expect(thumbStart).toHaveProperty('uri');
       expect((thumbStart as any).uri).toContain('o8XSR1SONnjcsv84NRu6Mwsl5io');
-      expect((thumbStart as any).uri).not.toContain('rstcAnBeCkxNQjNp3YXrF6IP1tW');
+      expect((thumbStart as any).uri).not.toContain(
+        'rstcAnBeCkxNQjNp3YXrF6IP1tW',
+      );
       expect((thumbStart as any).uri).not.toBe(`${THUMBNAIL_BASE_URL}00.jpg`);
     });
 
@@ -1024,14 +1032,18 @@ describe('PlayerSeekBar - Markers, Break Markers & Segments, Seeking Limits', ()
         movie: {
           id: 'the-lion-king-hero',
           title: 'The Lion King',
-          image: {uri: 'https://image.tmdb.org/t/p/w1280/sKCr78MXSLixwmZ8DyJLrpMsd15.jpg'},
+          image: {
+            uri: 'https://image.tmdb.org/t/p/w1280/sKCr78MXSLixwmZ8DyJLrpMsd15.jpg',
+          },
         },
       });
 
       expect(thumb).toHaveProperty('uri');
       expect((thumb as any).uri).not.toContain('sKCr78MXSLixwmZ8DyJLrpMsd15');
       expect(
-        MOVIE_EXACT_THUMBNAILS['the-lion-king-hero'].includes((thumb as any).uri)
+        MOVIE_EXACT_THUMBNAILS['the-lion-king-hero'].includes(
+          (thumb as any).uri,
+        ),
       ).toBe(true);
       expect((thumb as any).uri).not.toBe(`${THUMBNAIL_BASE_URL}10.jpg`);
     });
@@ -1045,15 +1057,17 @@ describe('PlayerSeekBar - Markers, Break Markers & Segments, Seeking Limits', ()
         movie: {
           id: 'horizon',
           title: 'RRR: Multi-Audio Edition',
-          image: {uri: 'https://image.tmdb.org/t/p/w1280/u0XUBNQWlOvrh0Gd97ARGpIkL0.jpg'},
+          image: {
+            uri: 'https://image.tmdb.org/t/p/w1280/u0XUBNQWlOvrh0Gd97ARGpIkL0.jpg',
+          },
         },
       });
 
       expect(thumb).toHaveProperty('uri');
       expect((thumb as any).uri).not.toContain('u0XUBNQWlOvrh0Gd97ARGpIkL0');
-      expect(
-        MOVIE_EXACT_THUMBNAILS['rrr'].includes((thumb as any).uri)
-      ).toBe(true);
+      expect(MOVIE_EXACT_THUMBNAILS['rrr'].includes((thumb as any).uri)).toBe(
+        true,
+      );
       expect((thumb as any).uri).not.toBe(`${THUMBNAIL_BASE_URL}27.jpg`);
     });
 
@@ -1092,27 +1106,40 @@ describe('PlayerSeekBar - Markers, Break Markers & Segments, Seeking Limits', ()
         movie,
       });
 
-      expect((start as any).uri).toBe('https://image.tmdb.org/t/p/w780/frame1.jpg');
-      expect((quarter as any).uri).toBe('https://image.tmdb.org/t/p/w780/frame2.jpg');
-      expect((half as any).uri).toBe('https://image.tmdb.org/t/p/w780/frame3.jpg');
-      expect((end as any).uri).toBe('https://image.tmdb.org/t/p/w780/frame4.jpg');
+      expect((start as any).uri).toBe(
+        'https://image.tmdb.org/t/p/w780/frame1.jpg',
+      );
+      expect((quarter as any).uri).toBe(
+        'https://image.tmdb.org/t/p/w780/frame2.jpg',
+      );
+      expect((half as any).uri).toBe(
+        'https://image.tmdb.org/t/p/w780/frame3.jpg',
+      );
+      expect((end as any).uri).toBe(
+        'https://image.tmdb.org/t/p/w780/frame4.jpg',
+      );
     });
 
     it('isolates cache keys so different movies sharing the same videoUrl show their exact thumbnails', () => {
       clearThumbnailCache();
 
-      const sharedVideoUrl = 'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd';
+      const sharedVideoUrl =
+        'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd';
 
       const movieA = {
         id: 'movie-kalki',
         title: 'Kalki 2898 AD',
-        image: {uri: 'https://image.tmdb.org/t/p/w780/rstcAnBeCkxNQjNp3YXrF6IP1tW.jpg'},
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/rstcAnBeCkxNQjNp3YXrF6IP1tW.jpg',
+        },
       };
 
       const movieB = {
         id: 'movie-lion-king',
         title: 'The Lion King',
-        image: {uri: 'https://image.tmdb.org/t/p/w780/sKCr78MXSLixwmZ8DyJLrpMsd15.jpg'},
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/sKCr78MXSLixwmZ8DyJLrpMsd15.jpg',
+        },
       };
 
       const thumbA = getExactVideoThumbnail({
@@ -1131,10 +1158,10 @@ describe('PlayerSeekBar - Markers, Break Markers & Segments, Seeking Limits', ()
 
       expect((thumbA as any).uri).not.toBe((thumbB as any).uri);
       expect(
-        MOVIE_EXACT_THUMBNAILS['kalki'].includes((thumbA as any).uri)
+        MOVIE_EXACT_THUMBNAILS['kalki'].includes((thumbA as any).uri),
       ).toBe(true);
       expect(
-        MOVIE_EXACT_THUMBNAILS['the-lion-king'].includes((thumbB as any).uri)
+        MOVIE_EXACT_THUMBNAILS['the-lion-king'].includes((thumbB as any).uri),
       ).toBe(true);
     });
 
@@ -1242,6 +1269,289 @@ describe('PlayerSeekBar - Markers, Break Markers & Segments, Seeking Limits', ()
 
       expect(screen.getByTestId('player-seekbar-container')).toBeTruthy();
       expect(screen.getByTestId('player-thumbnails-badge')).toBeTruthy();
+    });
+  });
+
+  describe('Feature 8: Skip Intro and Start from Beginning Options', () => {
+    it('renders Start from Beginning and Skip Intro buttons inside seekbar for VOD content', () => {
+      const screen = render(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={40}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+          onTogglePlayPause={mockOnTogglePlayPause}
+          onInteraction={mockOnInteraction}
+        />,
+      );
+
+      expect(
+        screen.getByTestId('player-start-from-beginning-button'),
+      ).toBeTruthy();
+      expect(screen.getByTestId('player-skip-intro-button')).toBeTruthy();
+      expect(screen.getByText('Start from Beginning')).toBeTruthy();
+      expect(screen.getByText('Skip Intro')).toBeTruthy();
+      expect(screen.getByTestId('player-quick-playback-controls')).toBeTruthy();
+    });
+
+    it('triggers seek to 0 when Start from Beginning button is pressed', () => {
+      const screen = render(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={60}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+          onInteraction={mockOnInteraction}
+        />,
+      );
+
+      const startBtn = screen.getByTestId('player-start-from-beginning-button');
+      fireEvent.press(startBtn);
+
+      expect(mockOnSeek).toHaveBeenCalledWith(0);
+      expect(mockOnInteraction).toHaveBeenCalled();
+
+      screen.rerender(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={0}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+        />,
+      );
+      expect(screen.getByText('00:00 / 05:00')).toBeTruthy();
+    });
+
+    it('triggers seek forward by few seconds (10s) when Skip Intro button is pressed', () => {
+      const screen = render(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={15}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+          onInteraction={mockOnInteraction}
+        />,
+      );
+
+      const skipIntroBtn = screen.getByTestId('player-skip-intro-button');
+      fireEvent.press(skipIntroBtn);
+
+      expect(mockOnSeek).toHaveBeenCalledWith(25);
+      expect(mockOnInteraction).toHaveBeenCalled();
+
+      screen.rerender(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={25}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+        />,
+      );
+      expect(screen.getByText('00:25 / 05:00')).toBeTruthy();
+    });
+
+    it('allows multiple consecutive Skip Intro clicks advancing forward each time', () => {
+      const screen = render(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={0}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+          onInteraction={mockOnInteraction}
+        />,
+      );
+
+      const skipIntroBtn = screen.getByTestId('player-skip-intro-button');
+      fireEvent.press(skipIntroBtn);
+      expect(mockOnSeek).toHaveBeenCalledWith(10);
+
+      fireEvent.press(skipIntroBtn);
+      expect(mockOnSeek).toHaveBeenCalledWith(20);
+    });
+
+    it('clamps Skip Intro seek time to safeDuration near end of video', () => {
+      const screen = render(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={295}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+        />,
+      );
+
+      const skipIntroBtn = screen.getByTestId('player-skip-intro-button');
+      fireEvent.press(skipIntroBtn);
+
+      expect(mockOnSeek).toHaveBeenCalledWith(300);
+
+      screen.rerender(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={300}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+        />,
+      );
+      expect(screen.getByText('05:00 / 05:00')).toBeTruthy();
+    });
+
+    it('supports custom skipIntroSeconds prop if provided', () => {
+      const screen = render(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={10}
+          duration={300}
+          isPaused={false}
+          skipIntroSeconds={30}
+          onSeek={mockOnSeek}
+        />,
+      );
+
+      const skipIntroBtn = screen.getByTestId('player-skip-intro-button');
+      fireEvent.press(skipIntroBtn);
+
+      expect(mockOnSeek).toHaveBeenCalledWith(40);
+    });
+
+    it('supports movie.introDuration if defined on movie item', () => {
+      const screen = render(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={5}
+          duration={300}
+          isPaused={false}
+          movie={{id: 'custom-movie', introDuration: 20}}
+          onSeek={mockOnSeek}
+        />,
+      );
+
+      const skipIntroBtn = screen.getByTestId('player-skip-intro-button');
+      fireEvent.press(skipIntroBtn);
+
+      expect(mockOnSeek).toHaveBeenCalledWith(25);
+    });
+
+    it('does NOT render Start from Beginning and Skip Intro in live streaming mode', () => {
+      const screen = render(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={50}
+          duration={0}
+          isPaused={false}
+          isLive={true}
+          onSeek={mockOnSeek}
+          onTogglePlayPause={mockOnTogglePlayPause}
+        />,
+      );
+
+      expect(
+        screen.queryByTestId('player-start-from-beginning-button'),
+      ).toBeNull();
+      expect(screen.queryByTestId('player-skip-intro-button')).toBeNull();
+      expect(screen.queryByTestId('player-quick-playback-controls')).toBeNull();
+      expect(screen.queryByText('Start from Beginning')).toBeNull();
+      expect(screen.queryByText('Skip Intro')).toBeNull();
+    });
+
+    it('triggers custom onStartFromBeginningPress and onSkipIntroPress callbacks if provided', () => {
+      const mockStartPress = jest.fn();
+      const mockSkipPress = jest.fn();
+
+      const screen = render(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={50}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+          onStartFromBeginningPress={mockStartPress}
+          onSkipIntroPress={mockSkipPress}
+        />,
+      );
+
+      fireEvent.press(screen.getByTestId('player-start-from-beginning-button'));
+      expect(mockStartPress).toHaveBeenCalledTimes(1);
+
+      fireEvent.press(screen.getByTestId('player-skip-intro-button'));
+      expect(mockSkipPress).toHaveBeenCalledTimes(1);
+    });
+
+    it('triggers custom onStartFromBeginning and onSkipIntro handlers if provided', () => {
+      const mockStartHandler = jest.fn();
+      const mockSkipHandler = jest.fn();
+
+      const screen = render(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={40}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+          onStartFromBeginning={mockStartHandler}
+          onSkipIntro={mockSkipHandler}
+        />,
+      );
+
+      fireEvent.press(screen.getByTestId('player-start-from-beginning-button'));
+      expect(mockStartHandler).toHaveBeenCalledTimes(1);
+
+      fireEvent.press(screen.getByTestId('player-skip-intro-button'));
+      expect(mockSkipHandler).toHaveBeenCalledWith(10);
+    });
+
+    it('handles focus and blur events for Start from Beginning and Skip Intro buttons', () => {
+      const screen = render(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={30}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+          onInteraction={mockOnInteraction}
+        />,
+      );
+
+      const startBtn = screen.getByTestId('player-start-from-beginning-button');
+      const skipBtn = screen.getByTestId('player-skip-intro-button');
+
+      fireEvent(startBtn, 'focus');
+      expect(mockOnInteraction).toHaveBeenCalled();
+      fireEvent(startBtn, 'blur');
+
+      fireEvent(skipBtn, 'focus');
+      expect(mockOnInteraction).toHaveBeenCalled();
+      fireEvent(skipBtn, 'blur');
+    });
+
+    it('integrates with VideoPlayerScreen during VOD playback', () => {
+      mockRouteParams = {
+        params: {
+          movie: {
+            id: 'movie-vod-test',
+            title: 'Inception',
+            genre: 'Sci-Fi',
+            seekbarType: 'markers',
+          },
+        },
+      };
+
+      const screen = render(<VideoPlayerScreen />);
+
+      expect(
+        screen.getByTestId('player-start-from-beginning-button'),
+      ).toBeTruthy();
+      expect(screen.getByTestId('player-skip-intro-button')).toBeTruthy();
+
+      fireEvent.press(screen.getByTestId('player-start-from-beginning-button'));
+      fireEvent.press(screen.getByTestId('player-skip-intro-button'));
     });
   });
 });
