@@ -434,6 +434,26 @@ export const strings = {
     dolbyAtmos: 'Dolby Atmos',
   },
 
+  videoQuality: {
+    buttonLabel: 'Quality',
+    qualityBadge: 'QUALITY',
+    videoQualityTitle: 'Video Quality',
+    selectQuality: 'Select Video Quality',
+    selectQualityDesc:
+      'Choose your preferred video streaming resolution and data usage.',
+    auto: 'Auto',
+    autoRecommended: 'Auto (Recommended)',
+    activeQuality: 'Active',
+    close: 'Close',
+    qualityActive: (label: string) => `Quality: ${label}`,
+    qualitiesAvailable: (count: number) => `${count} Quality Levels Available`,
+    uhd: '4K Ultra HD',
+    fhd: '1080p Full HD',
+    hd: '720p HD',
+    sd: '480p SD',
+    low: '360p Data Saver',
+  },
+
   accessibility: {
     retryVideoPlayback: 'Retry video playback',
     backToHome: 'Back to Home',
@@ -447,6 +467,11 @@ export const strings = {
     selectAudioTrack: (label: string, isSelected: boolean) =>
       `${label} audio track${isSelected ? ', currently selected' : ''}`,
     closeAudioTracksModal: 'Close audio tracks selection modal',
+    qualityButton: (label: string) =>
+      `Video quality selection. Currently ${label}`,
+    selectQuality: (label: string, isSelected: boolean) =>
+      `${label} video quality${isSelected ? ', currently selected' : ''}`,
+    closeQualityModal: 'Close video quality selection modal',
     skipIntroButton: 'Skip intro, forward a few seconds',
     startFromBeginningButton: 'Start video playback from the beginning',
   },

@@ -73,18 +73,25 @@ export const getSeekbarTypeForContent = (item?: any): SeekbarType => {
   return 'markers';
 };
 
+/**
+ * Mock video stream with multiple resolution qualities (1080p Full HD, 720p HD, 480p SD, 360p, 288p).
+ * Used for demonstrating and validating dynamic video quality selection.
+ */
+export const MULTI_QUALITY_MOCK_VIDEO_URL =
+  'https://media.axprod.net/TestVectors/v7-Clear/Manifest_1080p.mpd';
+
 export const WORKING_VIDEO_URLS = [
-  'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+  MULTI_QUALITY_MOCK_VIDEO_URL,
   'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
   // 'https://vjs.zencdn.net/v/oceans.mp4',
   'https://media.w3.org/2010/05/sintel/trailer.mp4',
   'https://media.w3.org/2010/05/bunny/trailer.mp4',
   // 'https://media.w3.org/2010/05/video/movie_300.mp4',
-  'https://media.axprod.net/TestVectors/v7-Clear/Manifest_1080p.mpd',
+  MULTI_QUALITY_MOCK_VIDEO_URL,
   'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
 ];
 
-export const DEFAULT_MOCK_VIDEO_URL = WORKING_VIDEO_URLS[1];
+export const DEFAULT_MOCK_VIDEO_URL = MULTI_QUALITY_MOCK_VIDEO_URL;
 
 export interface HomeContentItem {
   id: string;
@@ -209,8 +216,7 @@ export const homeHeroSlides: HeroSlide[] = [
     genre: 'Animation • Adventure • Family',
     director: 'Jon Favreau',
     cast: 'Donald Glover, Beyoncé, Seth Rogen, Chiwetel Ejiofor',
-    videoUrl:
-      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    videoUrl: MULTI_QUALITY_MOCK_VIDEO_URL,
     seekbarType: 'limits',
     thumbnails: MOVIE_EXACT_THUMBNAILS['the-lion-king-hero'],
   },
@@ -266,22 +272,21 @@ export const homeHeroSlides: HeroSlide[] = [
   },
   {
     id: 'kgf-2',
-    eyebrow: 'KANNADA MEGAHIT',
+    eyebrow: 'MULTI-QUALITY STREAM • 1080P • 720P • 480P',
     title: 'K.G.F: Chapter 2',
     maturityRating: '16_PLUS',
     description:
-      'Rocky rules over Kolar Gold Fields, striking terror into his enemies while fighting off government and criminal forces.',
-    meta: ['2022', 'KANNADA', '2h 48m', 'HDR10', 'IMDb 8.3'],
+      'Rocky rules over Kolar Gold Fields. Streamed in adaptive multi-quality DASH (1080p FHD, 720p HD, 480p SD, 360p, 288p). Use the Quality menu in player controls to switch stream qualities in real-time.',
+    meta: ['2022', 'MULTI-QUALITY', '1080P FHD', '720P HD', 'IMDb 8.3'],
     image: {
       uri: 'https://image.tmdb.org/t/p/w1280/khNVygolU0TxLIDWff5tQlAhZ23.jpg',
     },
-    badge: 'KANNADA HIT',
+    badge: '1080P • MULTI-QUALITY',
     rating: '⭐ 8.3 / 10',
-    genre: 'Action • Crime • Drama',
+    genre: 'Action • Crime • Multi-Quality Demo',
     director: 'Prashanth Neel',
     cast: 'Yash, Sanjay Dutt, Raveena Tandon, Srinidhi Shetty',
-    videoUrl:
-      'https://media.axprod.net/TestVectors/v7-Clear/Manifest_1080p.mpd',
+    videoUrl: MULTI_QUALITY_MOCK_VIDEO_URL,
     seekbarType: 'limits',
     thumbnails: MOVIE_EXACT_THUMBNAILS['kgf-2'],
   },
@@ -301,8 +306,7 @@ export const homeHeroSlides: HeroSlide[] = [
     genre: 'Action • Thriller • Drama',
     director: 'Atlee',
     cast: 'Shah Rukh Khan, Nayanthara, Vijay Sethupathi, Deepika Padukone',
-    videoUrl:
-      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    videoUrl: MULTI_QUALITY_MOCK_VIDEO_URL,
     seekbarType: 'markers',
     thumbnails: MOVIE_EXACT_THUMBNAILS['jawan'],
   },
