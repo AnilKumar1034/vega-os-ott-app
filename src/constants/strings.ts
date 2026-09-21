@@ -454,6 +454,24 @@ export const strings = {
     low: '360p Data Saver',
   },
 
+  nextEpisode: {
+    nextEpisodeBadge: 'NEXT EPISODE',
+    upNext: 'Up Next',
+    playingInSeconds: (seconds: number) =>
+      `Playing next episode in ${seconds}s`,
+    playingNext: 'Playing next episode...',
+    playNow: 'Play Now',
+    cancel: 'Cancel',
+    seasonEpisode: (season: number, episode: number) =>
+      `S${season}:E${episode}`,
+    seasonEpisodeFull: (season: number, episode: number, title: string) =>
+      `S${season}:E${episode} • ${title}`,
+    nextEpisodeButton: 'Next Episode',
+    autoplayDisabled: 'Autoplay is turned off in profile settings',
+    autoplayCountdown: (seconds: number) => `Auto-play in ${seconds}s`,
+    episodeEnded: 'Episode ended',
+  },
+
   accessibility: {
     retryVideoPlayback: 'Retry video playback',
     backToHome: 'Back to Home',
@@ -474,6 +492,10 @@ export const strings = {
     closeQualityModal: 'Close video quality selection modal',
     skipIntroButton: 'Skip intro, forward a few seconds',
     startFromBeginningButton: 'Start video playback from the beginning',
+    nextEpisodePlayButton: (title: string) => `Play next episode: ${title}`,
+    nextEpisodeCancelButton: 'Cancel next episode countdown',
+    nextEpisodeOverlay: (title: string, seconds: number) =>
+      `Next episode ${title} playing in ${seconds} seconds`,
   },
 
   // Player controls
@@ -504,5 +526,6 @@ export const strings = {
     thumbnails: '🖼 Thumbnails',
     thumbnailBadge: 'Thumbnail Images: Video Preview During Seeking',
     thumbnailPreview: 'Preview',
+    nextEpisode: 'Next Episode',
   },
 } as const;

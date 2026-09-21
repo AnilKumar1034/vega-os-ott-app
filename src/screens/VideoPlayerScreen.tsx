@@ -68,6 +68,13 @@ import {
   saveQualityPreference,
 } from '../services/videoQualityService';
 import {VideoQualityModal} from '../components/molecules/VideoQualityModal';
+import {EpisodeItem} from '../types/episode';
+import {getNextEpisodeForContent} from '../data/episodes';
+import {
+  DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS,
+  isAutoplayEnabled,
+} from '../services/episodeService';
+import {NextEpisodeModal} from '../components/molecules/NextEpisodeModal';
 
 let KeplerVideoViewComponent: any = View;
 let VideoPlayerClass: any = null;
@@ -90,7 +97,7 @@ try {
 export const VideoPlayerScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const {user, loading} = useAuth();
+  const {user, userProfile, loading} = useAuth();
   const {activeProfile} = useProfile();
   const isLive = Boolean(route.params?.isLive);
 
@@ -111,6 +118,34 @@ export const VideoPlayerScreen = () => {
       },
     [deeplinkMovie, route.params?.movie],
   );
+
+  const resolvedNextEpisode = useMemo<EpisodeItem | null>(() => {
+    if (isLive) {
+      return null;
+    }
+    if (route.params?.nextEpisode) {
+      return route.params.nextEpisode;
+    }
+    const currentEpisodeId = route.params?.episode?.id || movie.id;
+    return getNextEpisodeForContent(
+      {
+        ...movie,
+        episodes: route.params?.episodes || (movie as any).episodes,
+        nextEpisode: route.params?.nextEpisode || (movie as any).nextEpisode,
+      },
+      currentEpisodeId,
+    );
+  }, [
+    isLive,
+    movie,
+    route.params?.episode?.id,
+    route.params?.episodes,
+    route.params?.nextEpisode,
+  ]);
+
+  const autoplayEnabled = useMemo(() => {
+    return isAutoplayEnabled(userProfile, activeProfile);
+  }, [activeProfile, userProfile]);
 
   const videoUrl =
     route.params?.videoUrl || movie.videoUrl || DEFAULT_MOCK_VIDEO_URL;
@@ -225,6 +260,14 @@ export const VideoPlayerScreen = () => {
       route.params?.seekbarType || getSeekbarTypeForContent(movie);
     setActiveSeekbarType(determinedType);
   }, [movie, route.params?.seekbarType]);
+
+  // --- Next Episode Feature Setup ---
+  const [isNextEpisodeModalOpen, setIsNextEpisodeModalOpen] = useState(false);
+  const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState(
+    DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS,
+  );
+  const countdownTimerRef = useRef<any>(null);
+  const hasTriggeredEpisodeEndRef = useRef(false);
 
   // --- Subtitles Feature Setup ---
   const availableSubtitleTracks = useMemo<SubtitleTrack[]>(
@@ -1485,9 +1528,119 @@ export const VideoPlayerScreen = () => {
     [activeProfile?.id, isLive, movie, player, user],
   );
 
+  const handlePlayNextEpisode = useCallback(
+    (targetEpisode?: EpisodeItem) => {
+      const ep = targetEpisode || resolvedNextEpisode;
+      if (!ep) {
+        return;
+      }
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+      setIsNextEpisodeModalOpen(false);
+
+      navigation.replace(Routes.VideoPlayer, {
+        movieId: ep.id,
+        movie: {
+          id: ep.id,
+          title: ep.title,
+          description: ep.description,
+          image: ep.image || movie.image,
+          videoUrl: ep.videoUrl,
+          genre: ep.genre || movie.genre,
+          rating: ep.rating || movie.rating,
+          maturityRating: ep.maturityRating || movie.maturityRating,
+          cast: ep.cast || movie.cast,
+          director: ep.director || movie.director,
+          seekbarType: ep.seekbarType || movie.seekbarType,
+          seriesId: ep.seriesId,
+          seriesTitle: ep.seriesTitle || movie.title,
+          seasonNumber: ep.seasonNumber,
+          episodeNumber: ep.episodeNumber,
+        },
+        videoUrl: ep.videoUrl,
+        seek: 0,
+        isLive: false,
+      });
+    },
+    [movie, navigation, resolvedNextEpisode],
+  );
+
+  const handlePlayNextEpisodeRef = useRef(handlePlayNextEpisode);
+  handlePlayNextEpisodeRef.current = handlePlayNextEpisode;
+
+  const handleCancelNextEpisode = useCallback(() => {
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+    setIsNextEpisodeModalOpen(false);
+  }, []);
+
+  const triggerNextEpisodeCountdown = useCallback(() => {
+    if (isLive || !resolvedNextEpisode) {
+      return;
+    }
+
+    setIsPlaybackPaused(true);
+    try {
+      player?.pause?.();
+    } catch (_err) {
+      // Ignore pause errors if player is already stopped
+    }
+
+    const isAuto = isAutoplayEnabled(userProfile, activeProfile);
+    setNextEpisodeCountdown(DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS);
+    setIsNextEpisodeModalOpen(true);
+
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+
+    if (isAuto) {
+      let secondsRemaining = DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS;
+      countdownTimerRef.current = setInterval(() => {
+        secondsRemaining -= 1;
+        setNextEpisodeCountdown(secondsRemaining);
+        if (secondsRemaining <= 0) {
+          if (countdownTimerRef.current) {
+            clearInterval(countdownTimerRef.current);
+            countdownTimerRef.current = null;
+          }
+          handlePlayNextEpisodeRef.current();
+        }
+      }, 1000);
+    }
+  }, [activeProfile, isLive, player, resolvedNextEpisode, userProfile]);
+
+  const triggerNextEpisodeCountdownRef = useRef(triggerNextEpisodeCountdown);
+  triggerNextEpisodeCountdownRef.current = triggerNextEpisodeCountdown;
+
+  const resolvedNextEpisodeRef = useRef(resolvedNextEpisode);
+  resolvedNextEpisodeRef.current = resolvedNextEpisode;
+
+  // Cleanup countdown timer on component unmount
+  useEffect(() => {
+    return () => {
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+    };
+  }, []);
+
   const handleUserSeek = useCallback(
     (targetSeconds: number) => {
       resetHideTimer();
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+      setIsNextEpisodeModalOpen(false);
+      hasTriggeredEpisodeEndRef.current = false;
+
       if (
         isLive ||
         !player ||
@@ -1559,11 +1712,22 @@ export const VideoPlayerScreen = () => {
           Number.isFinite(player.currentTime)
         ) {
           setPlaybackTime(player.currentTime);
+          if (
+            !isLive &&
+            player.duration &&
+            player.duration > 0 &&
+            player.currentTime >= player.duration - 0.5 &&
+            !hasTriggeredEpisodeEndRef.current
+          ) {
+            hasTriggeredEpisodeEndRef.current = true;
+            void onEnded();
+          }
         }
       }, 500);
     };
 
-    const onEnded = async () => {
+    const onEnded = () => {
+      hasTriggeredEpisodeEndRef.current = true;
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
       }
@@ -1573,11 +1737,14 @@ export const VideoPlayerScreen = () => {
       }
       const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
       if (targetProfileId) {
-        try {
-          await clearContinueWatchProgress(targetProfileId, movieId);
-        } catch (error) {
+        clearContinueWatchProgress(targetProfileId, movieId).catch((error) => {
           console.log('Clear continue watch error:', error);
-        }
+        });
+      }
+
+      // Next Episode Flow: Episode ends -> Next episode -> Countdown -> Auto-play
+      if (!isLive && resolvedNextEpisodeRef.current) {
+        triggerNextEpisodeCountdownRef.current();
       }
     };
 
@@ -1616,6 +1783,10 @@ export const VideoPlayerScreen = () => {
     const handleAppStateChange = (nextAppState: AppStateStatus) => {
       console.log('VideoPlayerScreen AppState changed to:', nextAppState);
       if (nextAppState === 'background' || nextAppState === 'inactive') {
+        if (countdownTimerRef.current) {
+          clearInterval(countdownTimerRef.current);
+          countdownTimerRef.current = null;
+        }
         wasPausedBeforeBackground = isPlaybackPaused;
         void persistProgress(true);
         setIsPlaybackPaused(true);
@@ -1978,6 +2149,15 @@ export const VideoPlayerScreen = () => {
             onStartFromBeginningPress={() => {
               resetHideTimer();
             }}
+            onNextEpisodePress={
+              resolvedNextEpisode
+                ? () => {
+                    resetHideTimer();
+                    triggerNextEpisodeCountdown();
+                  }
+                : undefined
+            }
+            hasNextEpisode={Boolean(resolvedNextEpisode)}
             onTypeChange={(newType) => {
               setActiveSeekbarType(newType);
               resetHideTimer();
@@ -2021,6 +2201,16 @@ export const VideoPlayerScreen = () => {
           setIsVideoQualityModalOpen(false);
           resetHideTimer();
         }}
+      />
+
+      {/* Next Episode Modal with Countdown & Auto-play */}
+      <NextEpisodeModal
+        isOpen={isNextEpisodeModalOpen}
+        nextEpisode={resolvedNextEpisode}
+        countdownSeconds={nextEpisodeCountdown}
+        autoplayEnabled={autoplayEnabled}
+        onPlayNow={() => handlePlayNextEpisode()}
+        onCancel={handleCancelNextEpisode}
       />
     </TVFocusGuideView>
   );

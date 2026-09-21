@@ -43,6 +43,8 @@ export interface PlayerSeekBarProps {
   onSkipIntro?: (newTime: number) => void;
   onStartFromBeginning?: () => void;
   skipIntroSeconds?: number;
+  onNextEpisodePress?: () => void;
+  hasNextEpisode?: boolean;
   testID?: string;
   enableThumbnails?: boolean;
   thumbnailImageSource?: ((thumbValue: number) => any) | any;
@@ -307,6 +309,8 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
   onSkipIntro,
   onStartFromBeginning,
   skipIntroSeconds,
+  onNextEpisodePress,
+  hasNextEpisode,
   testID = 'player-seekbar-container',
   enableThumbnails = true,
   thumbnailImageSource,
@@ -772,6 +776,35 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                     {strings.playerControls.skipIntro}
                   </Text>
                 </TouchableOpacity>
+
+                {hasNextEpisode && onNextEpisodePress && (
+                  <TouchableOpacity
+                    style={[
+                      styles.quickActionButton,
+                      focusedButton === 'nextEpisode' &&
+                        styles.quickActionButtonFocused,
+                    ]}
+                    onFocus={() => {
+                      onInteraction?.();
+                      setFocusedButton('nextEpisode');
+                    }}
+                    onBlur={() => setFocusedButton(null)}
+                    onPress={onNextEpisodePress}
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      strings.nextEpisode?.nextEpisodeButton ||
+                      strings.playerControls?.nextEpisode ||
+                      'Next Episode'
+                    }
+                    testID="player-next-episode-button">
+                    <Text style={styles.quickActionButtonText}>
+                      ⏭{' '}
+                      {strings.nextEpisode?.nextEpisodeButton ||
+                        strings.playerControls?.nextEpisode ||
+                        'Next Episode'}
+                    </Text>
+                  </TouchableOpacity>
+                )}
               </View>
             </>
           )}
