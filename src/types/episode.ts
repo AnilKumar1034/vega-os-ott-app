@@ -21,6 +21,7 @@ export interface EpisodeItem {
   cast?: string;
   director?: string;
   seekbarType?: any;
+  progress?: number;
 }
 
 export interface NextEpisodeState {
@@ -28,4 +29,6 @@ export interface NextEpisodeState {
   countdownSeconds: number;
   isAutoPlayActive: boolean;
   nextEpisode: EpisodeItem | null;
+  nextEpisodes?: EpisodeItem[];
+  allEpisodes?: EpisodeItem[];
 }

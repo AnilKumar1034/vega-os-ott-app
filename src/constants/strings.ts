@@ -470,6 +470,28 @@ export const strings = {
     autoplayDisabled: 'Autoplay is turned off in profile settings',
     autoplayCountdown: (seconds: number) => `Auto-play in ${seconds}s`,
     episodeEnded: 'Episode ended',
+    nextEpisodesTitle: 'Next Episodes',
+    nextEpisodesListTitle: 'Next Episodes',
+    upcomingEpisodes: 'Upcoming Episodes',
+    allEpisodes: 'All Episodes',
+    allEpisodesTitle: 'All Episodes',
+    episodesCount: (count: number) =>
+      count === 1 ? '1 Next Episode' : `${count} Next Episodes`,
+    allEpisodesCount: (count: number) =>
+      count === 1 ? '1 Episode' : `${count} Episodes`,
+    tabUpcoming: 'Upcoming',
+    tabAll: 'All Episodes',
+    pressToPlay: '▶ Press OK to Play',
+    currentlyPlaying: 'Playing Now',
+    nowPlaying: 'Now Playing',
+    upNextCardBadge: 'UP NEXT',
+    playEpisode: (num: number, title?: string) =>
+      title ? `Play Ep ${num}: ${title}` : `Play Episode ${num}`,
+    selectEpisodeHint: 'Press OK to Play',
+    finalEpisodeOfSeason: 'Season Finale',
+    watchedEpisode: 'Watched',
+    viewAllEpisodes: 'View All Episodes',
+    seasonTitle: (season: number) => `Season ${season}`,
   },
 
   accessibility: {
@@ -496,6 +518,10 @@ export const strings = {
     nextEpisodeCancelButton: 'Cancel next episode countdown',
     nextEpisodeOverlay: (title: string, seconds: number) =>
       `Next episode ${title} playing in ${seconds} seconds`,
+    selectEpisodeCard: (title: string, episodeNumber?: number) =>
+      episodeNumber
+        ? `Play episode ${episodeNumber}: ${title}`
+        : `Select episode ${title} to play`,
   },
 
   // Player controls

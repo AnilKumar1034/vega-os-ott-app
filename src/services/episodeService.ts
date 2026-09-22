@@ -2,9 +2,11 @@ import {EpisodeItem} from '../types/episode';
 import {
   getEpisodesForContent,
   getNextEpisodeForContent,
+  getNextEpisodesForContent,
+  getAllEpisodesForContent,
 } from '../data/episodes';
 
-export const DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS = 5;
+export const DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS = 60;
 
 const LAST_WATCHED_EPISODE_KEY_PREFIX = '@vega_last_watched_episode_';
 
@@ -121,4 +123,29 @@ export function clearLastWatchedEpisodeCache(): void {
   }
 }
 
-export {getEpisodesForContent, getNextEpisodeForContent};
+/**
+ * Returns upcoming episodes following the current episode.
+ */
+export function getNextEpisodes(
+  content: any,
+  currentEpisodeId?: string,
+): EpisodeItem[] {
+  return getNextEpisodesForContent(content, currentEpisodeId);
+}
+
+/**
+ * Returns all episodes for the series or content.
+ */
+export function getAllEpisodes(
+  content: any,
+  currentEpisodeId?: string,
+): EpisodeItem[] {
+  return getAllEpisodesForContent(content, currentEpisodeId);
+}
+
+export {
+  getEpisodesForContent,
+  getNextEpisodeForContent,
+  getNextEpisodesForContent,
+  getAllEpisodesForContent,
+};

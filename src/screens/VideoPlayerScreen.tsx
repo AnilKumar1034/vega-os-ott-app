@@ -69,7 +69,11 @@ import {
 } from '../services/videoQualityService';
 import {VideoQualityModal} from '../components/molecules/VideoQualityModal';
 import {EpisodeItem} from '../types/episode';
-import {getNextEpisodeForContent} from '../data/episodes';
+import {
+  getNextEpisodeForContent,
+  getNextEpisodesForContent,
+  getAllEpisodesForContent,
+} from '../data/episodes';
 import {
   DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS,
   isAutoplayEnabled,
@@ -128,6 +132,48 @@ export const VideoPlayerScreen = () => {
     }
     const currentEpisodeId = route.params?.episode?.id || movie.id;
     return getNextEpisodeForContent(
+      {
+        ...movie,
+        episodes: route.params?.episodes || (movie as any).episodes,
+        nextEpisode: route.params?.nextEpisode || (movie as any).nextEpisode,
+      },
+      currentEpisodeId,
+    );
+  }, [
+    isLive,
+    movie,
+    route.params?.episode?.id,
+    route.params?.episodes,
+    route.params?.nextEpisode,
+  ]);
+
+  const resolvedNextEpisodes = useMemo<EpisodeItem[]>(() => {
+    if (isLive) {
+      return [];
+    }
+    const currentEpisodeId = route.params?.episode?.id || movie.id;
+    return getNextEpisodesForContent(
+      {
+        ...movie,
+        episodes: route.params?.episodes || (movie as any).episodes,
+        nextEpisode: route.params?.nextEpisode || (movie as any).nextEpisode,
+      },
+      currentEpisodeId,
+    );
+  }, [
+    isLive,
+    movie,
+    route.params?.episode?.id,
+    route.params?.episodes,
+    route.params?.nextEpisode,
+  ]);
+
+  const resolvedAllEpisodes = useMemo<EpisodeItem[]>(() => {
+    if (isLive) {
+      return [];
+    }
+    const currentEpisodeId = route.params?.episode?.id || movie.id;
+    return getAllEpisodesForContent(
       {
         ...movie,
         episodes: route.params?.episodes || (movie as any).episodes,
@@ -2203,14 +2249,18 @@ export const VideoPlayerScreen = () => {
         }}
       />
 
-      {/* Next Episode Modal with Countdown & Auto-play */}
+      {/* Next Episode Modal with Countdown, Auto-play & Next Episodes List View */}
       <NextEpisodeModal
         isOpen={isNextEpisodeModalOpen}
         nextEpisode={resolvedNextEpisode}
+        nextEpisodes={resolvedNextEpisodes}
+        allEpisodes={resolvedAllEpisodes}
+        currentEpisodeId={route.params?.episode?.id || movie.id}
         countdownSeconds={nextEpisodeCountdown}
         autoplayEnabled={autoplayEnabled}
-        onPlayNow={() => handlePlayNextEpisode()}
+        onPlayNow={(targetEp) => handlePlayNextEpisode(targetEp)}
         onCancel={handleCancelNextEpisode}
+        onSelectEpisode={(targetEp) => handlePlayNextEpisode(targetEp)}
       />
     </TVFocusGuideView>
   );

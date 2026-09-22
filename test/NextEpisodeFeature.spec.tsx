@@ -4,6 +4,8 @@ import {act, fireEvent, render, waitFor} from '@testing-library/react-native';
 import {
   formatSeasonEpisodeLabel,
   getLastWatchedEpisode,
+  getNextEpisodes,
+  getAllEpisodes,
   isAutoplayEnabled,
   saveLastWatchedEpisode,
 } from '../src/services/episodeService';
@@ -11,6 +13,8 @@ import {
   curatedEpisodesMap,
   getEpisodesForContent,
   getNextEpisodeForContent,
+  getNextEpisodesForContent,
+  getAllEpisodesForContent,
 } from '../src/data/episodes';
 import {EpisodeItem} from '../src/types/episode';
 import {NextEpisodeModal} from '../src/components/molecules/NextEpisodeModal';
@@ -605,6 +609,31 @@ describe('Next Episode Feature', () => {
       });
     });
 
+    it('displays and triggers Next Episode button in seekbar for default sample-video', async () => {
+      mockRouteParams = {
+        params: {
+          movie: {
+            id: 'sample-video',
+            title: 'Sample Video',
+          },
+        },
+      };
+
+      const screen = render(<VideoPlayerScreen />);
+
+      await waitFor(() => {
+        expect(screen.getByTestId('player-next-episode-button')).toBeTruthy();
+      });
+
+      act(() => {
+        fireEvent.press(screen.getByTestId('player-next-episode-button'));
+      });
+
+      await waitFor(() => {
+        expect(screen.getByTestId('next-episode-modal')).toBeTruthy();
+      });
+    });
+
     it('cancels countdown timer when AppState transitions to background', async () => {
       const screen = render(<VideoPlayerScreen />);
 
@@ -633,6 +662,427 @@ describe('Next Episode Feature', () => {
 
       // Must NOT navigate in background
       expect(mockReplace).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Next Episodes List View Enhancements', () => {
+    const mockEp1: EpisodeItem = {
+      id: 'ep-test-1',
+      seriesId: 'series-test',
+      seriesTitle: 'Galactic Odyssey',
+      seasonNumber: 1,
+      episodeNumber: 1,
+      title: 'Departure',
+      description: 'The voyage commences into uncharted regions.',
+      durationFormatted: '45m',
+      videoUrl: 'https://example.com/ep1.mp4',
+      image: require('../src/assets/background.png'),
+      rating: '⭐ 8.5',
+      maturityRating: '13_PLUS',
+      genre: 'Sci-Fi',
+      progress: 0.8,
+    };
+
+    const mockEp2: EpisodeItem = {
+      id: 'ep-test-2',
+      seriesId: 'series-test',
+      seriesTitle: 'Galactic Odyssey',
+      seasonNumber: 1,
+      episodeNumber: 2,
+      title: 'First Contact',
+      description: 'A strange beacon emanates from a distant nebula.',
+      durationFormatted: '48m',
+      videoUrl: 'https://example.com/ep2.mp4',
+      image: require('../src/assets/background.png'),
+      rating: '⭐ 8.9',
+      maturityRating: '13_PLUS',
+      genre: 'Sci-Fi',
+    };
+
+    const mockEp3: EpisodeItem = {
+      id: 'ep-test-3',
+      seriesId: 'series-test',
+      seriesTitle: 'Galactic Odyssey',
+      seasonNumber: 1,
+      episodeNumber: 3,
+      title: 'Solar Flare',
+      description: 'The ship navigates through an intense cosmic storm.',
+      durationFormatted: '44m',
+      videoUrl: 'https://example.com/ep3.mp4',
+      image: require('../src/assets/background.png'),
+      rating: '⭐ 9.1',
+      maturityRating: '13_PLUS',
+      genre: 'Sci-Fi',
+    };
+
+    describe('data and service resolution for upcoming and all episodes', () => {
+      it('resolves upcoming episodes correctly following the current episode', () => {
+        const upcoming = getNextEpisodesForContent(
+          {id: 'angel-one', title: 'Angel One'},
+          'angel-one-ep-15',
+        );
+        expect(upcoming.length).toBeGreaterThanOrEqual(4);
+        expect(upcoming[0].id).toBe('angel-one-ep-16');
+        expect(upcoming[0].title).toBe('Too Short a Season');
+      });
+
+      it('resolves all upcoming episodes from explicit episodes array', () => {
+        const upcoming = getNextEpisodesForContent(
+          {
+            id: 'show-1',
+            title: 'Show',
+            episodes: [mockEp1, mockEp2, mockEp3],
+          },
+          'ep-test-1',
+        );
+        expect(upcoming).toHaveLength(2);
+        expect(upcoming[0].id).toBe('ep-test-2');
+        expect(upcoming[1].id).toBe('ep-test-3');
+      });
+
+      it('returns empty array when current episode is the last one', () => {
+        const allEpisodes = curatedEpisodesMap['angel-one'];
+        const lastEpisode = allEpisodes[allEpisodes.length - 1];
+        const upcoming = getNextEpisodesForContent(
+          {id: 'angel-one', title: 'Angel One'},
+          lastEpisode.id,
+        );
+        expect(upcoming).toEqual([]);
+      });
+
+      it('generates upcoming episodes for episodic content with seriesId and episodeNumber', () => {
+        const upcoming = getNextEpisodesForContent({
+          id: 'custom-series-s1-e2',
+          seriesId: 'custom-series',
+          seriesTitle: 'Custom Series',
+          seasonNumber: 1,
+          episodeNumber: 2,
+        });
+        expect(upcoming.length).toBe(3);
+        expect(upcoming[0].episodeNumber).toBe(3);
+        expect(upcoming[1].episodeNumber).toBe(4);
+        expect(upcoming[2].episodeNumber).toBe(5);
+      });
+
+      it('returns explicit nextEpisode in array if only nextEpisode is provided', () => {
+        const upcoming = getNextEpisodesForContent({
+          id: 'movie-1',
+          title: 'Movie',
+          nextEpisode: mockEp2,
+        });
+        expect(upcoming).toEqual([mockEp2]);
+      });
+
+      it('returns empty array if current content is null or undefined', () => {
+        expect(getNextEpisodesForContent(null)).toEqual([]);
+        expect(getAllEpisodesForContent(null)).toEqual([]);
+      });
+
+      it('resolves all episodes for content from curated catalog', () => {
+        const all = getAllEpisodesForContent({
+          id: 'angel-one',
+          title: 'Angel One',
+        });
+        expect(all.length).toBeGreaterThanOrEqual(4);
+        expect(all[0].id).toBe('angel-one');
+      });
+
+      it('getNextEpisodes and getAllEpisodes helpers delegate to resolver functions', () => {
+        const nextEps = getNextEpisodes(
+          {
+            id: 'show',
+            episodes: [mockEp1, mockEp2],
+          },
+          'ep-test-1',
+        );
+        expect(nextEps).toEqual([mockEp2]);
+
+        const allEps = getAllEpisodes({
+          id: 'show',
+          episodes: [mockEp1, mockEp2],
+        });
+        expect(allEps).toEqual([mockEp1, mockEp2]);
+      });
+    });
+
+    describe('NextEpisodeModal List View UI & Interaction tests', () => {
+      it('renders next episodes list view container and section title', () => {
+        const {getByTestId} = render(
+          <NextEpisodeModal
+            isOpen={true}
+            nextEpisode={mockEp2}
+            nextEpisodes={[mockEp2, mockEp3]}
+            countdownSeconds={5}
+            autoplayEnabled={true}
+            onPlayNow={jest.fn()}
+            onCancel={jest.fn()}
+          />,
+        );
+
+        expect(getByTestId('next-episodes-section')).toBeTruthy();
+        expect(getByTestId('next-episodes-section-title')).toBeTruthy();
+        expect(getByTestId('next-episodes-list-view')).toBeTruthy();
+      });
+
+      it('renders episode cards for each upcoming episode with badges and metadata', () => {
+        const {getByTestId, getByText, getAllByText} = render(
+          <NextEpisodeModal
+            isOpen={true}
+            nextEpisode={mockEp2}
+            nextEpisodes={[mockEp2, mockEp3]}
+            countdownSeconds={5}
+            autoplayEnabled={true}
+            onPlayNow={jest.fn()}
+            onCancel={jest.fn()}
+          />,
+        );
+
+        expect(getByTestId('next-episode-card-ep-test-2')).toBeTruthy();
+        expect(getByTestId('next-episode-card-ep-test-3')).toBeTruthy();
+        expect(getByText('Ep. 2: First Contact')).toBeTruthy();
+        expect(getByText('Ep. 3: Solar Flare')).toBeTruthy();
+        expect(getByText('EP 2')).toBeTruthy();
+        expect(getByText('EP 3')).toBeTruthy();
+        expect(getAllByText('48m').length).toBeGreaterThanOrEqual(1);
+        expect(getByText('44m')).toBeTruthy();
+        expect(getAllByText('⭐ 8.9').length).toBeGreaterThanOrEqual(1);
+        expect(getByText('⭐ 9.1')).toBeTruthy();
+      });
+
+      it('displays UP NEXT badge with countdown on the immediate next episode card under autoplay', () => {
+        const {getByText} = render(
+          <NextEpisodeModal
+            isOpen={true}
+            nextEpisode={mockEp2}
+            nextEpisodes={[mockEp2, mockEp3]}
+            countdownSeconds={4}
+            autoplayEnabled={true}
+            onPlayNow={jest.fn()}
+            onCancel={jest.fn()}
+          />,
+        );
+
+        expect(getByText('UP NEXT (4s)')).toBeTruthy();
+      });
+
+      it('displays static UP NEXT badge when autoplay is disabled', () => {
+        const {getByText, queryByText} = render(
+          <NextEpisodeModal
+            isOpen={true}
+            nextEpisode={mockEp2}
+            nextEpisodes={[mockEp2, mockEp3]}
+            countdownSeconds={5}
+            autoplayEnabled={false}
+            onPlayNow={jest.fn()}
+            onCancel={jest.fn()}
+          />,
+        );
+
+        expect(getByText('UP NEXT')).toBeTruthy();
+        expect(queryByText('UP NEXT (5s)')).toBeNull();
+      });
+
+      it('triggers onSelectEpisode with the specific episode when a card is pressed', () => {
+        const onSelectEpisode = jest.fn();
+        const onPlayNow = jest.fn();
+        const {getByTestId} = render(
+          <NextEpisodeModal
+            isOpen={true}
+            nextEpisode={mockEp2}
+            nextEpisodes={[mockEp2, mockEp3]}
+            countdownSeconds={5}
+            autoplayEnabled={true}
+            onPlayNow={onPlayNow}
+            onCancel={jest.fn()}
+            onSelectEpisode={onSelectEpisode}
+          />,
+        );
+
+        fireEvent.press(getByTestId('next-episode-card-ep-test-3'));
+        expect(onSelectEpisode).toHaveBeenCalledTimes(1);
+        expect(onSelectEpisode).toHaveBeenCalledWith(mockEp3);
+        expect(onPlayNow).not.toHaveBeenCalled();
+      });
+
+      it('falls back to onPlayNow if onSelectEpisode is not provided', () => {
+        const onPlayNow = jest.fn();
+        const {getByTestId} = render(
+          <NextEpisodeModal
+            isOpen={true}
+            nextEpisode={mockEp2}
+            nextEpisodes={[mockEp2, mockEp3]}
+            countdownSeconds={5}
+            autoplayEnabled={true}
+            onPlayNow={onPlayNow}
+            onCancel={jest.fn()}
+          />,
+        );
+
+        fireEvent.press(getByTestId('next-episode-card-ep-test-3'));
+        expect(onPlayNow).toHaveBeenCalledTimes(1);
+        expect(onPlayNow).toHaveBeenCalledWith(mockEp3);
+      });
+
+      it('handles card focus and blur events properly, applying focus styling and action hint', () => {
+        const {getByTestId, getByText, queryByText} = render(
+          <NextEpisodeModal
+            isOpen={true}
+            nextEpisode={mockEp2}
+            nextEpisodes={[mockEp2, mockEp3]}
+            countdownSeconds={5}
+            autoplayEnabled={true}
+            onPlayNow={jest.fn()}
+            onCancel={jest.fn()}
+          />,
+        );
+
+        const card = getByTestId('next-episode-card-ep-test-2');
+        expect(queryByText('▶ Press OK to Play')).toBeNull();
+
+        // Focus episode card
+        fireEvent(card, 'focus');
+        expect(getByText('▶ Press OK to Play')).toBeTruthy();
+
+        // Blur episode card
+        fireEvent(card, 'blur');
+        expect(queryByText('▶ Press OK to Play')).toBeNull();
+      });
+
+      it('configures TV focus guides with autoFocus enabled for seamless D-pad traversal', () => {
+        const {getByTestId} = render(
+          <NextEpisodeModal
+            isOpen={true}
+            nextEpisode={mockEp2}
+            nextEpisodes={[mockEp2, mockEp3]}
+            countdownSeconds={5}
+            autoplayEnabled={true}
+            onPlayNow={jest.fn()}
+            onCancel={jest.fn()}
+          />,
+        );
+
+        const episodesSection = getByTestId('next-episodes-section');
+        expect(episodesSection.props.autoFocus).toBe(true);
+      });
+
+      it('handles tab focus and blur events for TV navigation', () => {
+        const {getByTestId} = render(
+          <NextEpisodeModal
+            isOpen={true}
+            nextEpisode={mockEp2}
+            nextEpisodes={[mockEp2, mockEp3]}
+            allEpisodes={[mockEp1, mockEp2, mockEp3]}
+            currentEpisodeId={mockEp1.id}
+            countdownSeconds={5}
+            autoplayEnabled={true}
+            onPlayNow={jest.fn()}
+            onCancel={jest.fn()}
+          />,
+        );
+
+        const upcomingTab = getByTestId('next-episodes-tab-upcoming');
+        fireEvent(upcomingTab, 'focus');
+        fireEvent(upcomingTab, 'blur');
+
+        const allTab = getByTestId('next-episodes-tab-all');
+        fireEvent(allTab, 'focus');
+        fireEvent(allTab, 'blur');
+      });
+
+      it('allows toggling between Upcoming and All Episodes tabs', () => {
+        const {getByTestId, getByText, queryByTestId} = render(
+          <NextEpisodeModal
+            isOpen={true}
+            nextEpisode={mockEp2}
+            nextEpisodes={[mockEp2, mockEp3]}
+            allEpisodes={[mockEp1, mockEp2, mockEp3]}
+            currentEpisodeId={mockEp1.id}
+            countdownSeconds={5}
+            autoplayEnabled={true}
+            onPlayNow={jest.fn()}
+            onCancel={jest.fn()}
+          />,
+        );
+
+        // Initially on Upcoming tab
+        expect(getByTestId('next-episodes-tab-upcoming')).toBeTruthy();
+        expect(getByTestId('next-episodes-tab-all')).toBeTruthy();
+        expect(queryByTestId('next-episode-card-ep-test-1')).toBeNull();
+        expect(getByTestId('next-episode-card-ep-test-2')).toBeTruthy();
+
+        // Switch to All Episodes tab
+        fireEvent.press(getByTestId('next-episodes-tab-all'));
+        expect(getByTestId('next-episode-card-ep-test-1')).toBeTruthy();
+        expect(getByTestId('next-episode-card-ep-test-2')).toBeTruthy();
+        expect(getByTestId('next-episode-card-ep-test-3')).toBeTruthy();
+        expect(getByText('Watched')).toBeTruthy();
+      });
+    });
+
+    describe('VideoPlayerScreen Next Episodes List View integration', () => {
+      it('opens NextEpisodeModal with next episodes list view when video playback ends', async () => {
+        const screen = render(<VideoPlayerScreen />);
+
+        await waitFor(() => {
+          expect(mockPlayerInstance).toBeTruthy();
+        });
+
+        act(() => {
+          mockPlayerInstance.emit('playing');
+        });
+
+        act(() => {
+          mockPlayerInstance.emit('ended');
+        });
+
+        await waitFor(() => {
+          expect(screen.getByTestId('next-episodes-list-view')).toBeTruthy();
+          expect(
+            screen.getByTestId('next-episodes-section-title'),
+          ).toBeTruthy();
+        });
+      });
+
+      it('immediately navigates to selected episode when user selects an upcoming episode card from the list view', async () => {
+        const screen = render(<VideoPlayerScreen />);
+
+        await waitFor(() => {
+          expect(mockPlayerInstance).toBeTruthy();
+        });
+
+        act(() => {
+          mockPlayerInstance.emit('ended');
+        });
+
+        await waitFor(() => {
+          expect(screen.getByTestId('next-episodes-list-view')).toBeTruthy();
+          // Find Episode 16 card from Angel One upcoming catalog
+          expect(
+            screen.getByTestId('next-episode-card-angel-one-ep-16'),
+          ).toBeTruthy();
+        });
+
+        // Click Episode 16 from the list view
+        act(() => {
+          fireEvent.press(
+            screen.getByTestId('next-episode-card-angel-one-ep-16'),
+          );
+        });
+
+        expect(mockReplace).toHaveBeenCalledWith(
+          Routes.VideoPlayer,
+          expect.objectContaining({
+            movieId: 'angel-one-ep-16',
+            movie: expect.objectContaining({
+              id: 'angel-one-ep-16',
+              title: 'Too Short a Season',
+              episodeNumber: 16,
+            }),
+            seek: 0,
+            isLive: false,
+          }),
+        );
+      });
     });
   });
 });
