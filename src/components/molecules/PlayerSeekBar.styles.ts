@@ -376,4 +376,109 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
   },
+  customDisablingBadge: {
+    backgroundColor: colors.seekBarLimitsBadge,
+    borderColor: SEEKBAR_COLORS.PRIMARY_BLUE,
+    borderWidth: 1,
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 12,
+  },
+  customDisablingBadgeText: {
+    color: SEEKBAR_COLORS.PRIMARY_BLUE,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.4,
+  },
+  disablingPresetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  disablingPresetButton: {
+    backgroundColor: colors.seekBarActionButton,
+    borderColor: colors.controlBackground,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  disablingPresetButtonActive: {
+    backgroundColor: colors.seekBarTypePil,
+    borderColor: SEEKBAR_COLORS.PRIMARY_BLUE,
+  },
+  disablingPresetButtonFocused: {
+    backgroundColor: SEEKBAR_COLORS.PRIMARY_BLUE,
+    borderColor: SEEKBAR_COLORS.WHITE,
+    transform: [{scale: 1.05}],
+  },
+  disablingPresetButtonText: {
+    color: SEEKBAR_COLORS.MEDIUM_GREY,
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  disablingPresetButtonTextActive: {
+    color: SEEKBAR_COLORS.WHITE,
+  },
+  toggleButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 14,
+    borderWidth: 1.5,
+  },
+  toggleButtonActive: {
+    backgroundColor: 'rgba(229, 9, 20, 0.25)',
+    borderColor: '#E50914',
+  },
+  toggleButtonInactive: {
+    backgroundColor: 'rgba(70, 211, 105, 0.2)',
+    borderColor: '#46D369',
+  },
+  toggleButtonFocused: {
+    borderColor: SEEKBAR_COLORS.WHITE,
+    transform: [{scale: 1.05}],
+  },
+  toggleButtonText: {
+    color: SEEKBAR_COLORS.WHITE,
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  toggleGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  actionTogglePill: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+  },
+  actionTogglePillDisabled: {
+    backgroundColor: 'rgba(229, 9, 20, 0.2)',
+    borderColor: '#E50914',
+  },
+  actionTogglePillEnabled: {
+    backgroundColor: 'rgba(70, 211, 105, 0.2)',
+    borderColor: '#46D369',
+  },
+  actionTogglePillFocusedState: {
+    backgroundColor: 'rgba(0, 168, 225, 0.3)',
+    borderColor: SEEKBAR_COLORS.PRIMARY_BLUE,
+  },
+  actionTogglePillUnfocusedState: {
+    backgroundColor: 'rgba(128, 128, 128, 0.2)',
+    borderColor: SEEKBAR_COLORS.MEDIUM_GREY,
+  },
+  actionTogglePillFocused: {
+    borderColor: SEEKBAR_COLORS.WHITE,
+    transform: [{scale: 1.05}],
+  },
+  actionToggleText: {
+    color: SEEKBAR_COLORS.WHITE,
+    fontSize: 11,
+    fontWeight: '700',
+  },
 });

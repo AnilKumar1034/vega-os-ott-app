@@ -5,6 +5,7 @@ import {
   SegmentColorsConfig,
   DisplayAboveThumbProps,
   InteractionEventPayload,
+  PartialDisablingConfiguration,
 } from '@amazon-devices/kepler-ui-components/dist/src/components/SeekBar';
 import {BreakMarker} from '@amazon-devices/kepler-ui-components/dist/src/components/ProgressBar';
 import {SEEKBAR_COLORS} from '../../constants/seekbarColors';
@@ -17,6 +18,8 @@ import {colors} from '../../theme/colors';
 import {circleStyle, styles} from './PlayerSeekBar.styles';
 import {strings} from '../../constants/strings';
 
+export type {PartialDisablingConfiguration};
+
 export type SeekbarType =
   | 'markers'
   | 'break-markers'
@@ -24,7 +27,8 @@ export type SeekbarType =
   | 'long-press'
   | 'fast-forward-rewind'
   | 'thumbnail-images'
-  | 'thumbnails';
+  | 'thumbnails'
+  | 'custom-disabling';
 
 export interface PlayerSeekBarProps {
   type: SeekbarType;
@@ -52,6 +56,12 @@ export interface PlayerSeekBarProps {
   videoUrl?: string;
   movie?: any;
   player?: any;
+  partialDisablingConfiguration?: PartialDisablingConfiguration;
+  onFocus?: () => void;
+  onBlur?: () => void;
+  disabledWhenNotFocused?: boolean;
+  disabled?: boolean;
+  onToggleDisabling?: (enabled: boolean) => void;
 }
 
 const ARROW_IMG = require('../../assets/arrow_up.png');
@@ -318,6 +328,12 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
   videoUrl,
   movie,
   player,
+  partialDisablingConfiguration,
+  onFocus,
+  onBlur,
+  disabledWhenNotFocused,
+  disabled,
+  onToggleDisabling,
 }) => {
   const safeDuration = Math.max(
     10,
@@ -496,6 +512,167 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
     [lowerSeekLimit, upperSeekLimit],
   );
 
+  // 4. Custom Disabling Configurations State & Logic (Referenced from vega-seekbar-sample CustomDisablingConfig.tsx)
+  const seekBarRef = useRef<any>(null);
+  const [isSeekbarFocused, setIsSeekbarFocused] = useState<boolean>(false);
+  const [isDisablingEnabled, setIsDisablingEnabled] = useState<boolean>(
+    disabled !== undefined ? !disabled : true,
+  );
+  const [disabledActions, setDisabledActions] = useState<{
+    dpad: boolean;
+    skip: boolean;
+    playPause: boolean;
+    select: boolean;
+  }>({
+    dpad: true,
+    skip: false,
+    playPause: true,
+    select: true,
+  });
+  const [disablingPreset, setDisablingPreset] = useState<
+    'focus-auto' | 'block-dpad' | 'block-play-pause' | 'block-skip' | 'all-enabled'
+  >('focus-auto');
+
+  useEffect(() => {
+    if (disabled !== undefined) {
+      setIsDisablingEnabled(!disabled);
+    }
+  }, [disabled]);
+
+  const handleToggleMasterDisabling = useCallback(() => {
+    onInteraction?.();
+    setIsDisablingEnabled((prev) => {
+      const next = !prev;
+      onToggleDisabling?.(next);
+      return next;
+    });
+  }, [onInteraction, onToggleDisabling]);
+
+  const handleToggleAction = useCallback(
+    (action: 'dpad' | 'skip' | 'playPause' | 'select') => {
+      onInteraction?.();
+      setDisablingPreset('focus-auto');
+      setDisabledActions((prev) => ({
+        ...prev,
+        [action]: !prev[action],
+      }));
+    },
+    [onInteraction],
+  );
+
+  const handleToggleFocus = useCallback(() => {
+    onInteraction?.();
+    setIsSeekbarFocused((prev) => !prev);
+  }, [onInteraction]);
+
+  const handleSeekbarFocus = useCallback(() => {
+    setIsSeekbarFocused(true);
+    onInteraction?.();
+    onFocus?.();
+  }, [onFocus, onInteraction]);
+
+  const handleSeekbarBlur = useCallback(() => {
+    setIsSeekbarFocused(false);
+    onBlur?.();
+  }, [onBlur]);
+
+  const defaultFocusAutoConfig = useMemo<PartialDisablingConfiguration>(
+    () => ({
+      skipBackward: false,
+      skipForward: false,
+      select: !isSeekbarFocused,
+      left: !isSeekbarFocused,
+      right: !isSeekbarFocused,
+      back: !isSeekbarFocused,
+      playPause: !isSeekbarFocused,
+    }),
+    [isSeekbarFocused],
+  );
+
+  const effectiveCustomDisablingConfig = useMemo<PartialDisablingConfiguration>(() => {
+    // If master toggle is OFF: all actions are enabled!
+    if (!isDisablingEnabled) {
+      return {
+        left: false,
+        right: false,
+        skipBackward: false,
+        skipForward: false,
+        select: false,
+        playPause: false,
+        back: false,
+      };
+    }
+    if (partialDisablingConfiguration) {
+      return {
+        ...defaultFocusAutoConfig,
+        ...partialDisablingConfiguration,
+      };
+    }
+    switch (disablingPreset) {
+      case 'block-dpad':
+        return {
+          left: true,
+          right: true,
+          skipBackward: false,
+          skipForward: false,
+          select: false,
+          playPause: false,
+          back: false,
+        };
+      case 'block-play-pause':
+        return {
+          playPause: true,
+          left: false,
+          right: false,
+          skipBackward: false,
+          skipForward: false,
+          select: false,
+          back: false,
+        };
+      case 'block-skip':
+        return {
+          skipBackward: true,
+          skipForward: true,
+          left: false,
+          right: false,
+          select: false,
+          playPause: false,
+          back: false,
+        };
+      case 'all-enabled':
+        return {
+          left: false,
+          right: false,
+          skipBackward: false,
+          skipForward: false,
+          select: false,
+          playPause: false,
+          back: false,
+        };
+      case 'focus-auto':
+      default:
+        return {
+          left: isSeekbarFocused ? false : disabledActions.dpad,
+          right: isSeekbarFocused ? false : disabledActions.dpad,
+          skipBackward: disabledActions.skip,
+          skipForward: disabledActions.skip,
+          playPause: isSeekbarFocused ? false : disabledActions.playPause,
+          select: isSeekbarFocused ? false : disabledActions.select,
+          back: isSeekbarFocused ? false : true,
+        };
+    }
+  }, [
+    isDisablingEnabled,
+    partialDisablingConfiguration,
+    disablingPreset,
+    defaultFocusAutoConfig,
+    isSeekbarFocused,
+    disabledActions.dpad,
+    disabledActions.skip,
+    disabledActions.playPause,
+    disabledActions.select,
+  ]);
+
   // Common Seekbar callbacks
   const handleOnValueChange = useCallback(
     (val: number) => {
@@ -596,7 +773,14 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
     setIsScrubbing(false);
     onSeek(newPos);
     onFastForwardPress?.();
-  }, [isLive, onFastForwardPress, onInteraction, onSeek, safeDuration]);
+    if (type === 'custom-disabling') {
+      try {
+        seekBarRef.current?.requestTVFocus?.();
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [isLive, onFastForwardPress, onInteraction, onSeek, safeDuration, type]);
 
   const handleRewind = useCallback(() => {
     if (isLive) {
@@ -610,7 +794,14 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
     setIsScrubbing(false);
     onSeek(newPos);
     onRewindPress?.();
-  }, [isLive, onInteraction, onRewindPress, onSeek]);
+    if (type === 'custom-disabling') {
+      try {
+        seekBarRef.current?.requestTVFocus?.();
+      } catch (e) {
+        // ignore
+      }
+    }
+  }, [isLive, onInteraction, onRewindPress, onSeek, type]);
 
   const handleStartFromBeginning = useCallback(() => {
     if (isLive) {
@@ -935,6 +1126,399 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
               </View>
             )}
 
+            {type === 'custom-disabling' && (
+              <>
+                <View
+                  style={styles.customDisablingBadge}
+                  testID="player-custom-disabling-badge">
+                  <Text style={styles.customDisablingBadgeText}>
+                    {!isDisablingEnabled
+                      ? 'Disabling: OFF (All Controls Active)'
+                      : isSeekbarFocused
+                      ? 'Focused: All Controls Active'
+                      : 'Unfocused: D-Pad & Select Disabled (FF/REW Active)'}
+                  </Text>
+                </View>
+
+                {/* Master Disabling Toggle (ON / OFF) */}
+                <TouchableOpacity
+                  style={[
+                    styles.toggleButton,
+                    isDisablingEnabled
+                      ? styles.toggleButtonActive
+                      : styles.toggleButtonInactive,
+                    focusedButton === 'master-toggle' &&
+                      styles.toggleButtonFocused,
+                  ]}
+                  onFocus={() => {
+                    onInteraction?.();
+                    setFocusedButton('master-toggle');
+                  }}
+                  onBlur={() => setFocusedButton(null)}
+                  onPress={handleToggleMasterDisabling}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Disabling is ${
+                    isDisablingEnabled ? 'Enabled' : 'Disabled'
+                  }. Click to toggle.`}
+                  testID="custom-disabling-master-toggle">
+                  <Text style={styles.toggleButtonText}>
+                    {isDisablingEnabled ? '⊘ Disabling: ON' : '○ Disabling: OFF'}
+                  </Text>
+                </TouchableOpacity>
+
+                {/* Granular Action Disabling Toggles */}
+                <View
+                  style={styles.toggleGroup}
+                  testID="custom-disabling-action-toggles">
+                  <TouchableOpacity
+                    style={[
+                      styles.actionTogglePill,
+                      disabledActions.dpad
+                        ? styles.actionTogglePillDisabled
+                        : styles.actionTogglePillEnabled,
+                      focusedButton === 'toggle-dpad' &&
+                        styles.actionTogglePillFocused,
+                    ]}
+                    onFocus={() => {
+                      onInteraction?.();
+                      setFocusedButton('toggle-dpad');
+                    }}
+                    onBlur={() => setFocusedButton(null)}
+                    onPress={() => handleToggleAction('dpad')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Toggle D-Pad seek disabling"
+                    testID="toggle-action-dpad">
+                    <Text style={styles.actionToggleText}>
+                      {disabledActions.dpad ? 'D-Pad: ✕' : 'D-Pad: ✓'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.actionTogglePill,
+                      disabledActions.skip
+                        ? styles.actionTogglePillDisabled
+                        : styles.actionTogglePillEnabled,
+                      focusedButton === 'toggle-skip' &&
+                        styles.actionTogglePillFocused,
+                    ]}
+                    onFocus={() => {
+                      onInteraction?.();
+                      setFocusedButton('toggle-skip');
+                    }}
+                    onBlur={() => setFocusedButton(null)}
+                    onPress={() => handleToggleAction('skip')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Toggle Skip buttons disabling"
+                    testID="toggle-action-skip">
+                    <Text style={styles.actionToggleText}>
+                      {disabledActions.skip ? 'Skip: ✕' : 'Skip: ✓'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.actionTogglePill,
+                      disabledActions.playPause
+                        ? styles.actionTogglePillDisabled
+                        : styles.actionTogglePillEnabled,
+                      focusedButton === 'toggle-playpause' &&
+                        styles.actionTogglePillFocused,
+                    ]}
+                    onFocus={() => {
+                      onInteraction?.();
+                      setFocusedButton('toggle-playpause');
+                    }}
+                    onBlur={() => setFocusedButton(null)}
+                    onPress={() => handleToggleAction('playPause')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Toggle Play/Pause disabling"
+                    testID="toggle-action-playpause">
+                    <Text style={styles.actionToggleText}>
+                      {disabledActions.playPause
+                        ? 'Play/Pause: ✕'
+                        : 'Play/Pause: ✓'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.actionTogglePill,
+                      disabledActions.select
+                        ? styles.actionTogglePillDisabled
+                        : styles.actionTogglePillEnabled,
+                      focusedButton === 'toggle-select' &&
+                        styles.actionTogglePillFocused,
+                    ]}
+                    onFocus={() => {
+                      onInteraction?.();
+                      setFocusedButton('toggle-select');
+                    }}
+                    onBlur={() => setFocusedButton(null)}
+                    onPress={() => handleToggleAction('select')}
+                    accessibilityRole="button"
+                    accessibilityLabel="Toggle Select disabling"
+                    testID="toggle-action-select">
+                    <Text style={styles.actionToggleText}>
+                      {disabledActions.select ? 'Select: ✕' : 'Select: ✓'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.actionTogglePill,
+                      isSeekbarFocused
+                        ? styles.actionTogglePillFocusedState
+                        : styles.actionTogglePillUnfocusedState,
+                      focusedButton === 'toggle-focus' &&
+                        styles.actionTogglePillFocused,
+                    ]}
+                    onFocus={() => {
+                      onInteraction?.();
+                      setFocusedButton('toggle-focus');
+                    }}
+                    onBlur={() => setFocusedButton(null)}
+                    onPress={handleToggleFocus}
+                    accessibilityRole="button"
+                    accessibilityLabel="Toggle Seekbar focus simulation"
+                    testID="toggle-focus-state">
+                    <Text style={styles.actionToggleText}>
+                      {isSeekbarFocused ? 'Focus: Sim' : 'Unfocused: Sim'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View
+                  style={styles.disablingPresetRow}
+                  testID="player-disabling-presets-row">
+                  <TouchableOpacity
+                    style={[
+                      styles.disablingPresetButton,
+                      disablingPreset === 'focus-auto' &&
+                        styles.disablingPresetButtonActive,
+                      focusedButton === 'preset-auto' &&
+                        styles.disablingPresetButtonFocused,
+                    ]}
+                    onFocus={() => {
+                      onInteraction?.();
+                      setFocusedButton('preset-auto');
+                    }}
+                    onBlur={() => setFocusedButton(null)}
+                    onPress={() => {
+                      onInteraction?.();
+                      setDisablingPreset('focus-auto');
+                      setDisabledActions({
+                        dpad: true,
+                        skip: false,
+                        playPause: true,
+                        select: true,
+                      });
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Focus-based Auto Disabling"
+                    testID="disabling-preset-auto">
+                    <Text
+                      style={[
+                        styles.disablingPresetButtonText,
+                        disablingPreset === 'focus-auto' &&
+                          styles.disablingPresetButtonTextActive,
+                      ]}>
+                      Auto
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.disablingPresetButton,
+                      disablingPreset === 'block-dpad' &&
+                        styles.disablingPresetButtonActive,
+                      focusedButton === 'preset-dpad' &&
+                        styles.disablingPresetButtonFocused,
+                    ]}
+                    onFocus={() => {
+                      onInteraction?.();
+                      setFocusedButton('preset-dpad');
+                    }}
+                    onBlur={() => setFocusedButton(null)}
+                    onPress={() => {
+                      onInteraction?.();
+                      setDisablingPreset('block-dpad');
+                      setDisabledActions({
+                        dpad: true,
+                        skip: false,
+                        playPause: false,
+                        select: false,
+                      });
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Block D-Pad Seeking"
+                    testID="disabling-preset-block-dpad">
+                    <Text
+                      style={[
+                        styles.disablingPresetButtonText,
+                        disablingPreset === 'block-dpad' &&
+                          styles.disablingPresetButtonTextActive,
+                      ]}>
+                      Block D-Pad
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.disablingPresetButton,
+                      disablingPreset === 'block-play-pause' &&
+                        styles.disablingPresetButtonActive,
+                      focusedButton === 'preset-playpause' &&
+                        styles.disablingPresetButtonFocused,
+                    ]}
+                    onFocus={() => {
+                      onInteraction?.();
+                      setFocusedButton('preset-playpause');
+                    }}
+                    onBlur={() => setFocusedButton(null)}
+                    onPress={() => {
+                      onInteraction?.();
+                      setDisablingPreset('block-play-pause');
+                      setDisabledActions({
+                        dpad: false,
+                        skip: false,
+                        playPause: true,
+                        select: false,
+                      });
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Block Play/Pause"
+                    testID="disabling-preset-block-playpause">
+                    <Text
+                      style={[
+                        styles.disablingPresetButtonText,
+                        disablingPreset === 'block-play-pause' &&
+                          styles.disablingPresetButtonTextActive,
+                      ]}>
+                      Block Play/Pause
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.disablingPresetButton,
+                      disablingPreset === 'block-skip' &&
+                        styles.disablingPresetButtonActive,
+                      focusedButton === 'preset-skip' &&
+                        styles.disablingPresetButtonFocused,
+                    ]}
+                    onFocus={() => {
+                      onInteraction?.();
+                      setFocusedButton('preset-skip');
+                    }}
+                    onBlur={() => setFocusedButton(null)}
+                    onPress={() => {
+                      onInteraction?.();
+                      setDisablingPreset('block-skip');
+                      setDisabledActions({
+                        dpad: false,
+                        skip: true,
+                        playPause: false,
+                        select: false,
+                      });
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Block Skip Buttons"
+                    testID="disabling-preset-block-skip">
+                    <Text
+                      style={[
+                        styles.disablingPresetButtonText,
+                        disablingPreset === 'block-skip' &&
+                          styles.disablingPresetButtonTextActive,
+                      ]}>
+                      Block Skip
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.disablingPresetButton,
+                      disablingPreset === 'all-enabled' &&
+                        styles.disablingPresetButtonActive,
+                      focusedButton === 'preset-all' &&
+                        styles.disablingPresetButtonFocused,
+                    ]}
+                    onFocus={() => {
+                      onInteraction?.();
+                      setFocusedButton('preset-all');
+                    }}
+                    onBlur={() => setFocusedButton(null)}
+                    onPress={() => {
+                      onInteraction?.();
+                      setDisablingPreset('all-enabled');
+                      setDisabledActions({
+                        dpad: false,
+                        skip: false,
+                        playPause: false,
+                        select: false,
+                      });
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="All Enabled"
+                    testID="disabling-preset-all">
+                    <Text
+                      style={[
+                        styles.disablingPresetButtonText,
+                        disablingPreset === 'all-enabled' &&
+                          styles.disablingPresetButtonTextActive,
+                      ]}>
+                      All Enabled
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                {/* Direct skip controls (<< -10s | +10s >>) matching vega-seekbar-sample */}
+                <View
+                  style={styles.skipControlsGroup}
+                  testID="custom-disabling-skip-controls">
+                  <TouchableOpacity
+                    style={[
+                      styles.skipButton,
+                      focusedButton === 'disablingRewind' &&
+                        styles.skipButtonFocused,
+                    ]}
+                    onFocus={() => {
+                      onInteraction?.();
+                      setFocusedButton('disablingRewind');
+                    }}
+                    onBlur={() => setFocusedButton(null)}
+                    onPress={handleRewind}
+                    accessibilityRole="button"
+                    accessibilityLabel="Rewind 10 seconds"
+                    testID="custom-disabling-rewind-button">
+                    <Text style={styles.skipButtonText}>
+                      {strings.playerControls.rewindButton}
+                    </Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[
+                      styles.skipButton,
+                      focusedButton === 'disablingFastForward' &&
+                        styles.skipButtonFocused,
+                    ]}
+                    onFocus={() => {
+                      onInteraction?.();
+                      setFocusedButton('disablingFastForward');
+                    }}
+                    onBlur={() => setFocusedButton(null)}
+                    onPress={handleFastForward}
+                    accessibilityRole="button"
+                    accessibilityLabel="Fast forward 10 seconds"
+                    testID="custom-disabling-fast-forward-button">
+                    <Text style={styles.skipButtonText}>
+                      {strings.playerControls.fastForwardButton}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+
             {/* Type Selector Pills */}
             <View style={styles.typeSelectorRow} testID="seekbar-type-selector">
               <Text style={styles.typeSelectorLabel}>Type:</Text>
@@ -1102,6 +1686,34 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                   {strings.playerControls.thumbnails}
                 </Text>
               </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[
+                  styles.typePill,
+                  type === 'custom-disabling' && styles.typePillActive,
+                  focusedButton === 'type-custom-disabling' &&
+                    styles.typePillFocused,
+                ]}
+                onFocus={() => {
+                  onInteraction?.();
+                  setFocusedButton('type-custom-disabling');
+                }}
+                onBlur={() => setFocusedButton(null)}
+                onPress={() => {
+                  onInteraction?.();
+                  onTypeChange?.('custom-disabling');
+                }}
+                accessibilityRole="button"
+                accessibilityLabel="Switch to Custom Disabling Configuration Seekbar"
+                testID="type-pill-custom-disabling">
+                <Text
+                  style={[
+                    styles.typePillText,
+                    type === 'custom-disabling' && styles.typePillTextActive,
+                  ]}>
+                  {strings.playerControls.customDisabling || '⊘ Disabling'}
+                </Text>
+              </TouchableOpacity>
             </View>
           </View>
         )}
@@ -1119,13 +1731,15 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
             onPress={handleOnPlayPause}
             onPlayPause={handleOnPlayPause}
             disabled={true}
-            partialDisablingConfiguration={{
-              skipBackward: true,
-              skipForward: true,
-              left: true,
-              right: true,
-              select: true,
-            }}
+            partialDisablingConfiguration={
+              partialDisablingConfiguration ?? {
+                skipBackward: true,
+                skipForward: true,
+                left: true,
+                right: true,
+                select: true,
+              }
+            }
             currentValueIndicatorColor={colors.heroAccent}
             disabledWhenNotFocused={false}
             disableThumbnail={true}
@@ -1152,6 +1766,9 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                 disableThumbnail={isLive ? true : !enableThumbnails}
                 thumbnailImageSource={effectiveThumbnailSource}
                 thumbnailLabel={effectiveThumbnailLabel}
+                partialDisablingConfiguration={partialDisablingConfiguration}
+                onFocus={onFocus}
+                onBlur={onBlur}
                 trapFocus={false}
                 markers={[
                   {
@@ -1186,6 +1803,9 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                 disableThumbnail={isLive ? true : !enableThumbnails}
                 thumbnailImageSource={effectiveThumbnailSource}
                 thumbnailLabel={effectiveThumbnailLabel}
+                partialDisablingConfiguration={partialDisablingConfiguration}
+                onFocus={onFocus}
+                onBlur={onBlur}
                 trapFocus={false}
                 markers={dynamicPointMarkers}
                 currentValueIndicatorColor={(focused: boolean) =>
@@ -1212,6 +1832,9 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                 disableThumbnail={isLive ? true : !enableThumbnails}
                 thumbnailImageSource={effectiveThumbnailSource}
                 thumbnailLabel={effectiveThumbnailLabel}
+                partialDisablingConfiguration={partialDisablingConfiguration}
+                onFocus={onFocus}
+                onBlur={onBlur}
                 trapFocus={false}
                 lowerSeekLimit={lowerSeekLimit}
                 upperSeekLimit={upperSeekLimit}
@@ -1238,6 +1861,9 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                 disableThumbnail={isLive ? true : !enableThumbnails}
                 thumbnailImageSource={effectiveThumbnailSource}
                 thumbnailLabel={effectiveThumbnailLabel}
+                partialDisablingConfiguration={partialDisablingConfiguration}
+                onFocus={onFocus}
+                onBlur={onBlur}
                 currentValueIndicatorColor={(focused: boolean) =>
                   focused ? SEEKBAR_COLORS.PRIMARY_BLUE : SEEKBAR_COLORS.WHITE
                 }
@@ -1271,6 +1897,9 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                 disableThumbnail={isLive ? true : !enableThumbnails}
                 thumbnailImageSource={effectiveThumbnailSource}
                 thumbnailLabel={effectiveThumbnailLabel}
+                partialDisablingConfiguration={partialDisablingConfiguration}
+                onFocus={onFocus}
+                onBlur={onBlur}
                 currentValueIndicatorColor={(focused: boolean) =>
                   focused ? SEEKBAR_COLORS.PRIMARY_BLUE : SEEKBAR_COLORS.WHITE
                 }
@@ -1302,6 +1931,9 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                 disableThumbnail={isLive ? true : !enableThumbnails}
                 thumbnailImageSource={effectiveThumbnailSource}
                 thumbnailLabel={effectiveThumbnailLabel}
+                partialDisablingConfiguration={partialDisablingConfiguration}
+                onFocus={onFocus}
+                onBlur={onBlur}
                 displayAboveThumb={ThumbnailAboveThumb}
                 displayBelowThumb={ThumbnailBelowThumb}
                 currentValueIndicatorColor={(focused: boolean) =>
@@ -1309,6 +1941,52 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                 }
                 trapFocus={false}
                 enableAnimations={true}
+              />
+            )}
+
+            {type === 'custom-disabling' && (
+              <SeekBar
+                ref={seekBarRef}
+                currentValue={effectiveCurrentTime}
+                totalValue={safeDuration}
+                step={stepValue}
+                thumbIcon={ThumbIcon}
+                onPress={handleOnPress}
+                onPlayPause={handleOnPlayPause}
+                onValueChange={handleOnValueChange}
+                onSlidingStart={handleOnSlidingStart}
+                onSlidingEnd={handleOnSlidingEnd}
+                onSeekInteractionChange={handleSeekInteractionChange}
+                onFastForwardPress={handleFastForward}
+                onRewindPress={handleRewind}
+                onFocus={handleSeekbarFocus}
+                onBlur={handleSeekbarBlur}
+                disabled={!isDisablingEnabled ? false : disabled}
+                partialDisablingConfiguration={effectiveCustomDisablingConfig}
+                disabledWhenNotFocused={disabledWhenNotFocused ?? false}
+                disableThumbnail={
+                  !isSeekbarFocused || (isLive ? true : !enableThumbnails)
+                }
+                thumbnailImageSource={effectiveThumbnailSource}
+                thumbnailLabel={effectiveThumbnailLabel}
+                displayAboveThumb={
+                  isSeekbarFocused ? FastForwardRewindAboveThumb : null
+                }
+                currentValueIndicatorColor={(focused: boolean) =>
+                  focused || isSeekbarFocused
+                    ? SEEKBAR_COLORS.PRIMARY_BLUE
+                    : SEEKBAR_COLORS.WHITE
+                }
+                enableSkipForwardBackwardAcceleration={true}
+                enableLongPressAcceleration={true}
+                stepMultiplierFactor={1}
+                stepMultiplierFactorInterval={1000}
+                longPressIntervalDuration={200}
+                longPressDelay={1000}
+                maxStepValue={50}
+                trapFocus={false}
+                enableAnimations={true}
+                animationDuration={200}
               />
             )}
           </>

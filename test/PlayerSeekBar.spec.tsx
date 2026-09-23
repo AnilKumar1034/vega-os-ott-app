@@ -1554,4 +1554,247 @@ describe('PlayerSeekBar - Markers, Break Markers & Segments, Seeking Limits', ()
       fireEvent.press(screen.getByTestId('player-skip-intro-button'));
     });
   });
+
+  describe('Feature 9: Custom Disabling Configurations', () => {
+    it('renders custom-disabling seekbar with badge, type pill, preset options, and skip controls', () => {
+      const screen = render(
+        <PlayerSeekBar
+          type="custom-disabling"
+          currentTime={45}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+          onTogglePlayPause={mockOnTogglePlayPause}
+          onTypeChange={mockOnTypeChange}
+          onInteraction={mockOnInteraction}
+        />,
+      );
+
+      expect(screen.getByTestId('player-seekbar-container')).toBeTruthy();
+      expect(screen.getByTestId('player-custom-disabling-badge')).toBeTruthy();
+      expect(screen.getByTestId('type-pill-custom-disabling')).toBeTruthy();
+      expect(screen.getByTestId('player-disabling-presets-row')).toBeTruthy();
+      expect(screen.getByTestId('disabling-preset-auto')).toBeTruthy();
+      expect(screen.getByTestId('disabling-preset-block-dpad')).toBeTruthy();
+      expect(screen.getByTestId('disabling-preset-block-playpause')).toBeTruthy();
+      expect(screen.getByTestId('disabling-preset-block-skip')).toBeTruthy();
+      expect(screen.getByTestId('disabling-preset-all')).toBeTruthy();
+      expect(screen.getByTestId('custom-disabling-skip-controls')).toBeTruthy();
+      expect(screen.getByTestId('custom-disabling-rewind-button')).toBeTruthy();
+      expect(screen.getByTestId('custom-disabling-fast-forward-button')).toBeTruthy();
+    });
+
+    it('allows switching between disabling presets and updates active preset', () => {
+      const screen = render(
+        <PlayerSeekBar
+          type="custom-disabling"
+          currentTime={45}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+          onInteraction={mockOnInteraction}
+        />,
+      );
+
+      const dpadPresetBtn = screen.getByTestId('disabling-preset-block-dpad');
+      fireEvent.press(dpadPresetBtn);
+      expect(mockOnInteraction).toHaveBeenCalled();
+
+      const playPausePresetBtn = screen.getByTestId('disabling-preset-block-playpause');
+      fireEvent.press(playPausePresetBtn);
+
+      const skipPresetBtn = screen.getByTestId('disabling-preset-block-skip');
+      fireEvent.press(skipPresetBtn);
+
+      const allPresetBtn = screen.getByTestId('disabling-preset-all');
+      fireEvent.press(allPresetBtn);
+
+      const autoPresetBtn = screen.getByTestId('disabling-preset-auto');
+      fireEvent.press(autoPresetBtn);
+    });
+
+    it('triggers seek backwards and forwards by 10s on skip button presses in custom-disabling mode', () => {
+      const mockFastForwardPress = jest.fn();
+      const mockRewindPress = jest.fn();
+
+      const screen = render(
+        <PlayerSeekBar
+          type="custom-disabling"
+          currentTime={60}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+          onFastForwardPress={mockFastForwardPress}
+          onRewindPress={mockRewindPress}
+          onInteraction={mockOnInteraction}
+        />,
+      );
+
+      const rewBtn = screen.getByTestId('custom-disabling-rewind-button');
+      fireEvent.press(rewBtn);
+      expect(mockOnSeek).toHaveBeenCalledWith(50);
+      expect(mockRewindPress).toHaveBeenCalledTimes(1);
+      expect(mockOnInteraction).toHaveBeenCalled();
+
+      const ffBtn = screen.getByTestId('custom-disabling-fast-forward-button');
+      fireEvent.press(ffBtn);
+      expect(mockOnSeek).toHaveBeenCalledWith(60);
+      expect(mockFastForwardPress).toHaveBeenCalledTimes(1);
+    });
+
+    it('accepts custom partialDisablingConfiguration prop override', () => {
+      const customConfig = {
+        skipBackward: true,
+        skipForward: true,
+        left: false,
+        right: false,
+        select: false,
+        playPause: false,
+      };
+
+      const screen = render(
+        <PlayerSeekBar
+          type="custom-disabling"
+          currentTime={60}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+          partialDisablingConfiguration={customConfig}
+        />,
+      );
+
+      expect(screen.getByTestId('vega-seekbar-wrapper')).toBeTruthy();
+    });
+
+    it('calls onTypeChange when clicking custom-disabling type pill', () => {
+      const screen = render(
+        <PlayerSeekBar
+          type="markers"
+          currentTime={30}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+          onTypeChange={mockOnTypeChange}
+        />,
+      );
+
+      const disablingPill = screen.getByTestId('type-pill-custom-disabling');
+      fireEvent.press(disablingPill);
+      expect(mockOnTypeChange).toHaveBeenCalledWith('custom-disabling');
+    });
+
+    it('allows toggling master disabling ON and OFF with interactive toggle button', () => {
+      const mockToggleDisabling = jest.fn();
+
+      const screen = render(
+        <PlayerSeekBar
+          type="custom-disabling"
+          currentTime={45}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+          onToggleDisabling={mockToggleDisabling}
+          onInteraction={mockOnInteraction}
+        />,
+      );
+
+      const masterToggle = screen.getByTestId('custom-disabling-master-toggle');
+      expect(screen.getByText('⊘ Disabling: ON')).toBeTruthy();
+
+      // Click to toggle OFF (enabling everything)
+      fireEvent.press(masterToggle);
+      expect(mockOnInteraction).toHaveBeenCalled();
+      expect(mockToggleDisabling).toHaveBeenCalledWith(false);
+      expect(screen.getByText('○ Disabling: OFF')).toBeTruthy();
+      expect(screen.getByText('Disabling: OFF (All Controls Active)')).toBeTruthy();
+
+      // Click again to toggle back ON
+      fireEvent.press(masterToggle);
+      expect(mockToggleDisabling).toHaveBeenCalledWith(true);
+      expect(screen.getByText('⊘ Disabling: ON')).toBeTruthy();
+    });
+
+    it('allows toggling granular disabling actions (D-Pad, Skip, Play/Pause, Select)', () => {
+      const screen = render(
+        <PlayerSeekBar
+          type="custom-disabling"
+          currentTime={45}
+          duration={300}
+          isPaused={false}
+          onSeek={mockOnSeek}
+          onInteraction={mockOnInteraction}
+        />,
+      );
+
+      expect(screen.getByTestId('custom-disabling-action-toggles')).toBeTruthy();
+
+      // D-Pad Toggle
+      const dpadToggle = screen.getByTestId('toggle-action-dpad');
+      expect(screen.getByText('D-Pad: ✕')).toBeTruthy();
+      fireEvent.press(dpadToggle);
+      expect(screen.getByText('D-Pad: ✓')).toBeTruthy();
+
+      // Skip Toggle
+      const skipToggle = screen.getByTestId('toggle-action-skip');
+      expect(screen.getByText('Skip: ✓')).toBeTruthy();
+      fireEvent.press(skipToggle);
+      expect(screen.getByText('Skip: ✕')).toBeTruthy();
+
+      // Play/Pause Toggle
+      const playPauseToggle = screen.getByTestId('toggle-action-playpause');
+      expect(screen.getByText('Play/Pause: ✕')).toBeTruthy();
+      fireEvent.press(playPauseToggle);
+      expect(screen.getByText('Play/Pause: ✓')).toBeTruthy();
+
+      // Select Toggle
+      const selectToggle = screen.getByTestId('toggle-action-select');
+      expect(screen.getByText('Select: ✕')).toBeTruthy();
+      fireEvent.press(selectToggle);
+      expect(screen.getByText('Select: ✓')).toBeTruthy();
+
+      // Focus Simulation Toggle
+      const focusToggle = screen.getByTestId('toggle-focus-state');
+      expect(screen.getByText('Unfocused: Sim')).toBeTruthy();
+      fireEvent.press(focusToggle);
+      expect(screen.getByText('Focus: Sim')).toBeTruthy();
+    });
+
+    it('supports disabled prop to control initial disabling toggle state', () => {
+      const screen = render(
+        <PlayerSeekBar
+          type="custom-disabling"
+          currentTime={45}
+          duration={300}
+          isPaused={false}
+          disabled={true}
+          onSeek={mockOnSeek}
+        />,
+      );
+
+      // When disabled is true, disabling is OFF
+      expect(screen.getByTestId('custom-disabling-master-toggle')).toBeTruthy();
+      expect(screen.getByText('○ Disabling: OFF')).toBeTruthy();
+    });
+
+    it('displays SEEKBAR: CUSTOM DISABLING CONFIGURATION in VideoPlayerScreen for custom-disabling content', () => {
+      mockRouteParams = {
+        params: {
+          movie: {
+            id: 'movie-custom-disabling-test',
+            title: 'Custom Disabling Showcase',
+            genre: 'Tech Demo',
+            seekbarType: 'custom-disabling',
+          },
+        },
+      };
+
+      const screen = render(<VideoPlayerScreen />);
+      expect(
+        screen.getByText('SEEKBAR: CUSTOM DISABLING CONFIGURATION'),
+      ).toBeTruthy();
+      expect(
+        screen.getByTestId('player-custom-disabling-badge'),
+      ).toBeTruthy();
+    });
+  });
 });

@@ -553,5 +553,8 @@ export const strings = {
     thumbnailBadge: 'Thumbnail Images: Video Preview During Seeking',
     thumbnailPreview: 'Preview',
     nextEpisode: 'Next Episode',
+    customDisabling: '⊘ Disabling',
+    customDisablingBadge:
+      'Custom Disabling: D-Pad & select disabled when unfocused • Skip FF/REW always enabled',
   },
 } as const;

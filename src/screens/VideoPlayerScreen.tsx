@@ -2165,6 +2165,8 @@ export const VideoPlayerScreen = () => {
                   ? 'SEEKBAR: LONG PRESS'
                   : activeSeekbarType === 'fast-forward-rewind'
                   ? 'SEEKBAR: FAST FORWARD / REWIND'
+                  : activeSeekbarType === 'custom-disabling'
+                  ? 'SEEKBAR: CUSTOM DISABLING CONFIGURATION'
                   : 'SEEKBAR: THUMBNAIL IMAGES'}
               </Text>
             </View>
@@ -2181,6 +2183,7 @@ export const VideoPlayerScreen = () => {
             videoUrl={videoUrl}
             movie={movie}
             player={shakaPlayerRef.current?.player}
+            partialDisablingConfiguration={movie?.partialDisablingConfiguration}
             onSeek={handleUserSeek}
             onTogglePlayPause={togglePlayback}
             onFastForwardPress={() => {

@@ -15,13 +15,21 @@ export type SeekbarType =
   | 'long-press'
   | 'fast-forward-rewind'
   | 'thumbnail-images'
-  | 'thumbnails';
+  | 'thumbnails'
+  | 'custom-disabling';
 
 export const getSeekbarTypeForContent = (item?: any): SeekbarType => {
   if (item?.seekbarType) {
     return item.seekbarType;
   }
   const id = String(item?.id || '').toLowerCase();
+  if (
+    id.includes('custom-disabling') ||
+    id.includes('disabling') ||
+    id.includes('partial-disabling')
+  ) {
+    return 'custom-disabling';
+  }
   if (
     id.includes('thumbnail') ||
     id.includes('preview') ||
@@ -108,6 +116,7 @@ export interface HomeContentItem {
   director?: string;
   videoUrl?: string;
   seekbarType?: SeekbarType;
+  partialDisablingConfiguration?: any;
   thumbnails?: string[];
 }
 
@@ -133,6 +142,7 @@ export interface HeroSlide {
   director?: string;
   videoUrl?: string;
   seekbarType?: SeekbarType;
+  partialDisablingConfiguration?: any;
   thumbnails?: string[];
 }
 
@@ -330,6 +340,26 @@ export const homeHeroSlides: HeroSlide[] = [
       'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
     seekbarType: 'fast-forward-rewind',
     thumbnails: MOVIE_EXACT_THUMBNAILS['interstellar'],
+  },
+  {
+    id: 'custom-disabling-demo',
+    eyebrow: 'CUSTOM DISABLING CONFIGURATION • VEGA SEEKBAR',
+    title: 'Custom Disabling Config Demo',
+    maturityRating: '13_PLUS',
+    description:
+      'Demonstrates partial disabling configuration for fine-grained control over specific interactions. When unfocused, D-pad controls are disabled while fast forward and rewind (<< | >>) remain active.',
+    meta: ['2024', 'VEGA SEEKBAR', 'CUSTOM DISABLING', '4K UHD', 'IMDb 9.0'],
+    image: {
+      uri: 'https://image.tmdb.org/t/p/w1280/rstcAnBeCkxNQjNp3YXrF6IP1tW.jpg',
+    },
+    badge: 'CUSTOM DISABLING CONFIG',
+    rating: '⭐ 9.0 / 10',
+    genre: 'Tech Demo • Custom Disabling',
+    director: 'Vega Video Player Team',
+    cast: 'Vega OS UI Components',
+    videoUrl: MULTI_QUALITY_MOCK_VIDEO_URL,
+    seekbarType: 'custom-disabling',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['kalki'],
   },
 ];
 
