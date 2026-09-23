@@ -1,17 +1,105 @@
 import {ContentMaturityRating} from '../types/maturity';
 import {ImageSourcePropType} from 'react-native';
+import {
+  MOVIE_EXACT_THUMBNAILS,
+  ANGEL_ONE_EXACT_VIDEO_FRAMES,
+  getMovieExactDynamicFrames,
+} from '../constants/movieThumbnails';
 
 export type CardLayoutType = 'horizontal' | 'portrait' | 'grid';
 
+export type SeekbarType =
+  | 'markers'
+  | 'break-markers'
+  | 'limits'
+  | 'long-press'
+  | 'fast-forward-rewind'
+  | 'thumbnail-images'
+  | 'thumbnails'
+  | 'custom-disabling';
+
+export const getSeekbarTypeForContent = (item?: any): SeekbarType => {
+  if (item?.seekbarType) {
+    return item.seekbarType;
+  }
+  const id = String(item?.id || '').toLowerCase();
+  if (
+    id.includes('custom-disabling') ||
+    id.includes('disabling') ||
+    id.includes('partial-disabling')
+  ) {
+    return 'custom-disabling';
+  }
+  if (
+    id.includes('thumbnail') ||
+    id.includes('preview') ||
+    id.includes('mock') ||
+    id.includes('trickplay')
+  ) {
+    return 'thumbnail-images';
+  }
+  if (id.includes('long-press') || id.includes('longpress')) {
+    return 'long-press';
+  }
+  if (
+    id.includes('fast-forward') ||
+    id.includes('fastforward') ||
+    id.includes('rewind') ||
+    id.includes('skip')
+  ) {
+    return 'fast-forward-rewind';
+  }
+  if (
+    id.includes('hls') ||
+    id.includes('kalki') ||
+    id.includes('jawan') ||
+    id.includes('summit') ||
+    id.includes('inception') ||
+    id.includes('markers')
+  ) {
+    return 'markers';
+  }
+  if (
+    id.includes('dash') ||
+    id.includes('angel') ||
+    id.includes('horizon') ||
+    id.includes('rrr') ||
+    id.includes('interstellar') ||
+    id.includes('pushpa') ||
+    id.includes('avatar')
+  ) {
+    return 'break-markers';
+  }
+  if (
+    id.includes('lion') ||
+    id.includes('kgf') ||
+    id.includes('dune') ||
+    id.includes('limits')
+  ) {
+    return 'limits';
+  }
+  return 'markers';
+};
+
+/**
+ * Mock video stream with multiple resolution qualities (1080p Full HD, 720p HD, 480p SD, 360p, 288p).
+ * Used for demonstrating and validating dynamic video quality selection.
+ */
+export const MULTI_QUALITY_MOCK_VIDEO_URL =
+  'https://media.axprod.net/TestVectors/v7-Clear/Manifest_1080p.mpd';
+
 export const WORKING_VIDEO_URLS = [
-  'https://vjs.zencdn.net/v/oceans.mp4',
+  MULTI_QUALITY_MOCK_VIDEO_URL,
+  'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+  // 'https://vjs.zencdn.net/v/oceans.mp4',
   'https://media.w3.org/2010/05/sintel/trailer.mp4',
   'https://media.w3.org/2010/05/bunny/trailer.mp4',
-  'https://media.w3.org/2010/05/video/movie_300.mp4',
+  // 'https://media.w3.org/2010/05/video/movie_300.mp4',
+  MULTI_QUALITY_MOCK_VIDEO_URL,
   'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
 ];
 
-export const DEFAULT_MOCK_VIDEO_URL = WORKING_VIDEO_URLS[0];
+export const DEFAULT_MOCK_VIDEO_URL = MULTI_QUALITY_MOCK_VIDEO_URL;
 
 export interface HomeContentItem {
   id: string;
@@ -27,6 +115,9 @@ export interface HomeContentItem {
   cast?: string;
   director?: string;
   videoUrl?: string;
+  seekbarType?: SeekbarType;
+  partialDisablingConfiguration?: any;
+  thumbnails?: string[];
 }
 
 export interface HomeContentRow {
@@ -50,9 +141,75 @@ export interface HeroSlide {
   cast?: string;
   director?: string;
   videoUrl?: string;
+  seekbarType?: SeekbarType;
+  partialDisablingConfiguration?: any;
+  thumbnails?: string[];
 }
 
 export const homeHeroSlides: HeroSlide[] = [
+  {
+    id: 'mock-video-seek-preview',
+    eyebrow: '1:1 FRAME-ACCURATE SEEKBAR PREVIEW • EXACT VIDEO THUMBNAILS',
+    title: 'Angel One (Multi-Audio Edition)',
+    maturityRating: '13_PLUS',
+    description:
+      'Official demo mock video featuring authentic, 1:1 progressive video preview thumbnails extracted directly from the video stream URL itself for every seek position along the playback timeline.',
+    meta: ['2024', 'FRAME-ACCURATE', 'DASH STREAM', 'EXACT THUMBNAILS', 'HD'],
+    image: {
+      uri: 'https://image.tmdb.org/t/p/w1280/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg',
+    },
+    badge: 'EXACT VIDEO THUMBNAILS',
+    rating: '⭐ 9.5 / 10',
+    genre: 'Sci-Fi • Dynamic Seek Preview',
+    director: 'Vega Video Player Team',
+    cast: 'Patrick Stewart, Jonathan Frakes, LeVar Burton, Marina Sirtis',
+    videoUrl:
+      'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+    seekbarType: 'thumbnail-images',
+    thumbnails: ANGEL_ONE_EXACT_VIDEO_FRAMES,
+  },
+  {
+    id: 'angel-one-hls',
+    eyebrow: 'HLS MULTI-AUDIO SPECIAL • 5 SPOKEN LANGUAGES',
+    title: 'Angel One (HLS Multi-Audio Edition)',
+    maturityRating: '13_PLUS',
+    description:
+      'Official HLS stream featuring 5 distinct audio tracks (English, German, Spanish, French, Italian). Switch audio tracks in the player to experience seamless HLS language switching!',
+    meta: ['2024', 'HLS STREAM', '5 LANGUAGES', '4K UHD', 'IMDb 8.9'],
+    image: {
+      uri: 'https://image.tmdb.org/t/p/w1280/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg',
+    },
+    badge: 'HLS • 5 AUDIO TRACKS',
+    rating: '⭐ 8.9 / 10',
+    genre: 'Sci-Fi • Adventure • Multi-Audio HLS',
+    director: 'Gene Roddenberry',
+    cast: 'Patrick Stewart, Jonathan Frakes, LeVar Burton, Marina Sirtis',
+    videoUrl:
+      'https://storage.googleapis.com/shaka-demo-assets/angel-one-hls/hls.m3u8',
+    seekbarType: 'markers',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['angel-one-hls'],
+  },
+  {
+    id: 'angel-one',
+    eyebrow: 'DASH MULTI-AUDIO SPECIAL • 5 SPOKEN LANGUAGES',
+    title: 'Angel One (DASH Multi-Audio Edition)',
+    maturityRating: '13_PLUS',
+    description:
+      'Experience true multi-audio streaming with 5 distinct language tracks (English, German, Spanish, French, Italian). Switch tracks in the player to hear the spoken voices change in real-time!',
+    meta: ['2024', 'DASH STREAM', '5 LANGUAGES', '4K UHD', 'IMDb 8.9'],
+    image: {
+      uri: 'https://image.tmdb.org/t/p/w1280/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg',
+    },
+    badge: 'DASH • 5 AUDIO TRACKS',
+    rating: '⭐ 8.9 / 10',
+    genre: 'Sci-Fi • Adventure • Multi-Audio Demo',
+    director: 'Gene Roddenberry',
+    cast: 'Patrick Stewart, Jonathan Frakes, LeVar Burton, Marina Sirtis',
+    videoUrl:
+      'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+    seekbarType: 'break-markers',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['angel-one'],
+  },
   {
     id: 'the-lion-king-hero',
     eyebrow: 'DISNEY CLASSIC • KIDS SPECIAL',
@@ -69,64 +226,79 @@ export const homeHeroSlides: HeroSlide[] = [
     genre: 'Animation • Adventure • Family',
     director: 'Jon Favreau',
     cast: 'Donald Glover, Beyoncé, Seth Rogen, Chiwetel Ejiofor',
-    videoUrl:
-      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
-  },
-  {
-    id: 'horizon',
-    eyebrow: 'TELUGU SUPERHIT • RRR',
-    title: 'The Last Horizon',
-    maturityRating: '13_PLUS',
-    description:
-      'A fearless revolutionary and a dedicated officer in British India form an unshakeable bond to battle colonial tyranny.',
-    meta: ['2022', 'TELUGU', '3h 07m', '4K UHD', 'IMDb 7.9', 'OSCAR WINNER'],
-    image: {
-      uri: 'https://image.tmdb.org/t/p/w1280/u0XUBNQWlOvrh0Gd97ARGpIkL0.jpg',
-    },
-    badge: 'OSCAR WINNER',
-    rating: '⭐ 7.9 / 10',
-    genre: 'Action • Drama • Historical',
-    director: 'S. S. Rajamouli',
-    cast: 'N. T. Rama Rao Jr., Ram Charan, Ajay Devgn, Alia Bhatt',
-    videoUrl: 'https://www.w3schools.com/html/mov_bbb.mp4',
+    videoUrl: MULTI_QUALITY_MOCK_VIDEO_URL,
+    seekbarType: 'limits',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['the-lion-king-hero'],
   },
   {
     id: 'kalki',
-    eyebrow: 'TELUGU SCI-FI EPIC',
+    eyebrow: 'MULTI-AUDIO BLOCKBUSTER • TELUGU • HINDI • ENGLISH',
     title: 'Kalki 2898 AD',
     maturityRating: '13_PLUS',
     description:
-      'In a post-apocalyptic dystopian world, a heroic warrior awakens to protect the unborn savior of mankind.',
-    meta: ['2024', 'TELUGU', '3h 01m', '4K UHD', 'IMDb 7.7'],
+      'Experience the futuristic sci-fi epic with multiple audio tracks in Telugu (Original), Hindi, and English. Switch audio tracks in the player to enjoy in your preferred language!',
+    meta: ['2024', 'TELUGU', 'HINDI', 'ENGLISH', '4K UHD', 'IMDb 7.7'],
     image: {
       uri: 'https://image.tmdb.org/t/p/w1280/rstcAnBeCkxNQjNp3YXrF6IP1tW.jpg',
     },
-    badge: 'TELUGU BLOCKBUSTER',
+    badge: 'TELUGU • HINDI • ENGLISH',
     rating: '⭐ 7.7 / 10',
-    genre: 'Sci-Fi • Action • Mythology',
+    genre: 'Sci-Fi • Action • Multi-Audio',
     director: 'Nag Ashwin',
     cast: 'Prabhas, Amitabh Bachchan, Kamal Haasan, Deepika Padukone',
     videoUrl:
-      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+      'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+    seekbarType: 'long-press',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['kalki'],
+  },
+  {
+    id: 'horizon',
+    eyebrow: 'MULTI-AUDIO SPECIAL • TELUGU • HINDI • ENGLISH',
+    title: 'RRR: Multi-Audio Edition',
+    maturityRating: '13_PLUS',
+    description:
+      'The Oscar-winning global blockbuster featuring multi-language audio in Telugu (Original), Hindi, and English. Switch audio in real-time!',
+    meta: [
+      '2022',
+      'TELUGU',
+      'HINDI',
+      'ENGLISH',
+      '4K UHD',
+      'IMDb 7.9',
+      'OSCAR WINNER',
+    ],
+    image: {
+      uri: 'https://image.tmdb.org/t/p/w1280/u0XUBNQWlOvrh0Gd97ARGpIkL0.jpg',
+    },
+    badge: 'TELUGU • HINDI • ENGLISH',
+    rating: '⭐ 7.9 / 10',
+    genre: 'Action • Drama • Multi-Audio',
+    director: 'S. S. Rajamouli',
+    cast: 'N. T. Rama Rao Jr., Ram Charan, Ajay Devgn, Alia Bhatt',
+    videoUrl:
+      'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+    seekbarType: 'break-markers',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['horizon'],
   },
   {
     id: 'kgf-2',
-    eyebrow: 'KANNADA MEGAHIT',
+    eyebrow: 'MULTI-QUALITY STREAM • 1080P • 720P • 480P',
     title: 'K.G.F: Chapter 2',
     maturityRating: '16_PLUS',
     description:
-      'Rocky rules over Kolar Gold Fields, striking terror into his enemies while fighting off government and criminal forces.',
-    meta: ['2022', 'KANNADA', '2h 48m', 'HDR10', 'IMDb 8.3'],
+      'Rocky rules over Kolar Gold Fields. Streamed in adaptive multi-quality DASH (1080p FHD, 720p HD, 480p SD, 360p, 288p). Use the Quality menu in player controls to switch stream qualities in real-time.',
+    meta: ['2022', 'MULTI-QUALITY', '1080P FHD', '720P HD', 'IMDb 8.3'],
     image: {
       uri: 'https://image.tmdb.org/t/p/w1280/khNVygolU0TxLIDWff5tQlAhZ23.jpg',
     },
-    badge: 'KANNADA HIT',
+    badge: '1080P • MULTI-QUALITY',
     rating: '⭐ 8.3 / 10',
-    genre: 'Action • Crime • Drama',
+    genre: 'Action • Crime • Multi-Quality Demo',
     director: 'Prashanth Neel',
     cast: 'Yash, Sanjay Dutt, Raveena Tandon, Srinidhi Shetty',
-    videoUrl:
-      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    videoUrl: MULTI_QUALITY_MOCK_VIDEO_URL,
+    seekbarType: 'limits',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['kgf-2'],
   },
   {
     id: 'jawan',
@@ -144,8 +316,9 @@ export const homeHeroSlides: HeroSlide[] = [
     genre: 'Action • Thriller • Drama',
     director: 'Atlee',
     cast: 'Shah Rukh Khan, Nayanthara, Vijay Sethupathi, Deepika Padukone',
-    videoUrl:
-      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    videoUrl: MULTI_QUALITY_MOCK_VIDEO_URL,
+    seekbarType: 'markers',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['jawan'],
   },
   {
     id: 'interstellar',
@@ -165,6 +338,28 @@ export const homeHeroSlides: HeroSlide[] = [
     cast: 'Matthew McConaughey, Anne Hathaway, Jessica Chastain, Michael Caine',
     videoUrl:
       'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+    seekbarType: 'fast-forward-rewind',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['interstellar'],
+  },
+  {
+    id: 'custom-disabling-demo',
+    eyebrow: 'CUSTOM DISABLING CONFIGURATION • VEGA SEEKBAR',
+    title: 'Custom Disabling Config Demo',
+    maturityRating: '13_PLUS',
+    description:
+      'Demonstrates partial disabling configuration for fine-grained control over specific interactions. When unfocused, D-pad controls are disabled while fast forward and rewind (<< | >>) remain active.',
+    meta: ['2024', 'VEGA SEEKBAR', 'CUSTOM DISABLING', '4K UHD', 'IMDb 9.0'],
+    image: {
+      uri: 'https://image.tmdb.org/t/p/w1280/rstcAnBeCkxNQjNp3YXrF6IP1tW.jpg',
+    },
+    badge: 'CUSTOM DISABLING CONFIG',
+    rating: '⭐ 9.0 / 10',
+    genre: 'Tech Demo • Custom Disabling',
+    director: 'Vega Video Player Team',
+    cast: 'Vega OS UI Components',
+    videoUrl: MULTI_QUALITY_MOCK_VIDEO_URL,
+    seekbarType: 'custom-disabling',
+    thumbnails: MOVIE_EXACT_THUMBNAILS['kalki'],
   },
 ];
 
@@ -176,6 +371,26 @@ export const homeContentRows: HomeContentRow[] = [
     title: 'Continue Watching',
     layout: 'horizontal',
     items: [
+      {
+        id: 'mock-video-seek-preview',
+        title: 'Mock Video (Exact Seek Thumbnails)',
+        maturityRating: '13_PLUS',
+        description:
+          'Demo mock video featuring authentic, 1:1 progressive video preview thumbnails extracted directly from the video stream URL itself for every seek position along the playback timeline.',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg',
+        },
+        progress: 0.35,
+        badge: 'EXACT VIDEO THUMBNAILS',
+        rating: '⭐ 9.5 / 10',
+        genre: 'Sci-Fi • Dynamic Seek Preview',
+        director: 'Vega Video Player Team',
+        cast: 'Patrick Stewart, Jonathan Frakes, LeVar Burton, Marina Sirtis',
+        videoUrl:
+          'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+        seekbarType: 'thumbnail-images',
+        thumbnails: ANGEL_ONE_EXACT_VIDEO_FRAMES,
+      },
       {
         id: 'horizon',
         title: 'RRR',
@@ -503,6 +718,57 @@ export const homeContentRows: HomeContentRow[] = [
     title: 'Trending Now',
     layout: 'portrait',
     items: [
+      {
+        id: 'angel-one-hls',
+        title: 'Angel One (HLS Multi-Audio)',
+        maturityRating: '13_PLUS',
+        description:
+          'Official HLS stream featuring 5 distinct audio tracks (English, German, Spanish, French, Italian). Switch audio tracks in the player to experience seamless HLS language switching!',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg',
+        },
+        badge: 'HLS • 5 AUDIO TRACKS',
+        rating: '⭐ 8.9 / 10',
+        genre: 'Sci-Fi • Multi-Audio HLS',
+        director: 'Gene Roddenberry',
+        cast: 'Patrick Stewart, Jonathan Frakes, LeVar Burton',
+        videoUrl:
+          'https://storage.googleapis.com/shaka-demo-assets/angel-one-hls/hls.m3u8',
+      },
+      {
+        id: 'angel-one',
+        title: 'Angel One (DASH Multi-Audio)',
+        maturityRating: '13_PLUS',
+        description:
+          'Experience true multi-audio streaming with 5 distinct language tracks (English, German, Spanish, French, Italian). Switch tracks in the player to hear the spoken voices change in real-time!',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg',
+        },
+        badge: 'DASH • 5 AUDIO TRACKS',
+        rating: '⭐ 8.9 / 10',
+        genre: 'Sci-Fi • Multi-Audio Demo',
+        director: 'Gene Roddenberry',
+        cast: 'Patrick Stewart, Jonathan Frakes, LeVar Burton',
+        videoUrl:
+          'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+      },
+      {
+        id: 'kalki',
+        title: 'Kalki 2898 AD (Telugu • Hindi • English)',
+        maturityRating: '13_PLUS',
+        description:
+          'Futuristic epic with Telugu (Original), Hindi, and English audio tracks. Switch tracks in the video player!',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/rstcAnBeCkxNQjNp3YXrF6IP1tW.jpg',
+        },
+        badge: 'TELUGU • HINDI • ENGLISH',
+        rating: '⭐ 7.7 / 10',
+        genre: 'Sci-Fi • Action • Multi-Audio',
+        director: 'Nag Ashwin',
+        cast: 'Prabhas, Amitabh Bachchan, Kamal Haasan, Deepika Padukone',
+        videoUrl:
+          'https://storage.googleapis.com/shaka-demo-assets/angel-one/dash.mpd',
+      },
       {
         id: 'summit',
         title: 'The Dark Knight',
@@ -1631,13 +1897,19 @@ export const homeContentRows: HomeContentRow[] = [
 ];
 
 homeHeroSlides.forEach((slide, index) => {
-  slide.videoUrl = WORKING_VIDEO_URLS[index % WORKING_VIDEO_URLS.length];
+  slide.videoUrl = slide.videoUrl || WORKING_VIDEO_URLS[index % WORKING_VIDEO_URLS.length];
+  if (!slide.thumbnails || slide.thumbnails.length === 0) {
+    slide.thumbnails = getMovieExactDynamicFrames(slide, slide.videoUrl);
+  }
 });
 
 homeContentRows.forEach((row) => {
   row.items.forEach((item, index) => {
     if (!item.videoUrl) {
       item.videoUrl = WORKING_VIDEO_URLS[index % WORKING_VIDEO_URLS.length];
+    }
+    if (!item.thumbnails || item.thumbnails.length === 0) {
+      item.thumbnails = getMovieExactDynamicFrames(item, item.videoUrl);
     }
   });
 });

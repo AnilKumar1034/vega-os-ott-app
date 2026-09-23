@@ -417,6 +417,83 @@ export const strings = {
     tracksAvailable: (count: number) => `${count} Subtitle Languages Available`,
   },
 
+  audioTracks: {
+    buttonLabel: 'Audio',
+    audioBadge: 'AUDIO',
+    audioTracksTitle: 'Audio Languages',
+    selectAudioTrack: 'Select Audio Track',
+    selectAudioTrackDesc:
+      'Choose your preferred audio language and sound format.',
+    original: 'Original',
+    activeTrack: 'Active',
+    close: 'Close',
+    audioActive: (label: string) => `Audio: ${label}`,
+    tracksAvailable: (count: number) => `${count} Audio Tracks Available`,
+    stereo: 'Stereo 2.0',
+    surround51: '5.1 Surround',
+    dolbyAtmos: 'Dolby Atmos',
+  },
+
+  videoQuality: {
+    buttonLabel: 'Quality',
+    qualityBadge: 'QUALITY',
+    videoQualityTitle: 'Video Quality',
+    selectQuality: 'Select Video Quality',
+    selectQualityDesc:
+      'Choose your preferred video streaming resolution and data usage.',
+    auto: 'Auto',
+    autoRecommended: 'Auto (Recommended)',
+    activeQuality: 'Active',
+    close: 'Close',
+    qualityActive: (label: string) => `Quality: ${label}`,
+    qualitiesAvailable: (count: number) => `${count} Quality Levels Available`,
+    uhd: '4K Ultra HD',
+    fhd: '1080p Full HD',
+    hd: '720p HD',
+    sd: '480p SD',
+    low: '360p Data Saver',
+  },
+
+  nextEpisode: {
+    nextEpisodeBadge: 'NEXT EPISODE',
+    upNext: 'Up Next',
+    playingInSeconds: (seconds: number) =>
+      `Playing next episode in ${seconds}s`,
+    playingNext: 'Playing next episode...',
+    playNow: 'Play Now',
+    cancel: 'Cancel',
+    seasonEpisode: (season: number, episode: number) =>
+      `S${season}:E${episode}`,
+    seasonEpisodeFull: (season: number, episode: number, title: string) =>
+      `S${season}:E${episode} • ${title}`,
+    nextEpisodeButton: 'Next Episode',
+    autoplayDisabled: 'Autoplay is turned off in profile settings',
+    autoplayCountdown: (seconds: number) => `Auto-play in ${seconds}s`,
+    episodeEnded: 'Episode ended',
+    nextEpisodesTitle: 'Next Episodes',
+    nextEpisodesListTitle: 'Next Episodes',
+    upcomingEpisodes: 'Upcoming Episodes',
+    allEpisodes: 'All Episodes',
+    allEpisodesTitle: 'All Episodes',
+    episodesCount: (count: number) =>
+      count === 1 ? '1 Next Episode' : `${count} Next Episodes`,
+    allEpisodesCount: (count: number) =>
+      count === 1 ? '1 Episode' : `${count} Episodes`,
+    tabUpcoming: 'Upcoming',
+    tabAll: 'All Episodes',
+    pressToPlay: '▶ Press OK to Play',
+    currentlyPlaying: 'Playing Now',
+    nowPlaying: 'Now Playing',
+    upNextCardBadge: 'UP NEXT',
+    playEpisode: (num: number, title?: string) =>
+      title ? `Play Ep ${num}: ${title}` : `Play Episode ${num}`,
+    selectEpisodeHint: 'Press OK to Play',
+    finalEpisodeOfSeason: 'Season Finale',
+    watchedEpisode: 'Watched',
+    viewAllEpisodes: 'View All Episodes',
+    seasonTitle: (season: number) => `Season ${season}`,
+  },
+
   accessibility: {
     retryVideoPlayback: 'Retry video playback',
     backToHome: 'Back to Home',
@@ -425,5 +502,59 @@ export const strings = {
     selectSubtitleTrack: (label: string, isSelected: boolean) =>
       `${label} subtitle track${isSelected ? ', currently selected' : ''}`,
     closeSubtitlesModal: 'Close subtitles selection modal',
+    audioTracksButton: (label: string) =>
+      `Audio track selection. Currently ${label}`,
+    selectAudioTrack: (label: string, isSelected: boolean) =>
+      `${label} audio track${isSelected ? ', currently selected' : ''}`,
+    closeAudioTracksModal: 'Close audio tracks selection modal',
+    qualityButton: (label: string) =>
+      `Video quality selection. Currently ${label}`,
+    selectQuality: (label: string, isSelected: boolean) =>
+      `${label} video quality${isSelected ? ', currently selected' : ''}`,
+    closeQualityModal: 'Close video quality selection modal',
+    skipIntroButton: 'Skip intro, forward a few seconds',
+    startFromBeginningButton: 'Start video playback from the beginning',
+    nextEpisodePlayButton: (title: string) => `Play next episode: ${title}`,
+    nextEpisodeCancelButton: 'Cancel next episode countdown',
+    nextEpisodeOverlay: (title: string, seconds: number) =>
+      `Next episode ${title} playing in ${seconds} seconds`,
+    selectEpisodeCard: (title: string, episodeNumber?: number) =>
+      episodeNumber
+        ? `Play episode ${episodeNumber}: ${title}`
+        : `Select episode ${title} to play`,
+  },
+
+  // Player controls
+  playerControls: {
+    removeMarker: '- Remove Marker',
+    addMarker: '+ Add Marker',
+    removeSegment: '- Remove Segment',
+    addSegment: '+ Add Segment',
+    removeBreakMarker: '- Remove Break Marker',
+    addBreakMarker: '+ Add Break Marker',
+    removeBreakSegment: '- Remove Break Segment',
+    addBreakSegment: '+ Add Break Segment',
+    removeMarkerSegment: '- Remove Marker Segment',
+    markers: '● Markers',
+    limits: '⇥ Limits ⇤',
+    pauseAction: '▶',
+    playAction: '❚❚',
+    breakSegments: '❖ Breaks & Segments',
+    longPress: '⏩ Long Press',
+    fastForwardRewind: '⏪ FF / REW ⏩',
+    rewindButton: '⏪ -10s',
+    fastForwardButton: '+10s ⏩',
+    skipIntro: 'Skip Intro',
+    startFromBeginning: 'Start from Beginning',
+    startFromBegining: 'Start from Beginning',
+    longPressBadge: 'Long Press: Speed Acceleration (1x, 2x, 3x, 4x, 5x)',
+    fastForwardRewindBadge: 'Skip Acceleration (1x, 2x, 3x...)',
+    thumbnails: '🖼 Thumbnails',
+    thumbnailBadge: 'Thumbnail Images: Video Preview During Seeking',
+    thumbnailPreview: 'Preview',
+    nextEpisode: 'Next Episode',
+    customDisabling: '⊘ Disabling',
+    customDisablingBadge:
+      'Custom Disabling: D-Pad & select disabled when unfocused • Skip FF/REW always enabled',
   },
 } as const;

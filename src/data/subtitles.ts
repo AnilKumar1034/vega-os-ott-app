@@ -6,6 +6,110 @@ export const SUBTITLE_OFF_ID = 'off';
  * Curated subtitle tracks with authentic synchronized dialogue cues for popular VOD catalog movies.
  */
 const curatedSubtitlesMap: Record<string, SubtitleTrack[]> = {
+  // Angel One - Multi-Audio Demo with authentic dialogue cues
+  'angel-one': [
+    {
+      id: 'angel-sub-en',
+      language: 'en',
+      label: 'English [CC]',
+      kind: 'captions',
+      isDefault: true,
+      cues: [
+        {
+          startTime: 1,
+          endTime: 6,
+          text: '[Enterprise warp drive hums smoothly]\nCaptain: "Captain\'s log, Stardate 41501.2."',
+        },
+        {
+          startTime: 7,
+          endTime: 14,
+          text: 'Captain: "We have arrived at the planet Angel One to search for survivors of the freighter Odin."',
+        },
+        {
+          startTime: 15,
+          endTime: 23,
+          text: 'Commander: "Scanners indicate an advanced matriarchal civilization on the surface."',
+        },
+        {
+          startTime: 24,
+          endTime: 32,
+          text: 'Counselor: "The leadership is apprehensive about our presence, Captain."',
+        },
+        {
+          startTime: 33,
+          endTime: 42,
+          text: '[Transporter beam energizes]\nAway Team: "Energize when ready, Chief."',
+        },
+        {
+          startTime: 43,
+          endTime: 65,
+          text: 'Mistress Beata: "Welcome to Angel One. Our customs require mutual respect and honor."',
+        },
+      ],
+    },
+    {
+      id: 'angel-sub-fr',
+      language: 'fr',
+      label: 'French (Français)',
+      kind: 'subtitles',
+      cues: [
+        {
+          startTime: 1,
+          endTime: 6,
+          text: 'Capitaine: "Journal de bord du Capitaine, Date stellaire 41501.2."',
+        },
+        {
+          startTime: 7,
+          endTime: 14,
+          text: 'Capitaine: "Nous sommes arrivés sur la planète Angel One pour retrouver les survivants."',
+        },
+        {
+          startTime: 15,
+          endTime: 23,
+          text: 'Commandant: "Les scanners indiquent une civilisation avancée en surface."',
+        },
+        {
+          startTime: 24,
+          endTime: 42,
+          text: 'Conseiller: "Les dirigeants sont prudents quant à notre visite."',
+        },
+        {
+          startTime: 43,
+          endTime: 65,
+          text: 'Maîtresse Beata: "Bienvenue sur Angel One."',
+        },
+      ],
+    },
+    {
+      id: 'angel-sub-es',
+      language: 'es',
+      label: 'Spanish (Español)',
+      kind: 'subtitles',
+      cues: [
+        {
+          startTime: 1,
+          endTime: 6,
+          text: 'Capitán: "Cuaderno de bitácora del capitán, fecha estelar 41501.2."',
+        },
+        {
+          startTime: 7,
+          endTime: 14,
+          text: 'Capitán: "Hemos llegado al planeta Angel One en busca de supervivientes."',
+        },
+        {
+          startTime: 15,
+          endTime: 35,
+          text: 'Comandante: "Los escáneres detectan una civilización avanzada."',
+        },
+        {
+          startTime: 36,
+          endTime: 65,
+          text: 'Señora Beata: "Bienvenidos a Angel One."',
+        },
+      ],
+    },
+  ],
+
   // Sintel / Sample Video (Blender Foundation)
   sintel: [
     {

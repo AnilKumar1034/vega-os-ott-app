@@ -82,4 +82,11 @@ export const colors = {
   buttonSecondaryBackground: 'rgba(255, 255, 255, 0.1)',
   buttonSecondaryFocusedBackground: 'rgba(255, 255, 255, 0.22)',
   footerTextMuted: 'rgba(255, 255, 255, 0.4)',
+
+  // player controls
+  seekBarBackground: 'rgba(18, 18, 18, 0.88)',
+  seekBarTypePil: 'rgba(0, 173, 225, 0.25)',
+  seekBarActionButton: 'rgba(0, 173, 225, 0.22)',
+  seekBarLimitsBadge: 'rgba(250, 225, 128, 0.18)',
+  seekBarBelowMarkerText: 'rgba(229, 9, 20, 0.9)',
 } as const;

@@ -1,6 +1,8 @@
 /* global globalThis */
 import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
+  AppState,
+  AppStateStatus,
   Dimensions,
   ImageBackground,
   StyleSheet,
@@ -10,7 +12,15 @@ import {
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
-import {DEFAULT_MOCK_VIDEO_URL, HomeContentItem} from '../data/home';
+import {
+  DEFAULT_MOCK_VIDEO_URL,
+  getSeekbarTypeForContent,
+  HomeContentItem,
+} from '../data/home';
+import {
+  PlayerSeekBar,
+  SeekbarType,
+} from '../components/molecules/PlayerSeekBar';
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
@@ -39,9 +49,38 @@ import {
 import {SubtitleTrack} from '../types/subtitles';
 import {SubtitleOverlay} from '../components/molecules/SubtitleOverlay';
 import {SubtitlesModal} from '../components/molecules/SubtitlesModal';
+import {getAudioTracksForContent} from '../data/audioTracks';
+import {
+  findMatchingAudioTrack,
+  getSavedAudioPreference,
+  saveAudioPreference,
+} from '../services/audioTrackService';
+import {AudioTrack} from '../types/audioTracks';
+import {AudioTracksModal} from '../components/molecules/AudioTracksModal';
+import {AUTO_QUALITY_ID, VideoQualityOption} from '../types/videoQuality';
+import {
+  getVideoQualitiesForContent,
+  extractQualitiesFromShakaVariants,
+} from '../data/videoQualities';
+import {
+  findMatchingQuality,
+  getSavedQualityPreference,
+  saveQualityPreference,
+} from '../services/videoQualityService';
+import {VideoQualityModal} from '../components/molecules/VideoQualityModal';
+import {EpisodeItem} from '../types/episode';
+import {
+  getNextEpisodeForContent,
+  getNextEpisodesForContent,
+  getAllEpisodesForContent,
+} from '../data/episodes';
+import {
+  DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS,
+  isAutoplayEnabled,
+} from '../services/episodeService';
+import {NextEpisodeModal} from '../components/molecules/NextEpisodeModal';
 
 let KeplerVideoViewComponent: any = View;
-let KeplerVideoSurfaceViewComponent: any = View;
 let VideoPlayerClass: any = null;
 
 try {
@@ -52,35 +91,23 @@ try {
       w3cMedia.KeplerVideoSurfaceView ||
       w3cMedia.Video ||
       View;
-    KeplerVideoSurfaceViewComponent =
-      w3cMedia.KeplerVideoSurfaceView || w3cMedia.KeplerVideoView || View;
     VideoPlayerClass = w3cMedia.VideoPlayer || w3cMedia.Video || null;
   }
 } catch (e) {
   KeplerVideoViewComponent = View;
-  KeplerVideoSurfaceViewComponent = View;
   VideoPlayerClass = null;
 }
 
 export const VideoPlayerScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
-  const {user, loading} = useAuth();
+  const {user, userProfile, loading} = useAuth();
   const {activeProfile} = useProfile();
   const isLive = Boolean(route.params?.isLive);
-  const streamType = route.params?.streamType as 'hls' | 'dash' | undefined;
-  const isVideoOnly = Boolean(route.params?.isVideoOnly);
-  const drm = route.params?.drm as LiveChannelDrmConfig | undefined;
-  const isDrmContent = Boolean(drm?.enabled);
-  // DASH requires MSE/Shaka even when it is clear content. Keeping this path
-  // available lets us verify the MSE pipeline independently from Widevine.
-  const useShakaPlayer = streamType === 'dash' || isDrmContent;
 
   const screenDimensions = Dimensions.get('window');
   const screenWidth = screenDimensions.width || 1920;
   const screenHeight = screenDimensions.height || 1080;
-  const shakaSurfaceWidth = Math.min(screenWidth, 1920);
-  const shakaSurfaceHeight = Math.min(screenHeight, 1080);
 
   const deeplinkMovie = findContentById(route.params?.movieId);
   const movie = useMemo<HomeContentItem>(
@@ -96,8 +123,94 @@ export const VideoPlayerScreen = () => {
     [deeplinkMovie, route.params?.movie],
   );
 
+  const resolvedNextEpisode = useMemo<EpisodeItem | null>(() => {
+    if (isLive) {
+      return null;
+    }
+    if (route.params?.nextEpisode) {
+      return route.params.nextEpisode;
+    }
+    const currentEpisodeId = route.params?.episode?.id || movie.id;
+    return getNextEpisodeForContent(
+      {
+        ...movie,
+        episodes: route.params?.episodes || (movie as any).episodes,
+        nextEpisode: route.params?.nextEpisode || (movie as any).nextEpisode,
+      },
+      currentEpisodeId,
+    );
+  }, [
+    isLive,
+    movie,
+    route.params?.episode?.id,
+    route.params?.episodes,
+    route.params?.nextEpisode,
+  ]);
+
+  const resolvedNextEpisodes = useMemo<EpisodeItem[]>(() => {
+    if (isLive) {
+      return [];
+    }
+    const currentEpisodeId = route.params?.episode?.id || movie.id;
+    return getNextEpisodesForContent(
+      {
+        ...movie,
+        episodes: route.params?.episodes || (movie as any).episodes,
+        nextEpisode: route.params?.nextEpisode || (movie as any).nextEpisode,
+      },
+      currentEpisodeId,
+    );
+  }, [
+    isLive,
+    movie,
+    route.params?.episode?.id,
+    route.params?.episodes,
+    route.params?.nextEpisode,
+  ]);
+
+  const resolvedAllEpisodes = useMemo<EpisodeItem[]>(() => {
+    if (isLive) {
+      return [];
+    }
+    const currentEpisodeId = route.params?.episode?.id || movie.id;
+    return getAllEpisodesForContent(
+      {
+        ...movie,
+        episodes: route.params?.episodes || (movie as any).episodes,
+        nextEpisode: route.params?.nextEpisode || (movie as any).nextEpisode,
+      },
+      currentEpisodeId,
+    );
+  }, [
+    isLive,
+    movie,
+    route.params?.episode?.id,
+    route.params?.episodes,
+    route.params?.nextEpisode,
+  ]);
+
+  const autoplayEnabled = useMemo(() => {
+    return isAutoplayEnabled(userProfile, activeProfile);
+  }, [activeProfile, userProfile]);
+
   const videoUrl =
     route.params?.videoUrl || movie.videoUrl || DEFAULT_MOCK_VIDEO_URL;
+  const streamType =
+    (route.params?.streamType as 'hls' | 'dash' | undefined) ||
+    (videoUrl?.includes('.mpd')
+      ? 'dash'
+      : videoUrl?.includes('.m3u8')
+      ? 'hls'
+      : undefined);
+  const isVideoOnly = Boolean(route.params?.isVideoOnly);
+  const drm = route.params?.drm as LiveChannelDrmConfig | undefined;
+  const isDrmContent = Boolean(drm?.enabled);
+  const useShakaPlayer =
+    streamType === 'dash' ||
+    streamType === 'hls' ||
+    isDrmContent ||
+    Boolean(videoUrl?.includes('angel-one')) ||
+    Boolean(videoUrl?.includes('storage.googleapis.com/shaka-demo-assets'));
   const deeplinkSeek = Number(route.params?.seek);
   const hasExplicitSeek =
     Number.isFinite(deeplinkSeek) && deeplinkSeek >= 0 ? deeplinkSeek : null;
@@ -149,6 +262,8 @@ export const VideoPlayerScreen = () => {
   const movieId = movie.id;
   const shakaPlayerRef = useRef<ShakaPlayer | null>(null);
   const drmPlaybackStartedRef = useRef(false);
+  const surfaceReadyRef = useRef(false);
+  const shakaLoadedRef = useRef(false);
   // A D-pad Select that opens the player can be delivered once more as the
   // initial TV focus settles. Keep it from activating the Back button.
   const playerOpenedAtRef = useRef(Date.now());
@@ -164,8 +279,6 @@ export const VideoPlayerScreen = () => {
   const backButtonRef = useRef<any>(null);
   const [backButtonNode, setBackButtonNode] = useState<any>(null);
   const [isBackFocused, setIsBackFocused] = useState(false);
-  const [isPlaybackControlFocused, setIsPlaybackControlFocused] =
-    useState(false);
   const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
@@ -173,11 +286,34 @@ export const VideoPlayerScreen = () => {
   const [resumeTime, setResumeTime] = useState<number>(0);
   const lastSavedTimeRef = useRef<number>(0);
   const progressTimerRef = useRef<any>(null);
+  const timeSyncTimerRef = useRef<any>(null);
   const pendingSeekRef = useRef<number | null>(null);
   const metadataReadyRef = useRef(false);
   const shouldApplySeekRef = useRef(false);
 
   const hideControlsTimerRef = useRef<any>(null);
+
+  const [playbackTime, setPlaybackTime] = useState(0);
+  const [playbackDuration, setPlaybackDuration] = useState(0);
+  const [activeSeekbarType, setActiveSeekbarType] = useState<SeekbarType>(
+    () => {
+      return route.params?.seekbarType || getSeekbarTypeForContent(movie);
+    },
+  );
+
+  useEffect(() => {
+    const determinedType =
+      route.params?.seekbarType || getSeekbarTypeForContent(movie);
+    setActiveSeekbarType(determinedType);
+  }, [movie, route.params?.seekbarType]);
+
+  // --- Next Episode Feature Setup ---
+  const [isNextEpisodeModalOpen, setIsNextEpisodeModalOpen] = useState(false);
+  const [nextEpisodeCountdown, setNextEpisodeCountdown] = useState(
+    DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS,
+  );
+  const countdownTimerRef = useRef<any>(null);
+  const hasTriggeredEpisodeEndRef = useRef(false);
 
   // --- Subtitles Feature Setup ---
   const availableSubtitleTracks = useMemo<SubtitleTrack[]>(
@@ -298,6 +434,118 @@ export const VideoPlayerScreen = () => {
     );
   }, [availableSubtitleTracks, selectedSubtitleTrackId]);
 
+  // --- Audio Tracks Feature Setup ---
+  const availableAudioTracks = useMemo<AudioTrack[]>(
+    () =>
+      getAudioTracksForContent(
+        movie.id,
+        movie.title,
+        videoUrl,
+        isLive,
+        movie.genre,
+        movie.description,
+      ),
+    [movie.id, movie.title, videoUrl, isLive, movie.genre, movie.description],
+  );
+
+  const [selectedAudioTrackId, setSelectedAudioTrackId] = useState<string>(
+    () => {
+      const defaultTrack = availableAudioTracks.find((t) => t.isDefault);
+      return defaultTrack
+        ? defaultTrack.id
+        : availableAudioTracks[0]?.id || 'audio-default';
+    },
+  );
+  const [isAudioTracksModalOpen, setIsAudioTracksModalOpen] = useState(false);
+  const [isAudioFocused, setIsAudioFocused] = useState(false);
+
+  // Load saved audio preference for active profile
+  useEffect(() => {
+    let active = true;
+    const loadAudioPref = async () => {
+      const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+      const savedPref = await getSavedAudioPreference(targetProfileId);
+      if (active && savedPref) {
+        const matching = findMatchingAudioTrack(
+          availableAudioTracks,
+          savedPref,
+        );
+        if (matching) {
+          setSelectedAudioTrackId(matching.id);
+        }
+      }
+    };
+    loadAudioPref();
+    return () => {
+      active = false;
+    };
+  }, [activeProfile?.id, availableAudioTracks]);
+
+  const activeAudioTrack = useMemo(() => {
+    return (
+      availableAudioTracks.find((t) => t.id === selectedAudioTrackId) ||
+      availableAudioTracks[0] ||
+      null
+    );
+  }, [availableAudioTracks, selectedAudioTrackId]);
+
+  const selectedAudioLanguageRef = useRef<string | null>(null);
+  useEffect(() => {
+    selectedAudioLanguageRef.current = activeAudioTrack?.language || null;
+  }, [activeAudioTrack?.language]);
+
+  // --- Video Quality Feature Setup ---
+  const [dynamicQualityOptions, setDynamicQualityOptions] = useState<
+    VideoQualityOption[] | null
+  >(null);
+  const availableVideoQualities = useMemo<VideoQualityOption[]>(() => {
+    if (dynamicQualityOptions && dynamicQualityOptions.length > 0) {
+      return dynamicQualityOptions;
+    }
+    return getVideoQualitiesForContent(movie.id, movie.title, videoUrl, isLive);
+  }, [dynamicQualityOptions, isLive, movie.id, movie.title, videoUrl]);
+
+  const [selectedQualityId, setSelectedQualityId] =
+    useState<string>(AUTO_QUALITY_ID);
+  const [activeRendition, setActiveRendition] = useState<{
+    width?: number;
+    height?: number;
+    bitrate?: string;
+    badge?: string;
+  } | null>(null);
+  const [isVideoQualityModalOpen, setIsVideoQualityModalOpen] = useState(false);
+  const [isQualityFocused, setIsQualityFocused] = useState(false);
+
+  // Load saved quality preference for active profile
+  useEffect(() => {
+    let active = true;
+    const loadQualityPref = async () => {
+      const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+      const savedPref = await getSavedQualityPreference(targetProfileId);
+      if (active && savedPref) {
+        const matching = findMatchingQuality(
+          availableVideoQualities,
+          savedPref,
+        );
+        if (matching) {
+          setSelectedQualityId(matching.id);
+        }
+      }
+    };
+    loadQualityPref();
+    return () => {
+      active = false;
+    };
+  }, [activeProfile?.id, availableVideoQualities]);
+
+  const activeVideoQuality = useMemo(() => {
+    return (
+      availableVideoQualities.find((q) => q.id === selectedQualityId) ||
+      availableVideoQualities[0] ||
+      null
+    );
+  }, [availableVideoQualities, selectedQualityId]);
+
   const updateActiveSubtitle = useCallback(() => {
     if (!player || !activeSubtitleTrack || !activeSubtitleTrack.cues) {
       setActiveSubtitleCueText(null);
@@ -409,6 +657,279 @@ export const VideoPlayerScreen = () => {
     [activeProfile?.id, availableSubtitleTracks, player, resetHideTimer],
   );
 
+  const handleSelectAudioTrack = useCallback(
+    async (trackId: string) => {
+      setSelectedAudioTrackId(trackId);
+      const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+      await saveAudioPreference(targetProfileId, trackId);
+
+      const targetTrack = availableAudioTracks.find((t) => t.id === trackId);
+      if (!targetTrack) {
+        setIsAudioTracksModalOpen(false);
+        resetHideTimer();
+        return;
+      }
+
+      // 1. Sync with native W3C media element audioTracks if matching track exists
+      if (player?.audioTracks && player.audioTracks.length > 0) {
+        try {
+          let hasMatchingNativeTrack = false;
+          for (let i = 0; i < player.audioTracks.length; i++) {
+            const current = player.audioTracks[i];
+            if (
+              current &&
+              (current.language?.toLowerCase() ===
+                targetTrack.language.toLowerCase() ||
+                current.label?.toLowerCase() ===
+                  targetTrack.label.toLowerCase() ||
+                current.id === targetTrack.id)
+            ) {
+              hasMatchingNativeTrack = true;
+              break;
+            }
+          }
+
+          if (hasMatchingNativeTrack) {
+            for (let i = 0; i < player.audioTracks.length; i++) {
+              const current = player.audioTracks[i];
+              if (current) {
+                const matches =
+                  current.language?.toLowerCase() ===
+                    targetTrack.language.toLowerCase() ||
+                  current.label?.toLowerCase() ===
+                    targetTrack.label.toLowerCase() ||
+                  current.id === targetTrack.id;
+                current.enabled = matches;
+              }
+            }
+            player.audioTracks.emitEvent?.('change');
+          }
+        } catch (e) {
+          console.log('Notice syncing player audio track:', e);
+        }
+      }
+
+      // 2. Sync if player has selectAudioLanguage method
+      if (typeof player?.selectAudioLanguage === 'function') {
+        try {
+          player.selectAudioLanguage(targetTrack.language);
+        } catch (e) {
+          console.log('Notice calling player.selectAudioLanguage:', e);
+        }
+      }
+
+      // 3. Sync with Shaka player instance if active
+      if (shakaPlayerRef.current) {
+        try {
+          const shakaInst = shakaPlayerRef.current;
+          const targetLang = targetTrack.language.toLowerCase();
+          console.log('Shaka selecting audio track language:', targetLang);
+
+          shakaInst.selectAudioLanguage?.(targetTrack.language);
+          if (shakaInst.player?.selectAudioLanguage) {
+            shakaInst.player.selectAudioLanguage(targetTrack.language);
+          }
+
+          // If variant tracks are available, select matching variant and clear audio buffer
+          const rawPlayer = shakaInst.player;
+          if (rawPlayer && typeof rawPlayer.getVariantTracks === 'function') {
+            const variants = rawPlayer.getVariantTracks();
+            if (Array.isArray(variants)) {
+              const match = variants.find(
+                (v: any) =>
+                  v.language?.toLowerCase() === targetLang ||
+                  v.language?.toLowerCase().startsWith(targetLang) ||
+                  targetLang.startsWith(v.language?.toLowerCase() || ''),
+              );
+              if (match && typeof rawPlayer.selectVariantTrack === 'function') {
+                console.log('Shaka activating variant track:', match);
+                rawPlayer.selectVariantTrack(match, false);
+              }
+            }
+          }
+        } catch (e) {
+          console.log('Notice Shaka audio track selection:', e);
+        }
+      }
+
+      setIsAudioTracksModalOpen(false);
+      resetHideTimer();
+    },
+    [activeProfile?.id, availableAudioTracks, player, resetHideTimer],
+  );
+
+  const handleSelectQuality = useCallback(
+    async (qualityId: string) => {
+      setSelectedQualityId(qualityId);
+      const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+      await saveQualityPreference(targetProfileId, qualityId);
+
+      const targetQuality = availableVideoQualities.find(
+        (q) => q.id === qualityId,
+      );
+      if (!targetQuality) {
+        setIsVideoQualityModalOpen(false);
+        resetHideTimer();
+        return;
+      }
+
+      // 1. Shaka Player ABR & Variant selection
+      if (shakaPlayerRef.current?.player) {
+        try {
+          const rawPlayer = shakaPlayerRef.current.player;
+          if (qualityId === AUTO_QUALITY_ID) {
+            console.log('Shaka configuring ABR: enabled');
+            rawPlayer.configure?.({
+              abr: {
+                enabled: true,
+                restrictions: {
+                  minHeight: 0,
+                  maxHeight: Math.min(screenHeight, 1080),
+                  maxWidth: Math.min(screenWidth, 1920),
+                },
+              },
+            });
+          } else {
+            console.log('Shaka configuring manual quality:', targetQuality);
+            rawPlayer.configure?.({
+              abr: {
+                enabled: false,
+                restrictions: {
+                  minHeight: targetQuality.height || 0,
+                  maxHeight: targetQuality.height || 1080,
+                },
+              },
+            });
+
+            if (typeof rawPlayer.getVariantTracks === 'function') {
+              const variants = rawPlayer.getVariantTracks();
+              if (Array.isArray(variants) && variants.length > 0) {
+                const targetH = targetQuality.height;
+                const activeAudioLang =
+                  selectedAudioLanguageRef.current?.toLowerCase();
+                const currentVariant = variants.find((v: any) => v.active);
+
+                // Prefer AVC (H.264) variants for Kepler / Vega OS MSE compatibility
+                const isAvcTrack = (v: any) =>
+                  !v.videoCodec ||
+                  v.videoCodec.includes('avc') ||
+                  !v.videoCodec.includes('hev');
+
+                const match =
+                  variants.find(
+                    (v: any) =>
+                      v.height === targetH &&
+                      currentVariant?.audioId != null &&
+                      v.audioId === currentVariant.audioId &&
+                      isAvcTrack(v),
+                  ) ||
+                  variants.find(
+                    (v: any) =>
+                      v.height === targetH &&
+                      (!activeAudioLang ||
+                        v.language?.toLowerCase() === activeAudioLang) &&
+                      isAvcTrack(v),
+                  ) ||
+                  variants.find(
+                    (v: any) => v.height === targetH && isAvcTrack(v),
+                  ) ||
+                  (targetQuality.rawTrack &&
+                    variants.find(
+                      (v: any) =>
+                        v.id === targetQuality.rawTrack.id && isAvcTrack(v),
+                    )) ||
+                  variants.find((v: any) => v.height === targetH) ||
+                  variants.find(
+                    (v: any) =>
+                      v.height && targetH && Math.abs(v.height - targetH) <= 60,
+                  );
+
+                if (
+                  match &&
+                  typeof rawPlayer.selectVariantTrack === 'function'
+                ) {
+                  console.log('Shaka selecting variant track seamlessly:', match);
+                  // clearBuffer=false ensures Kepler video decoder does not stall
+                  rawPlayer.selectVariantTrack(match, false);
+                  const mbps = match.bandwidth
+                    ? match.bandwidth >= 1000000
+                      ? `${(match.bandwidth / 1000000).toFixed(1)} Mbps`
+                      : `${Math.round(match.bandwidth / 1000)} Kbps`
+                    : targetQuality.bitrate;
+                  setActiveRendition({
+                    width: match.width,
+                    height: match.height,
+                    bitrate: mbps,
+                    badge: `${match.height}p`,
+                  });
+                  console.log(
+                    `[QualitySwitch] Active rendition switched to: ${match.height}p (${match.width}x${match.height} @ ${mbps}, ${match.videoCodec})`,
+                  );
+                }
+              }
+            }
+          }
+
+          // Ensure native media element continues playback smoothly
+          if (player && typeof player.play === 'function' && !isPlaybackPaused) {
+            try {
+              const playPromise = player.play();
+              if (playPromise && typeof playPromise.catch === 'function') {
+                playPromise.catch(() => {});
+              }
+            } catch {
+              // Ignore benign play rejection
+            }
+          }
+        } catch (e) {
+          console.log('Notice Shaka video quality selection:', e);
+        }
+      }
+
+      // 2. Native W3C player videoTracks sync ONLY when Shaka is NOT active
+      if (!useShakaPlayer && player?.videoTracks && player.videoTracks.length > 0) {
+        try {
+          if (qualityId !== AUTO_QUALITY_ID) {
+            for (let i = 0; i < player.videoTracks.length; i++) {
+              const current = player.videoTracks[i];
+              if (current) {
+                const matches =
+                  current.id === qualityId ||
+                  (targetQuality.height &&
+                    current.label?.includes(String(targetQuality.height)));
+                current.selected = matches;
+              }
+            }
+            player.videoTracks.emitEvent?.('change');
+          }
+        } catch (e) {
+          console.log('Notice syncing player video track:', e);
+        }
+      }
+
+      setIsVideoQualityModalOpen(false);
+      resetHideTimer();
+    },
+    [
+      activeProfile?.id,
+      availableVideoQualities,
+      player,
+      resetHideTimer,
+      screenHeight,
+      screenWidth,
+    ],
+  );
+
+  const startAdaptivePlayback = useCallback(() => {
+    if (!player) {
+      return;
+    }
+    Promise.resolve(player?.play?.()).catch((error) => {
+      console.log('Adaptive playback start error:', error);
+      setVideoError(error?.message || strings.errors.videoPlaybackUnavailable);
+    });
+  }, [player]);
+
   const startDrmPlayback = useCallback(async () => {
     if (!useShakaPlayer || !player || drmPlaybackStartedRef.current) {
       return;
@@ -447,6 +968,7 @@ export const VideoPlayerScreen = () => {
         playerSettings,
       ) as ShakaPlayer;
       shakaPlayerRef.current = shakaPlayer;
+      const initialAudioLang = selectedAudioLanguageRef.current;
       const source = {
         secure: isDrmContent ? 'true' : 'false',
         uri: videoUrl,
@@ -455,6 +977,7 @@ export const VideoPlayerScreen = () => {
         vcodec: 'avc1',
         ...(isVideoOnly ? {} : {acodec: 'mp4a'}),
         ...(isVideoOnly ? {video_only: 'true'} : {}),
+        ...(initialAudioLang ? {preferredAudioLanguage: initialAudioLang} : {}),
         ...(isDrmContent && drm
           ? {
               drm_scheme: drm.keySystem,
@@ -464,8 +987,122 @@ export const VideoPlayerScreen = () => {
       };
 
       await shakaPlayer.load(source, true);
+      shakaLoadedRef.current = true;
+
+      // Sync any text tracks discovered by Shaka into player.textTracks so default player controls display them
+      try {
+        const rawPlayer = shakaPlayer.player;
+        if (rawPlayer && typeof rawPlayer.getTextTracks === 'function') {
+          const shakaTracks = rawPlayer.getTextTracks();
+          if (
+            Array.isArray(shakaTracks) &&
+            player.addTextTrack &&
+            player.textTracks
+          ) {
+            shakaTracks.forEach((st: any) => {
+              const lang = st.language || 'en';
+              const label = st.label || st.language || 'Subtitle';
+              const trackListLen = player.textTracks.length || 0;
+              let exists = false;
+              for (let i = 0; i < trackListLen; i++) {
+                const t = player.textTracks[i];
+                if (t && (t.language === lang || t.label === label)) {
+                  exists = true;
+                  break;
+                }
+              }
+              if (!exists) {
+                const newTrack = player.addTextTrack('subtitles', label, lang);
+                if (newTrack) {
+                  newTrack.mode = 'hidden';
+                  player.textTracks.emitEvent?.('addtrack', newTrack);
+                }
+              }
+            });
+          }
+        }
+      } catch (err) {
+        console.log('Shaka text track sync notice:', err);
+      }
+
+      // Sync any variant tracks discovered by Shaka for dynamic video quality selection
+      try {
+        const rawPlayer = shakaPlayer.player;
+        if (rawPlayer && typeof rawPlayer.getVariantTracks === 'function') {
+          const variants = rawPlayer.getVariantTracks();
+          if (Array.isArray(variants) && variants.length > 0) {
+            const extracted = extractQualitiesFromShakaVariants(variants);
+            if (extracted.length > 1) {
+              setDynamicQualityOptions(extracted);
+            }
+            const active = variants.find((t: any) => t.active);
+            if (active && active.height) {
+              const mbps = active.bandwidth
+                ? active.bandwidth >= 1000000
+                  ? `${(active.bandwidth / 1000000).toFixed(1)} Mbps`
+                  : `${Math.round(active.bandwidth / 1000)} Kbps`
+                : undefined;
+              setActiveRendition({
+                width: active.width,
+                height: active.height,
+                bitrate: mbps,
+                badge: `${active.height}p`,
+              });
+              console.log(
+                `[QualityInit] Initial active stream rendition: ${active.width}x${active.height} (${mbps})`,
+              );
+            }
+          }
+
+          const onVariantTrackChange = (event: any) => {
+            const newTrack = event?.newTrack;
+            if (newTrack && newTrack.height) {
+              const mbps = newTrack.bandwidth
+                ? newTrack.bandwidth >= 1000000
+                  ? `${(newTrack.bandwidth / 1000000).toFixed(1)} Mbps`
+                  : `${Math.round(newTrack.bandwidth / 1000)} Kbps`
+                : undefined;
+              setActiveRendition({
+                width: newTrack.width,
+                height: newTrack.height,
+                bitrate: mbps,
+                badge: `${newTrack.height}p`,
+              });
+              console.log(
+                `[QualityVerified] Active decoder stream switched to: ${newTrack.width}x${newTrack.height} (${mbps}, ${newTrack.codecs || newTrack.videoCodec})`,
+              );
+            }
+          };
+
+          rawPlayer.addEventListener?.('variantchanged', onVariantTrackChange);
+          rawPlayer.addEventListener?.('adaptation', onVariantTrackChange);
+        }
+      } catch (err) {
+        console.log('Shaka variant tracks sync notice:', err);
+      }
+
+      if (initialAudioLang) {
+        try {
+          shakaPlayer.selectAudioLanguage?.(initialAudioLang);
+        } catch (err) {
+          console.log('Shaka initial audio track selection notice:', err);
+        }
+      }
+
+      const isSurfaceReady =
+        surfaceReadyRef.current || Boolean(player?.surfaceHandle);
+      if (isSurfaceReady) {
+        startAdaptivePlayback();
+      } else {
+        setTimeout(() => {
+          if (shakaLoadedRef.current) {
+            startAdaptivePlayback();
+          }
+        }, 500);
+      }
     } catch (error: any) {
       drmPlaybackStartedRef.current = false;
+      shakaLoadedRef.current = false;
       console.log('DRM playback initialization error:', error);
       setVideoError(error?.message || strings.errors.videoPlaybackUnavailable);
       throw error;
@@ -477,40 +1114,65 @@ export const VideoPlayerScreen = () => {
     player,
     screenHeight,
     screenWidth,
+    startAdaptivePlayback,
     streamType,
     useShakaPlayer,
     videoUrl,
   ]);
+  const currentSurfaceHandleRef = useRef<string | null>(null);
 
-  const handleDrmSurfaceCreated = useCallback(
-    (
-      surface:
-        | string
-        | {surfaceHandle?: string; nativeEvent?: {surfaceHandle?: string}},
-    ) => {
-      const surfaceHandle =
-        typeof surface === 'string'
-          ? surface
-          : surface?.surfaceHandle || surface?.nativeEvent?.surfaceHandle;
-      if (!surfaceHandle) {
-        setVideoError(strings.errors.videoPlaybackUnavailable);
-        return;
+  const releaseMediaResourcesSync = useCallback(() => {
+    try {
+      if (player) {
+        player.pause?.();
+        const surface = currentSurfaceHandleRef.current;
+        if (surface) {
+          player.clearSurfaceHandle?.(surface);
+          currentSurfaceHandleRef.current = null;
+        } else if (player.clearSurfaceHandle) {
+          player.clearSurfaceHandle?.('');
+        }
+        player.deinitializeSync?.(1000);
       }
+    } catch (err) {
+      console.log('Synchronous media resource release notice:', err);
+    }
+  }, [player]);
 
-      player?.setSurfaceHandle?.(surfaceHandle);
-      // Shaka begins loading immediately after media initialization, matching
-      // the Vega sample lifecycle.  At this point the adaptive source may
-      // already be loading; the surface callback only attaches the native
-      // target and starts presentation.
-      Promise.resolve(player?.play?.()).catch((error) => {
-        console.log('Adaptive playback start error:', error);
-        setVideoError(
-          error?.message || strings.errors.videoPlaybackUnavailable,
-        );
-      });
-    },
-    [player],
-  );
+  // Intercept player.setSurfaceHandle and clearSurfaceHandle to track surface and integrate Shaka
+  useEffect(() => {
+    if (!player) {
+      return;
+    }
+    const originalSetSurfaceHandle = player.setSurfaceHandle?.bind(player);
+    const originalClearSurfaceHandle = player.clearSurfaceHandle?.bind(player);
+
+    player.setSurfaceHandle = (surfaceHandle: string) => {
+      currentSurfaceHandleRef.current = surfaceHandle;
+      originalSetSurfaceHandle?.(surfaceHandle);
+      if (surfaceHandle && useShakaPlayer) {
+        surfaceReadyRef.current = true;
+        if (shakaLoadedRef.current) {
+          startAdaptivePlayback();
+        }
+      }
+    };
+
+    player.clearSurfaceHandle = (surfaceHandle: string) => {
+      currentSurfaceHandleRef.current = null;
+      surfaceReadyRef.current = false;
+      originalClearSurfaceHandle?.(surfaceHandle);
+    };
+
+    return () => {
+      if (originalSetSurfaceHandle) {
+        player.setSurfaceHandle = originalSetSurfaceHandle;
+      }
+      if (originalClearSurfaceHandle) {
+        player.clearSurfaceHandle = originalClearSurfaceHandle;
+      }
+    };
+  }, [player, startAdaptivePlayback, useShakaPlayer]);
 
   useEffect(() => {
     resetHideTimer();
@@ -584,8 +1246,33 @@ export const VideoPlayerScreen = () => {
       }
     };
 
+    const onPlayerTimeUpdate = () => {
+      if (!disposed && player) {
+        if (
+          player.currentTime !== undefined &&
+          Number.isFinite(player.currentTime)
+        ) {
+          setPlaybackTime(player.currentTime);
+        }
+        if (
+          player.duration !== undefined &&
+          Number.isFinite(player.duration) &&
+          player.duration > 0
+        ) {
+          setPlaybackDuration(player.duration);
+        }
+      }
+    };
+
     const onLoadedMetadata = () => {
       metadataReadyRef.current = true;
+      if (
+        player?.duration !== undefined &&
+        Number.isFinite(player.duration) &&
+        player.duration > 0
+      ) {
+        setPlaybackDuration(player.duration);
+      }
       const requestedSeek = pendingSeekRef.current;
       if (requestedSeek !== null) {
         try {
@@ -615,6 +1302,13 @@ export const VideoPlayerScreen = () => {
       }
       if (player.captioning === false) {
         setSelectedSubtitleTrackId(SUBTITLE_OFF_ID);
+        if (shakaPlayerRef.current?.player) {
+          try {
+            shakaPlayerRef.current.player.setTextTrackVisibility?.(false);
+          } catch (e) {
+            console.log('Shaka caption visibility sync error:', e);
+          }
+        }
         return;
       }
       let matchedTrackId: string | null = null;
@@ -640,12 +1334,20 @@ export const VideoPlayerScreen = () => {
       } else {
         setIsSubtitlesModalOpen(true);
       }
+      if (shakaPlayerRef.current?.player) {
+        try {
+          shakaPlayerRef.current.player.setTextTrackVisibility?.(true);
+        } catch (e) {
+          console.log('Shaka caption visibility sync error:', e);
+        }
+      }
     };
 
     if (player?.addEventListener) {
       player.addEventListener('loadstart', onLoadStart);
       player.addEventListener('error', onError);
       player.addEventListener('loadedmetadata', onLoadedMetadata);
+      player.addEventListener('timeupdate', onPlayerTimeUpdate);
       player.addEventListener('captioningchange', onCaptioningChange);
     }
 
@@ -770,6 +1472,8 @@ export const VideoPlayerScreen = () => {
       disposed = true;
       setIsPlayerInitialized(false);
       drmPlaybackStartedRef.current = false;
+      shakaLoadedRef.current = false;
+      surfaceReadyRef.current = false;
       if (sourceTimerRef.current) {
         clearTimeout(sourceTimerRef.current);
         sourceTimerRef.current = null;
@@ -778,40 +1482,38 @@ export const VideoPlayerScreen = () => {
         player.removeEventListener('loadstart', onLoadStart);
         player.removeEventListener('error', onError);
         player.removeEventListener('loadedmetadata', onLoadedMetadata);
+        player.removeEventListener('timeupdate', onPlayerTimeUpdate);
         player.removeEventListener('captioningchange', onCaptioningChange);
       }
       if (player?.textTracks?.removeEventListener) {
         player.textTracks.removeEventListener('change', onCaptioningChange);
       }
 
+      // Release native media resources synchronously and immediately to prevent
+      // Kepler / Vega OS ReclaimMediaResource crash.
+      releaseMediaResourcesSync();
+
       const shakaPlayer = shakaPlayerRef.current;
       shakaPlayerRef.current = null;
       (globalThis as any).gmedia = null;
 
-      // Stop Shaka's live-manifest update timer before the W3C media element
-      // is deinitialized. Otherwise Shaka continues to fetch the manifest
-      // against a detached MSE surface after the player screen closes.
+      // Stop Shaka's live-manifest update timer after releasing native resources.
       void (async () => {
         try {
           await shakaPlayer?.destroy();
         } catch (error) {
           console.log('Shaka cleanup error:', error);
-        } finally {
-          try {
-            player.pause?.();
-            player.deinitializeSync?.(1000);
-          } catch (error) {
-            console.log('Player cleanup error:', error);
-          }
         }
       })();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     hasExplicitSeek,
-    useShakaPlayer,
     isLive,
     player,
+    releaseMediaResourcesSync,
     startDrmPlayback,
+    useShakaPlayer,
     videoUrl,
   ]);
 
@@ -840,34 +1542,175 @@ export const VideoPlayerScreen = () => {
     }
   }, [isLive, player, resumeTime]);
 
-  const persistProgress = useCallback(async () => {
-    const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
-    if (isLive || !player || !movie?.id || !user || !targetProfileId) {
+  const persistProgress = useCallback(
+    async (force = false) => {
+      const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
+      if (isLive || !player || !movie?.id || !user || !targetProfileId) {
+        return;
+      }
+
+      const currentTime = Number(player.currentTime || 0);
+      const duration = Number(player.duration || 0);
+      if (!currentTime || currentTime <= 0 || !Number.isFinite(currentTime)) {
+        return;
+      }
+
+      if (!force && Math.abs(currentTime - lastSavedTimeRef.current) < 5) {
+        return;
+      }
+
+      lastSavedTimeRef.current = currentTime;
+      try {
+        await saveContinueWatchProgress(
+          targetProfileId,
+          movie,
+          currentTime,
+          duration,
+        );
+      } catch (error: any) {
+        console.log('Save continue watch error:', error);
+      }
+    },
+    [activeProfile?.id, isLive, movie, player, user],
+  );
+
+  const handlePlayNextEpisode = useCallback(
+    (targetEpisode?: EpisodeItem) => {
+      const ep = targetEpisode || resolvedNextEpisode;
+      if (!ep) {
+        return;
+      }
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+      setIsNextEpisodeModalOpen(false);
+
+      navigation.replace(Routes.VideoPlayer, {
+        movieId: ep.id,
+        movie: {
+          id: ep.id,
+          title: ep.title,
+          description: ep.description,
+          image: ep.image || movie.image,
+          videoUrl: ep.videoUrl,
+          genre: ep.genre || movie.genre,
+          rating: ep.rating || movie.rating,
+          maturityRating: ep.maturityRating || movie.maturityRating,
+          cast: ep.cast || movie.cast,
+          director: ep.director || movie.director,
+          seekbarType: ep.seekbarType || movie.seekbarType,
+          seriesId: ep.seriesId,
+          seriesTitle: ep.seriesTitle || movie.title,
+          seasonNumber: ep.seasonNumber,
+          episodeNumber: ep.episodeNumber,
+        },
+        videoUrl: ep.videoUrl,
+        seek: 0,
+        isLive: false,
+      });
+    },
+    [movie, navigation, resolvedNextEpisode],
+  );
+
+  const handlePlayNextEpisodeRef = useRef(handlePlayNextEpisode);
+  handlePlayNextEpisodeRef.current = handlePlayNextEpisode;
+
+  const handleCancelNextEpisode = useCallback(() => {
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+    setIsNextEpisodeModalOpen(false);
+  }, []);
+
+  const triggerNextEpisodeCountdown = useCallback(() => {
+    if (isLive || !resolvedNextEpisode) {
       return;
     }
 
-    const currentTime = Number(player.currentTime || 0);
-    const duration = Number(player.duration || 0);
-    if (!currentTime || currentTime <= 0 || !Number.isFinite(currentTime)) {
-      return;
-    }
-
-    if (Math.abs(currentTime - lastSavedTimeRef.current) < 5) {
-      return;
-    }
-
-    lastSavedTimeRef.current = currentTime;
+    setIsPlaybackPaused(true);
     try {
-      await saveContinueWatchProgress(
-        targetProfileId,
-        movie,
-        currentTime,
-        duration,
-      );
-    } catch (error: any) {
-      console.log('Save continue watch error:', error);
+      player?.pause?.();
+    } catch (_err) {
+      // Ignore pause errors if player is already stopped
     }
-  }, [activeProfile?.id, isLive, movie, player, user]);
+
+    const isAuto = isAutoplayEnabled(userProfile, activeProfile);
+    setNextEpisodeCountdown(DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS);
+    setIsNextEpisodeModalOpen(true);
+
+    if (countdownTimerRef.current) {
+      clearInterval(countdownTimerRef.current);
+      countdownTimerRef.current = null;
+    }
+
+    if (isAuto) {
+      let secondsRemaining = DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS;
+      countdownTimerRef.current = setInterval(() => {
+        secondsRemaining -= 1;
+        setNextEpisodeCountdown(secondsRemaining);
+        if (secondsRemaining <= 0) {
+          if (countdownTimerRef.current) {
+            clearInterval(countdownTimerRef.current);
+            countdownTimerRef.current = null;
+          }
+          handlePlayNextEpisodeRef.current();
+        }
+      }, 1000);
+    }
+  }, [activeProfile, isLive, player, resolvedNextEpisode, userProfile]);
+
+  const triggerNextEpisodeCountdownRef = useRef(triggerNextEpisodeCountdown);
+  triggerNextEpisodeCountdownRef.current = triggerNextEpisodeCountdown;
+
+  const resolvedNextEpisodeRef = useRef(resolvedNextEpisode);
+  resolvedNextEpisodeRef.current = resolvedNextEpisode;
+
+  // Cleanup countdown timer on component unmount
+  useEffect(() => {
+    return () => {
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  const handleUserSeek = useCallback(
+    (targetSeconds: number) => {
+      resetHideTimer();
+      if (countdownTimerRef.current) {
+        clearInterval(countdownTimerRef.current);
+        countdownTimerRef.current = null;
+      }
+      setIsNextEpisodeModalOpen(false);
+      hasTriggeredEpisodeEndRef.current = false;
+
+      if (
+        isLive ||
+        !player ||
+        !Number.isFinite(targetSeconds) ||
+        targetSeconds < 0
+      ) {
+        return;
+      }
+      try {
+        const duration = Number(player.duration);
+        const clampedSeek =
+          Number.isFinite(duration) && duration > 0
+            ? Math.min(targetSeconds, Math.max(0, duration - 1))
+            : targetSeconds;
+
+        player.currentTime = clampedSeek;
+        setPlaybackTime(clampedSeek);
+        void persistProgress();
+      } catch (err) {
+        console.log('Player seek error:', err);
+      }
+    },
+    [isLive, persistProgress, player, resetHideTimer],
+  );
 
   useEffect(() => {
     if (isLive || !player) {
@@ -875,10 +1718,16 @@ export const VideoPlayerScreen = () => {
     }
 
     const onPause = () => {
+      setIsPlaybackPaused(true);
+      if (timeSyncTimerRef.current) {
+        clearInterval(timeSyncTimerRef.current);
+        timeSyncTimerRef.current = null;
+      }
       void persistProgress();
     };
 
     const onPlaying = () => {
+      setIsPlaybackPaused(false);
       const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
       if (
         !isLive &&
@@ -898,19 +1747,50 @@ export const VideoPlayerScreen = () => {
       progressTimerRef.current = setInterval(() => {
         void persistProgress();
       }, 8000);
+
+      if (timeSyncTimerRef.current) {
+        clearInterval(timeSyncTimerRef.current);
+      }
+      timeSyncTimerRef.current = setInterval(() => {
+        if (
+          player &&
+          player.currentTime !== undefined &&
+          Number.isFinite(player.currentTime)
+        ) {
+          setPlaybackTime(player.currentTime);
+          if (
+            !isLive &&
+            player.duration &&
+            player.duration > 0 &&
+            player.currentTime >= player.duration - 0.5 &&
+            !hasTriggeredEpisodeEndRef.current
+          ) {
+            hasTriggeredEpisodeEndRef.current = true;
+            void onEnded();
+          }
+        }
+      }, 500);
     };
 
-    const onEnded = async () => {
+    const onEnded = () => {
+      hasTriggeredEpisodeEndRef.current = true;
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
       }
+      if (timeSyncTimerRef.current) {
+        clearInterval(timeSyncTimerRef.current);
+        timeSyncTimerRef.current = null;
+      }
       const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
       if (targetProfileId) {
-        try {
-          await clearContinueWatchProgress(targetProfileId, movieId);
-        } catch (error) {
+        clearContinueWatchProgress(targetProfileId, movieId).catch((error) => {
           console.log('Clear continue watch error:', error);
-        }
+        });
+      }
+
+      // Next Episode Flow: Episode ends -> Next episode -> Countdown -> Auto-play
+      if (!isLive && resolvedNextEpisodeRef.current) {
+        triggerNextEpisodeCountdownRef.current();
       }
     };
 
@@ -926,6 +1806,11 @@ export const VideoPlayerScreen = () => {
         progressTimerRef.current = null;
       }
 
+      if (timeSyncTimerRef.current) {
+        clearInterval(timeSyncTimerRef.current);
+        timeSyncTimerRef.current = null;
+      }
+
       if (player.removeEventListener) {
         player.removeEventListener('pause', onPause);
         player.removeEventListener('playing', onPlaying);
@@ -934,7 +1819,67 @@ export const VideoPlayerScreen = () => {
 
       void persistProgress();
     };
-  }, [activeProfile?.id, isLive, movieId, persistProgress, player]);
+  }, [activeProfile?.id, isLive, movie, movieId, persistProgress, player]);
+
+  // Vega OS lifecycle: Synchronously release media resources when the application
+  // transitions to background or inactive state, preventing ReclaimMediaResource terminations.
+  useEffect(() => {
+    let wasPausedBeforeBackground = false;
+
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      console.log('VideoPlayerScreen AppState changed to:', nextAppState);
+      if (nextAppState === 'background' || nextAppState === 'inactive') {
+        if (countdownTimerRef.current) {
+          clearInterval(countdownTimerRef.current);
+          countdownTimerRef.current = null;
+        }
+        wasPausedBeforeBackground = isPlaybackPaused;
+        void persistProgress(true);
+        setIsPlaybackPaused(true);
+        releaseMediaResourcesSync();
+      } else if (nextAppState === 'active') {
+        if (player) {
+          void (async () => {
+            try {
+              await Promise.resolve(player.initialize?.());
+              if (!isLive) {
+                const resumeSec = lastSavedTimeRef.current || playbackTime;
+                if (resumeSec > 0 && player.currentTime !== undefined) {
+                  player.currentTime = resumeSec;
+                }
+              }
+              if (!wasPausedBeforeBackground) {
+                await Promise.resolve(player.play?.());
+                setIsPlaybackPaused(false);
+              }
+            } catch (err) {
+              console.log('Resume after background notice:', err);
+            }
+          })();
+        }
+      }
+    };
+
+    const subscription = AppState.addEventListener(
+      'change',
+      handleAppStateChange,
+    );
+
+    return () => {
+      if (subscription?.remove) {
+        subscription.remove();
+      } else if ((AppState as any).removeEventListener) {
+        (AppState as any).removeEventListener('change', handleAppStateChange);
+      }
+    };
+  }, [
+    isLive,
+    isPlaybackPaused,
+    persistProgress,
+    playbackTime,
+    player,
+    releaseMediaResourcesSync,
+  ]);
 
   const handleBackFocus = () => {
     resetHideTimer();
@@ -984,26 +1929,15 @@ export const VideoPlayerScreen = () => {
           styles.videoSurface,
           {width: screenWidth, height: screenHeight},
         ])}>
-        {isPlayerInitialized &&
-          (useShakaPlayer ? (
-            <View style={styles.shakaSurfaceContainer}>
-              <KeplerVideoSurfaceViewComponent
-                style={[
-                  styles.shakaVideoSurface,
-                  {width: shakaSurfaceWidth, height: shakaSurfaceHeight},
-                ]}
-                onSurfaceViewCreated={handleDrmSurfaceCreated}
-                testID="w3c-drm-video-surface"
-              />
-            </View>
-          ) : (
-            <KeplerVideoViewComponent
-              videoPlayer={player}
-              showControls={true}
-              showCaptions={true}
-              testID="w3c-video-surface"
-            />
-          ))}
+        {isPlayerInitialized && (
+          <KeplerVideoViewComponent
+            videoPlayer={player}
+            showControls={true}
+            showCaptions={true}
+            scalingmode="fit"
+            testID="w3c-video-surface"
+          />
+        )}
       </View>
 
       {/* Active Subtitle Cue Overlay at zIndex: 8 */}
@@ -1133,40 +2067,152 @@ export const VideoPlayerScreen = () => {
               </Text>
             </TouchableOpacity>
 
-            <View style={styles.qualityBadge} pointerEvents="none">
-              <Text style={styles.qualityBadgeText}>{strings.header.uhd}</Text>
+            {/* Top Audio Status Badge - Shows selected audio track / language */}
+            <TouchableOpacity
+              style={[
+                styles.topAudioBadge,
+                styles.topAudioBadgeActive,
+                isAudioFocused && styles.topAudioBadgeFocused,
+              ]}
+              onFocus={() => {
+                resetHideTimer();
+                setIsAudioFocused(true);
+              }}
+              onBlur={() => setIsAudioFocused(false)}
+              onPress={() => {
+                resetHideTimer();
+                setIsAudioTracksModalOpen(true);
+              }}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={strings.accessibility.audioTracksButton(
+                activeAudioTrack?.label || strings.audioTracks.original,
+              )}
+              testID="player-audio-button">
+              <Text style={styles.audioBadgeText}>
+                {strings.audioTracks.audioBadge}
+              </Text>
+              <Text style={styles.audioLabelText}>
+                {`Audio: ${
+                  activeAudioTrack?.label || strings.audioTracks.original
+                }`}
+              </Text>
+            </TouchableOpacity>
+
+            {/* Top Video Quality Status Badge - Shows selected quality e.g. Auto or 1080p */}
+            <TouchableOpacity
+              style={[
+                styles.topQualityBadge,
+                styles.topQualityBadgeActive,
+                isQualityFocused && styles.topQualityBadgeFocused,
+              ]}
+              onFocus={() => {
+                resetHideTimer();
+                setIsQualityFocused(true);
+              }}
+              onBlur={() => setIsQualityFocused(false)}
+              onPress={() => {
+                resetHideTimer();
+                setIsVideoQualityModalOpen(true);
+              }}
+              activeOpacity={0.8}
+              accessibilityRole="button"
+              accessibilityLabel={strings.accessibility.qualityButton(
+                activeVideoQuality?.label ||
+                  strings.videoQuality?.autoRecommended ||
+                  'Auto',
+              )}
+              testID="player-quality-button">
+              <Text style={styles.qualityBadgeTag}>
+                {activeVideoQuality?.badge ||
+                  strings.videoQuality?.qualityBadge ||
+                  'QUALITY'}
+              </Text>
+              <Text style={styles.qualityLabelText}>
+                {`Quality: ${
+                  activeVideoQuality?.shortLabel ||
+                  strings.videoQuality?.auto ||
+                  'Auto'
+                }`}
+              </Text>
+              {activeRendition?.height && (
+                <Text
+                  style={styles.qualityRenditionText}
+                  testID="player-quality-live-rendition">
+                  {`[${activeRendition.height}p${
+                    activeRendition.bitrate
+                      ? ` • ${activeRendition.bitrate}`
+                      : ''
+                  }]`}
+                </Text>
+              )}
+            </TouchableOpacity>
+
+            <View
+              style={styles.seekbarBadge}
+              pointerEvents="none"
+              testID="player-seekbar-type-badge">
+              <Text style={styles.seekbarBadgeText}>
+                {isLive
+                  ? 'LIVE STREAM'
+                  : activeSeekbarType === 'markers'
+                  ? 'SEEKBAR: MARKERS'
+                  : activeSeekbarType === 'break-markers'
+                  ? 'SEEKBAR: BREAK MARKERS & SEGMENTS'
+                  : activeSeekbarType === 'limits'
+                  ? 'SEEKBAR: SEEKING LIMITS'
+                  : activeSeekbarType === 'long-press'
+                  ? 'SEEKBAR: LONG PRESS'
+                  : activeSeekbarType === 'fast-forward-rewind'
+                  ? 'SEEKBAR: FAST FORWARD / REWIND'
+                  : activeSeekbarType === 'custom-disabling'
+                  ? 'SEEKBAR: CUSTOM DISABLING CONFIGURATION'
+                  : 'SEEKBAR: THUMBNAIL IMAGES'}
+              </Text>
             </View>
           </TVFocusGuideView>
 
-          {useShakaPlayer && (
-            <View style={styles.bottomControls}>
-              <TouchableOpacity
-                style={[
-                  styles.playbackControl,
-                  isPlaybackControlFocused && styles.playbackControlFocused,
-                ]}
-                onFocus={() => {
-                  resetHideTimer();
-                  setIsPlaybackControlFocused(true);
-                }}
-                onBlur={() => setIsPlaybackControlFocused(false)}
-                onPress={togglePlayback}
-                activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel={
-                  isPlaybackPaused
-                    ? strings.actions.play
-                    : strings.actions.pause
-                }
-                testID="shaka-playback-control">
-                <Text style={styles.playbackControlText}>
-                  {isPlaybackPaused
-                    ? `▶ ${strings.actions.play}`
-                    : `Ⅱ ${strings.actions.pause}`}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          {/* Bottom Controls Bar with PlayerSeekBar */}
+          <PlayerSeekBar
+            type={activeSeekbarType}
+            currentTime={playbackTime}
+            duration={playbackDuration}
+            isPaused={isPlaybackPaused}
+            isLive={isLive}
+            enableThumbnails={!isLive}
+            videoUrl={videoUrl}
+            movie={movie}
+            player={shakaPlayerRef.current?.player}
+            partialDisablingConfiguration={movie?.partialDisablingConfiguration}
+            onSeek={handleUserSeek}
+            onTogglePlayPause={togglePlayback}
+            onFastForwardPress={() => {
+              resetHideTimer();
+            }}
+            onRewindPress={() => {
+              resetHideTimer();
+            }}
+            onSkipIntroPress={() => {
+              resetHideTimer();
+            }}
+            onStartFromBeginningPress={() => {
+              resetHideTimer();
+            }}
+            onNextEpisodePress={
+              resolvedNextEpisode
+                ? () => {
+                    resetHideTimer();
+                    triggerNextEpisodeCountdown();
+                  }
+                : undefined
+            }
+            hasNextEpisode={Boolean(resolvedNextEpisode)}
+            onTypeChange={(newType) => {
+              setActiveSeekbarType(newType);
+              resetHideTimer();
+            }}
+            onInteraction={resetHideTimer}
+          />
         </View>
       )}
 
@@ -1180,6 +2226,44 @@ export const VideoPlayerScreen = () => {
           setIsSubtitlesModalOpen(false);
           resetHideTimer();
         }}
+      />
+
+      {/* Audio Tracks Selection Modal */}
+      <AudioTracksModal
+        isOpen={isAudioTracksModalOpen}
+        tracks={availableAudioTracks}
+        selectedTrackId={selectedAudioTrackId}
+        onSelectTrack={handleSelectAudioTrack}
+        onClose={() => {
+          setIsAudioTracksModalOpen(false);
+          resetHideTimer();
+        }}
+      />
+
+      {/* Video Quality Selection Modal */}
+      <VideoQualityModal
+        isOpen={isVideoQualityModalOpen}
+        qualities={availableVideoQualities}
+        selectedQualityId={selectedQualityId}
+        onSelectQuality={handleSelectQuality}
+        onClose={() => {
+          setIsVideoQualityModalOpen(false);
+          resetHideTimer();
+        }}
+      />
+
+      {/* Next Episode Modal with Countdown, Auto-play & Next Episodes List View */}
+      <NextEpisodeModal
+        isOpen={isNextEpisodeModalOpen}
+        nextEpisode={resolvedNextEpisode}
+        nextEpisodes={resolvedNextEpisodes}
+        allEpisodes={resolvedAllEpisodes}
+        currentEpisodeId={route.params?.episode?.id || movie.id}
+        countdownSeconds={nextEpisodeCountdown}
+        autoplayEnabled={autoplayEnabled}
+        onPlayNow={(targetEp) => handlePlayNextEpisode(targetEp)}
+        onCancel={handleCancelNextEpisode}
+        onSelectEpisode={(targetEp) => handlePlayNextEpisode(targetEp)}
       />
     </TVFocusGuideView>
   );
