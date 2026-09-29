@@ -8,7 +8,6 @@ import {
   View,
 } from 'react-native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
-import {AppDetails} from '../../constants/appDetails';
 import {strings} from '../../constants/strings';
 import {HeroMetaTag} from '../atoms/HeroMetaTag';
 import {styles} from './HeroBanner.styles';
@@ -72,7 +71,7 @@ export const HeroBanner = ({
             hasTVPreferredFocus
             accessibilityRole="button"
             accessibilityLabel={strings.hero.playAccessibility(title)}>
-            <Text style={styles.playButtonText}>{AppDetails.play}</Text>
+            <Text style={styles.playButtonText}>{strings.actions.playWithIcon}</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[

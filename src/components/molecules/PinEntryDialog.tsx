@@ -168,8 +168,8 @@ export const PinEntryDialog = ({
         {isConfirmMode && (
           <Text style={styles.stepIndicator}>
             {isConfirmingStep
-              ? 'Step 2 of 2: Confirm'
-              : 'Step 1 of 2: Enter PIN'}
+              ? strings.parentalControls.step2Confirm
+              : strings.parentalControls.step1EnterPin}
           </Text>
         )}
 
@@ -236,10 +236,10 @@ export const PinEntryDialog = ({
                       accessibilityRole="button"
                       accessibilityLabel={
                         isDigit
-                          ? `Digit ${key}`
+                          ? strings.accessibility.pinDigit(key)
                           : isClear
-                          ? 'Clear PIN digits'
-                          : 'Cancel PIN entry'
+                          ? strings.accessibility.clearPinDigits
+                          : strings.accessibility.cancelPinEntry
                       }
                       testID={`pin-key-${key}`}>
                       <Text

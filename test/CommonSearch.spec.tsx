@@ -49,9 +49,9 @@ describe('CommonSearch and Multi-Screen Search Filtering', () => {
     const screen = render(<HomeScreen />);
 
     const input = screen.getByTestId('common-search-input');
-    fireEvent.changeText(input, 'Horizon');
+    fireEvent.changeText(input, 'Knight');
 
-    expect(screen.getByText('The Last Horizon')).toBeTruthy();
+    expect(screen.getByText('The Dark Knight')).toBeTruthy();
     expect(screen.queryByText('Kalki 2898 AD')).toBeNull();
   });
 

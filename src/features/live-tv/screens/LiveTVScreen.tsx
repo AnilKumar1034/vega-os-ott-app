@@ -14,7 +14,7 @@ import {
   I18nManager,
   TVFocusGuideView,
 } from '@amazon-devices/react-native-kepler';
-import {EPG, EPGActions} from '@amazon-devices/kepler-ui-components';
+import {EPG, type EPGActions} from '../components/EPG';
 import {CommonHeader} from '../../../components/molecules/CommonHeader';
 import {SideMenu} from '../../../components/molecules/SideMenu';
 import {Routes} from '../../../constants/routes';
@@ -55,7 +55,7 @@ const freeLiveCategories = [
   strings.liveTV.categoryRegional,
   strings.liveTV.categoryDocumentary,
 ];
-const epgLogoStyle = {backgroundColor: colors.cardBackground, width: 220};
+const epgLogoStyle = {backgroundColor: colors.cardBackground, width: 110};
 const epgOverlayStyle = {
   enabled: true,
   elapsedColor: colors.heroAccent,
@@ -67,7 +67,7 @@ const epgTileStyle = {
   focusedForegroundColor: colors.textPrimary,
   elapsedBackgroundColor: colors.cardBackground,
   pendingBackgroundColor: colors.darkCardBackground,
-  rowHeight: 100,
+  rowHeight: 50,
   fontSize: fontSizes.cardTitle,
   boldFocusedTitle: true,
   borderRadius: borderRadius.sm,
@@ -84,7 +84,7 @@ export const LiveTVScreen = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>(
     strings.liveTV.allCategories,
   );
-  const [isCategoryMenuVisible, setIsCategoryMenuVisible] = useState(true);
+  const [isCategoryMenuVisible, setIsCategoryMenuVisible] = useState(false);
   const [menuFocusVersion, setMenuFocusVersion] = useState(0);
   const [programmeAlert, setProgrammeAlert] = useState<
     'future' | 'playbackUnavailable' | null
@@ -162,6 +162,11 @@ export const LiveTVScreen = () => {
     setTimeout(() => categoryFilterFocusGuideRef.current?.requestTVFocus(), 50);
   }, []);
 
+  const dismissCategoryMenu = useCallback(() => {
+    setIsCategoryMenuVisible(false);
+    setTimeout(() => epgRef.current?.focusOnEPG(true), 100);
+  }, []);
+
   const dismissFutureProgrammeAlert = useCallback(() => {
     setProgrammeAlert(null);
     epgRef.current?.focusOnEPG(true);
@@ -210,7 +215,11 @@ export const LiveTVScreen = () => {
   }, [selectedCategory, showFreeLiveOnly]);
 
   useEffect(() => {
-    I18nManager.setTimezone(EPG_TIMEZONE);
+    try {
+      I18nManager.setTimezone?.(EPG_TIMEZONE);
+    } catch {
+      // Ignore if setTimezone is not supported
+    }
   }, []);
 
   useEffect(() => {
@@ -335,6 +344,15 @@ export const LiveTVScreen = () => {
     return () => clearInterval(interval);
   }, []);
 
+  useEffect(() => {
+    if (isEPGReady && !isCategoryMenuVisible && !isMenuExpanded) {
+      const timer = setTimeout(() => {
+        epgRef.current?.focusOnEPG(true);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isEPGReady, isCategoryMenuVisible, isMenuExpanded]);
+
   return (
     <ImageBackground
       source={require('../../../assets/background.png')}
@@ -343,8 +361,12 @@ export const LiveTVScreen = () => {
         key={`live-tv-menu-${menuFocusVersion}`}
         activeRoute={Routes.LiveTV}
         isExpanded={isMenuExpanded}
+        preferActiveFocus={isMenuExpanded}
         onMenuFocus={() => setIsMenuExpanded(true)}
-        onMenuBlur={() => setIsMenuExpanded(false)}
+        onMenuBlur={() => {
+          setIsMenuExpanded(false);
+          epgRef.current?.focusOnEPG(true);
+        }}
       />
       <View style={styles.content} testID="live-tv-screen">
         <CommonHeader
@@ -352,7 +374,6 @@ export const LiveTVScreen = () => {
           logo={require('../../../assets/vega.png')}
           filterLabel={strings.liveTV.filters}
           filterFocusGuideRef={categoryFilterFocusGuideRef}
-          filterHasTVPreferredFocus
           onFilterPress={() => setIsCategoryMenuVisible((visible) => !visible)}
         />
         <ProgramDetails program={focusedProgram} now={now} />
@@ -361,27 +382,32 @@ export const LiveTVScreen = () => {
             ref={epgRef}
             style={styles.epg}
             onTileFocus={(event) => {
-              const program = event.payload.program.extras?.sourceProgram;
+              const program =
+                event?.payload?.program?.extras?.sourceProgram;
               if (program) {
                 handleProgramFocus(program);
               }
             }}
             onTilePress={(event) => {
-              const program = event.payload.program.extras?.sourceProgram;
+              const program =
+                event?.payload?.program?.extras?.sourceProgram;
               if (program) {
                 handleProgramPress(
                   program,
-                  event.payload.program.extras?.streamUrl,
-                  event.payload.program.extras?.streamType,
-                  event.payload.program.extras?.isVideoOnly,
-                  event.payload.program.extras?.drm,
+                  event.payload.program.extras.streamUrl,
+                  event.payload.program.extras.streamType,
+                  event.payload.program.extras.isVideoOnly,
+                  event.payload.program.extras.drm,
                 );
               }
             }}
             onMenu={handleEPGMenu}
             onFocusEscapeUp={handleEPGFocusEscapeUp}
             onScroll={(event) => {
-              if (event.row >= nextChannelOffsetRef.current - 2) {
+              if (
+                typeof event?.row === 'number' &&
+                event.row >= nextChannelOffsetRef.current - 2
+              ) {
                 loadNextChannelPage();
               }
             }}
@@ -437,7 +463,7 @@ export const LiveTVScreen = () => {
         transparent
         visible={isCategoryMenuVisible}
         animationType="none"
-        onRequestClose={() => setIsCategoryMenuVisible(false)}>
+        onRequestClose={dismissCategoryMenu}>
         <View style={styles.categoryMenuBackdrop}>
           <View style={styles.categoryMenu}>
             <TouchableOpacity
@@ -447,7 +473,7 @@ export const LiveTVScreen = () => {
               ]}
               onPress={() => {
                 setShowFreeLiveOnly(false);
-                setIsCategoryMenuVisible(false);
+                dismissCategoryMenu();
               }}
               hasTVPreferredFocus={!showFreeLiveOnly}
               accessibilityRole="button"
@@ -463,7 +489,7 @@ export const LiveTVScreen = () => {
               ]}
               onPress={() => {
                 setShowFreeLiveOnly(true);
-                setIsCategoryMenuVisible(false);
+                dismissCategoryMenu();
               }}
               hasTVPreferredFocus={showFreeLiveOnly}
               accessibilityRole="button"
@@ -483,7 +509,7 @@ export const LiveTVScreen = () => {
                 ]}
                 onPress={() => {
                   setSelectedCategory(category);
-                  setIsCategoryMenuVisible(false);
+                  dismissCategoryMenu();
                 }}
                 hasTVPreferredFocus={selectedCategory === category}
                 accessibilityRole="button"

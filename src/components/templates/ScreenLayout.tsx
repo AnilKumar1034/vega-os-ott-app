@@ -3,7 +3,7 @@ import {ImageBackground, Text, View} from 'react-native';
 import {RouteName} from '../../constants/routes';
 import {CommonHeader} from '../molecules/CommonHeader';
 import {SideMenu} from '../molecules/SideMenu';
-import {AppDetails} from '../../constants/appDetails';
+import {strings} from '../../constants/strings';
 import {styles} from './ScreenLayout.styles';
 
 interface ScreenLayoutProps {
@@ -54,7 +54,7 @@ export const ScreenLayout = ({
       />
       <View style={styles.content}>
         <CommonHeader
-          title={AppDetails.name}
+          title={strings.appName}
           logo={require('../../assets/vega.png')}
           testID="vega-logo"
           searchValue={searchQuery}

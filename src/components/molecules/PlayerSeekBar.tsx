@@ -251,7 +251,7 @@ export const ThumbnailAboveThumb = ({
 export const ThumbnailBelowThumb = () => (
   <View style={styles.belowLabel} testID="below-thumb-thumbnail">
     <Text style={styles.belowLabelText} testID="thumbnail-below-label-text">
-      {strings.playerControls.thumbnailPreview || 'Preview'}
+      {strings.playerControls.thumbnailPreview}
     </Text>
   </View>
 );
@@ -286,7 +286,7 @@ const LiveThumbIcon = () => (
 
 const BelowMarker = (
   <View style={styles.belowMarker}>
-    <Text style={styles.belowMarkerText}>Ad</Text>
+    <Text style={styles.belowMarkerText}>{strings.playerControls.adMarker}</Text>
   </View>
 );
 
@@ -900,7 +900,9 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
               onTogglePlayPause?.();
             }}
             accessibilityRole="button"
-            accessibilityLabel={isPaused ? 'Play' : 'Pause'}
+            accessibilityLabel={
+              isPaused ? strings.actions.play : strings.actions.pause
+            }
             testID="player-play-pause-toggle">
             <Text style={styles.playPauseIconText}>
               {isPaused
@@ -982,17 +984,10 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                     onBlur={() => setFocusedButton(null)}
                     onPress={onNextEpisodePress}
                     accessibilityRole="button"
-                    accessibilityLabel={
-                      strings.nextEpisode?.nextEpisodeButton ||
-                      strings.playerControls?.nextEpisode ||
-                      'Next Episode'
-                    }
+                    accessibilityLabel={strings.nextEpisode.nextEpisodeButton}
                     testID="player-next-episode-button">
                     <Text style={styles.quickActionButtonText}>
-                      ⏭{' '}
-                      {strings.nextEpisode?.nextEpisodeButton ||
-                        strings.playerControls?.nextEpisode ||
-                        'Next Episode'}
+                      ⏭ {strings.nextEpisode.nextEpisodeButton}
                     </Text>
                   </TouchableOpacity>
                 )}
@@ -1004,7 +999,9 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
         {isLive ? (
           <View style={styles.centerExtraControls}>
             <View style={styles.liveBroadcastTag} testID="player-live-tag">
-              <Text style={styles.liveBroadcastText}>LIVE STREAM</Text>
+              <Text style={styles.liveBroadcastText}>
+                {strings.playerControls.liveStream}
+              </Text>
             </View>
           </View>
         ) : (
@@ -1025,7 +1022,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                   onBlur={() => setFocusedButton(null)}
                   onPress={handleOnRemoveMarker}
                   accessibilityRole="button"
-                  accessibilityLabel="Remove marker"
+                  accessibilityLabel={strings.accessibility.removeMarker}
                   testID="player-remove-marker-button">
                   <Text style={styles.actionButtonText}>
                     {strings.playerControls.removeMarker}
@@ -1044,7 +1041,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                   onBlur={() => setFocusedButton(null)}
                   onPress={handleOnAddMarker}
                   accessibilityRole="button"
-                  accessibilityLabel="Add marker"
+                  accessibilityLabel={strings.accessibility.addMarker}
                   testID="player-add-marker-button">
                   <Text style={styles.actionButtonText}>
                     {strings.playerControls.addMarker}
@@ -1056,8 +1053,8 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
             {type === 'limits' && (
               <View style={styles.limitsBadge} testID="player-limits-badge">
                 <Text style={styles.limitsBadgeText}>
-                  Limits: {formatTime(lowerSeekLimit)} –{' '}
-                  {formatTime(upperSeekLimit)}
+                  {strings.playerControls.limitsPrefix}:{' '}
+                  {formatTime(lowerSeekLimit)} – {formatTime(upperSeekLimit)}
                 </Text>
               </View>
             )}
@@ -1088,7 +1085,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                   onBlur={() => setFocusedButton(null)}
                   onPress={handleRewind}
                   accessibilityRole="button"
-                  accessibilityLabel="Rewind 10 seconds"
+                  accessibilityLabel={strings.accessibility.rewind10Seconds}
                   testID="player-rewind-button">
                   <Text style={styles.skipButtonText}>
                     {strings.playerControls.rewindButton}
@@ -1107,7 +1104,9 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                   onBlur={() => setFocusedButton(null)}
                   onPress={handleFastForward}
                   accessibilityRole="button"
-                  accessibilityLabel="Fast forward 10 seconds"
+                  accessibilityLabel={
+                    strings.accessibility.fastForward10Seconds
+                  }
                   testID="player-fast-forward-button">
                   <Text style={styles.skipButtonText}>
                     {strings.playerControls.fastForwardButton}
@@ -1133,10 +1132,10 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                   testID="player-custom-disabling-badge">
                   <Text style={styles.customDisablingBadgeText}>
                     {!isDisablingEnabled
-                      ? 'Disabling: OFF (All Controls Active)'
+                      ? strings.playerControls.disablingOffAllActive
                       : isSeekbarFocused
-                      ? 'Focused: All Controls Active'
-                      : 'Unfocused: D-Pad & Select Disabled (FF/REW Active)'}
+                      ? strings.playerControls.focusedAllActive
+                      : strings.playerControls.unfocusedDpadSelectDisabled}
                   </Text>
                 </View>
 
@@ -1157,12 +1156,14 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                   onBlur={() => setFocusedButton(null)}
                   onPress={handleToggleMasterDisabling}
                   accessibilityRole="button"
-                  accessibilityLabel={`Disabling is ${
-                    isDisablingEnabled ? 'Enabled' : 'Disabled'
-                  }. Click to toggle.`}
+                  accessibilityLabel={strings.accessibility.disablingStatus(
+                    isDisablingEnabled,
+                  )}
                   testID="custom-disabling-master-toggle">
                   <Text style={styles.toggleButtonText}>
-                    {isDisablingEnabled ? '⊘ Disabling: ON' : '○ Disabling: OFF'}
+                    {isDisablingEnabled
+                      ? strings.playerControls.disablingOn
+                      : strings.playerControls.disablingOff}
                   </Text>
                 </TouchableOpacity>
 
@@ -1186,10 +1187,14 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                     onBlur={() => setFocusedButton(null)}
                     onPress={() => handleToggleAction('dpad')}
                     accessibilityRole="button"
-                    accessibilityLabel="Toggle D-Pad seek disabling"
+                    accessibilityLabel={
+                      strings.accessibility.toggleDpadDisabling
+                    }
                     testID="toggle-action-dpad">
                     <Text style={styles.actionToggleText}>
-                      {disabledActions.dpad ? 'D-Pad: ✕' : 'D-Pad: ✓'}
+                      {disabledActions.dpad
+                        ? strings.playerControls.dpadDisabled
+                        : strings.playerControls.dpadEnabled}
                     </Text>
                   </TouchableOpacity>
 
@@ -1209,10 +1214,14 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                     onBlur={() => setFocusedButton(null)}
                     onPress={() => handleToggleAction('skip')}
                     accessibilityRole="button"
-                    accessibilityLabel="Toggle Skip buttons disabling"
+                    accessibilityLabel={
+                      strings.accessibility.toggleSkipDisabling
+                    }
                     testID="toggle-action-skip">
                     <Text style={styles.actionToggleText}>
-                      {disabledActions.skip ? 'Skip: ✕' : 'Skip: ✓'}
+                      {disabledActions.skip
+                        ? strings.playerControls.skipDisabled
+                        : strings.playerControls.skipEnabled}
                     </Text>
                   </TouchableOpacity>
 
@@ -1232,12 +1241,14 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                     onBlur={() => setFocusedButton(null)}
                     onPress={() => handleToggleAction('playPause')}
                     accessibilityRole="button"
-                    accessibilityLabel="Toggle Play/Pause disabling"
+                    accessibilityLabel={
+                      strings.accessibility.togglePlayPauseDisabling
+                    }
                     testID="toggle-action-playpause">
                     <Text style={styles.actionToggleText}>
                       {disabledActions.playPause
-                        ? 'Play/Pause: ✕'
-                        : 'Play/Pause: ✓'}
+                        ? strings.playerControls.playPauseDisabled
+                        : strings.playerControls.playPauseEnabled}
                     </Text>
                   </TouchableOpacity>
 
@@ -1257,10 +1268,14 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                     onBlur={() => setFocusedButton(null)}
                     onPress={() => handleToggleAction('select')}
                     accessibilityRole="button"
-                    accessibilityLabel="Toggle Select disabling"
+                    accessibilityLabel={
+                      strings.accessibility.toggleSelectDisabling
+                    }
                     testID="toggle-action-select">
                     <Text style={styles.actionToggleText}>
-                      {disabledActions.select ? 'Select: ✕' : 'Select: ✓'}
+                      {disabledActions.select
+                        ? strings.playerControls.selectDisabled
+                        : strings.playerControls.selectEnabled}
                     </Text>
                   </TouchableOpacity>
 
@@ -1280,10 +1295,14 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                     onBlur={() => setFocusedButton(null)}
                     onPress={handleToggleFocus}
                     accessibilityRole="button"
-                    accessibilityLabel="Toggle Seekbar focus simulation"
+                    accessibilityLabel={
+                      strings.accessibility.toggleSeekbarFocusSimulation
+                    }
                     testID="toggle-focus-state">
                     <Text style={styles.actionToggleText}>
-                      {isSeekbarFocused ? 'Focus: Sim' : 'Unfocused: Sim'}
+                      {isSeekbarFocused
+                        ? strings.playerControls.focusSim
+                        : strings.playerControls.unfocusedSim}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1315,7 +1334,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                       });
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel="Focus-based Auto Disabling"
+                    accessibilityLabel={strings.accessibility.presetAuto}
                     testID="disabling-preset-auto">
                     <Text
                       style={[
@@ -1323,7 +1342,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                         disablingPreset === 'focus-auto' &&
                           styles.disablingPresetButtonTextActive,
                       ]}>
-                      Auto
+                      {strings.playerControls.presetAuto}
                     </Text>
                   </TouchableOpacity>
 
@@ -1351,7 +1370,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                       });
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel="Block D-Pad Seeking"
+                    accessibilityLabel={strings.accessibility.presetBlockDpad}
                     testID="disabling-preset-block-dpad">
                     <Text
                       style={[
@@ -1359,7 +1378,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                         disablingPreset === 'block-dpad' &&
                           styles.disablingPresetButtonTextActive,
                       ]}>
-                      Block D-Pad
+                      {strings.playerControls.presetBlockDpad}
                     </Text>
                   </TouchableOpacity>
 
@@ -1387,7 +1406,9 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                       });
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel="Block Play/Pause"
+                    accessibilityLabel={
+                      strings.accessibility.presetBlockPlayPause
+                    }
                     testID="disabling-preset-block-playpause">
                     <Text
                       style={[
@@ -1395,7 +1416,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                         disablingPreset === 'block-play-pause' &&
                           styles.disablingPresetButtonTextActive,
                       ]}>
-                      Block Play/Pause
+                      {strings.playerControls.presetBlockPlayPause}
                     </Text>
                   </TouchableOpacity>
 
@@ -1423,7 +1444,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                       });
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel="Block Skip Buttons"
+                    accessibilityLabel={strings.accessibility.presetBlockSkip}
                     testID="disabling-preset-block-skip">
                     <Text
                       style={[
@@ -1431,7 +1452,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                         disablingPreset === 'block-skip' &&
                           styles.disablingPresetButtonTextActive,
                       ]}>
-                      Block Skip
+                      {strings.playerControls.presetBlockSkip}
                     </Text>
                   </TouchableOpacity>
 
@@ -1459,7 +1480,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                       });
                     }}
                     accessibilityRole="button"
-                    accessibilityLabel="All Enabled"
+                    accessibilityLabel={strings.accessibility.presetAllEnabled}
                     testID="disabling-preset-all">
                     <Text
                       style={[
@@ -1467,7 +1488,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                         disablingPreset === 'all-enabled' &&
                           styles.disablingPresetButtonTextActive,
                       ]}>
-                      All Enabled
+                      {strings.playerControls.presetAllEnabled}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1489,7 +1510,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                     onBlur={() => setFocusedButton(null)}
                     onPress={handleRewind}
                     accessibilityRole="button"
-                    accessibilityLabel="Rewind 10 seconds"
+                    accessibilityLabel={strings.accessibility.rewind10Seconds}
                     testID="custom-disabling-rewind-button">
                     <Text style={styles.skipButtonText}>
                       {strings.playerControls.rewindButton}
@@ -1509,7 +1530,9 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                     onBlur={() => setFocusedButton(null)}
                     onPress={handleFastForward}
                     accessibilityRole="button"
-                    accessibilityLabel="Fast forward 10 seconds"
+                    accessibilityLabel={
+                      strings.accessibility.fastForward10Seconds
+                    }
                     testID="custom-disabling-fast-forward-button">
                     <Text style={styles.skipButtonText}>
                       {strings.playerControls.fastForwardButton}
@@ -1521,7 +1544,9 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
 
             {/* Type Selector Pills */}
             <View style={styles.typeSelectorRow} testID="seekbar-type-selector">
-              <Text style={styles.typeSelectorLabel}>Type:</Text>
+              <Text style={styles.typeSelectorLabel}>
+                {strings.playerControls.typeLabel}
+              </Text>
               <TouchableOpacity
                 style={[
                   styles.typePill,
@@ -1538,7 +1563,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                   onTypeChange?.('markers');
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Switch to Markers Seekbar"
+                accessibilityLabel={strings.accessibility.switchMarkers}
                 testID="type-pill-markers">
                 <Text
                   style={[
@@ -1566,7 +1591,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                   onTypeChange?.('break-markers');
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Switch to Break Markers & Segments Seekbar"
+                accessibilityLabel={strings.accessibility.switchBreakMarkers}
                 testID="type-pill-break-markers">
                 <Text
                   style={[
@@ -1593,7 +1618,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                   onTypeChange?.('limits');
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Switch to Seeking Limits Seekbar"
+                accessibilityLabel={strings.accessibility.switchLimits}
                 testID="type-pill-limits">
                 <Text
                   style={[
@@ -1620,7 +1645,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                   onTypeChange?.('long-press');
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Switch to Long Press Seekbar"
+                accessibilityLabel={strings.accessibility.switchLongPress}
                 testID="type-pill-long-press">
                 <Text
                   style={[
@@ -1648,7 +1673,9 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                   onTypeChange?.('fast-forward-rewind');
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Switch to Fast Forward and Rewind Seekbar"
+                accessibilityLabel={
+                  strings.accessibility.switchFastForwardRewind
+                }
                 testID="type-pill-fast-forward-rewind">
                 <Text
                   style={[
@@ -1676,7 +1703,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                   onTypeChange?.('thumbnail-images');
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Switch to Thumbnail Images Seekbar"
+                accessibilityLabel={strings.accessibility.switchThumbnails}
                 testID="type-pill-thumbnail-images">
                 <Text
                   style={[
@@ -1704,14 +1731,16 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                   onTypeChange?.('custom-disabling');
                 }}
                 accessibilityRole="button"
-                accessibilityLabel="Switch to Custom Disabling Configuration Seekbar"
+                accessibilityLabel={
+                  strings.accessibility.switchCustomDisabling
+                }
                 testID="type-pill-custom-disabling">
                 <Text
                   style={[
                     styles.typePillText,
                     type === 'custom-disabling' && styles.typePillTextActive,
                   ]}>
-                  {strings.playerControls.customDisabling || '⊘ Disabling'}
+                  {strings.playerControls.customDisabling}
                 </Text>
               </TouchableOpacity>
             </View>

@@ -106,8 +106,8 @@ export const VideoPlayerScreen = () => {
   const isLive = Boolean(route.params?.isLive);
 
   const screenDimensions = Dimensions.get('window');
-  const screenWidth = screenDimensions.width || 1920;
-  const screenHeight = screenDimensions.height || 1080;
+  const screenWidth = screenDimensions.width || 960;
+  const screenHeight = screenDimensions.height || 540;
 
   const deeplinkMovie = findContentById(route.params?.movieId);
   const movie = useMemo<HomeContentItem>(
@@ -660,13 +660,13 @@ export const VideoPlayerScreen = () => {
   const handleSelectAudioTrack = useCallback(
     async (trackId: string) => {
       setSelectedAudioTrackId(trackId);
+      setIsAudioTracksModalOpen(false);
+      resetHideTimer();
       const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
       await saveAudioPreference(targetProfileId, trackId);
 
       const targetTrack = availableAudioTracks.find((t) => t.id === trackId);
       if (!targetTrack) {
-        setIsAudioTracksModalOpen(false);
-        resetHideTimer();
         return;
       }
 
@@ -761,6 +761,8 @@ export const VideoPlayerScreen = () => {
   const handleSelectQuality = useCallback(
     async (qualityId: string) => {
       setSelectedQualityId(qualityId);
+      setIsVideoQualityModalOpen(false);
+      resetHideTimer();
       const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
       await saveQualityPreference(targetProfileId, qualityId);
 
@@ -768,8 +770,6 @@ export const VideoPlayerScreen = () => {
         (q) => q.id === qualityId,
       );
       if (!targetQuality) {
-        setIsVideoQualityModalOpen(false);
-        resetHideTimer();
         return;
       }
 
@@ -784,8 +784,14 @@ export const VideoPlayerScreen = () => {
                 enabled: true,
                 restrictions: {
                   minHeight: 0,
-                  maxHeight: Math.min(screenHeight, 1080),
-                  maxWidth: Math.min(screenWidth, 1920),
+                  maxHeight: Math.min(
+                    screenHeight * (screenDimensions.scale || 2),
+                    1080,
+                  ),
+                  maxWidth: Math.min(
+                    screenWidth * (screenDimensions.scale || 2),
+                    1920,
+                  ),
                 },
               },
             });
@@ -954,8 +960,14 @@ export const VideoPlayerScreen = () => {
         // The public Sintel Widevine asset advertises a 4K rendition. The
         // Vega MSE source-buffer path on this device rejects that rendition,
         // so keep Shaka on the broadly supported FHD H.264 profiles.
-        abrMaxWidth: Math.min(screenWidth, 1920),
-        abrMaxHeight: Math.min(screenHeight, 1080),
+        abrMaxWidth: Math.min(
+          screenWidth * (screenDimensions.scale || 2),
+          1920,
+        ),
+        abrMaxHeight: Math.min(
+          screenHeight * (screenDimensions.scale || 2),
+          1080,
+        ),
       };
       // Shaka installs several browser/media polyfills at module load time.
       // Keep that work off the app bootstrap path: this screen is registered by
@@ -1929,15 +1941,13 @@ export const VideoPlayerScreen = () => {
           styles.videoSurface,
           {width: screenWidth, height: screenHeight},
         ])}>
-        {isPlayerInitialized && (
-          <KeplerVideoViewComponent
-            videoPlayer={player}
-            showControls={true}
-            showCaptions={true}
-            scalingmode="fit"
-            testID="w3c-video-surface"
-          />
-        )}
+        <KeplerVideoViewComponent
+          videoPlayer={player}
+          showControls={useShakaPlayer ? true : isPlayerInitialized}
+          showCaptions={true}
+          scalingmode="fit"
+          testID="w3c-video-surface"
+        />
       </View>
 
       {/* Active Subtitle Cue Overlay at zIndex: 8 */}

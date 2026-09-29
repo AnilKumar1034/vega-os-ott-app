@@ -160,6 +160,8 @@ export const parentalControlsService = {
           await saveLocalSettings(uid, decoded);
           return decoded;
         }
+      } else if (response && response.status === 404) {
+        return null;
       } else if (response && response.status === 403) {
         // 2. If 403, try reading from user document: users/{uid}
         const userDocResponse = await authenticatedFirestoreFetch(

@@ -1,5 +1,4 @@
-import 'react-native';
-import {render, waitFor} from '@testing-library/react-native';
+import {act, render, waitFor} from '@testing-library/react-native';
 import * as React from 'react';
 import {MoviesScreen} from '../src/screens/MoviesScreen';
 import * as watchProgressService from '../src/services/watchProgressService';
@@ -88,6 +87,7 @@ describe('MoviesScreen (Real Continue Watching integration)', () => {
 
   it('1. Loads and renders real profile continue watching row when data exists', async () => {
     const screen = render(<MoviesScreen />);
+    await act(async () => {});
 
     await waitFor(() => {
       expect(mockFetchContinueWatch).toHaveBeenCalledWith('profile-anil');

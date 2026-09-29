@@ -110,6 +110,8 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.giant,
     paddingVertical: spacing.xxxl,
     backgroundColor: colors.white,
+    borderWidth: spacing.borderThin,
+    borderColor: colors.transparent,
   },
   listButton: {
     minWidth: spacing.heroActionAltMinWidth,
@@ -119,11 +121,12 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.giant,
     paddingVertical: spacing.xxxl,
     backgroundColor: colors.gold,
+    borderWidth: spacing.borderThin,
+    borderColor: colors.transparent,
   },
   focusedAction: {
-    borderWidth: spacing.borderUltra,
+    borderWidth: spacing.borderThin,
     borderColor: colors.focusRing,
-    transform: [{scale: 1.05}],
   },
   playButtonText: {
     color: colors.actionPrimaryText,
@@ -163,12 +166,13 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginHorizontal: spacing.sm,
+    borderWidth: spacing.borderHeavy,
+    borderColor: colors.transparent,
   },
   focusedNavArrow: {
     backgroundColor: colors.heroAccent,
     borderWidth: spacing.borderHeavy,
     borderColor: colors.focusRing,
-    transform: [{scale: 1.15}],
   },
   navArrowText: {
     color: colors.textPrimary,
@@ -186,6 +190,8 @@ export const styles = StyleSheet.create({
     borderRadius: spacing.radiusPill,
     backgroundColor: colors.controlFocusedBackground,
     marginHorizontal: spacing.sm,
+    borderWidth: spacing.borderThick,
+    borderColor: colors.transparent,
   },
   activeDot: {
     width: spacing.colossal,
@@ -195,7 +201,6 @@ export const styles = StyleSheet.create({
   focusedDot: {
     borderWidth: spacing.borderThick,
     borderColor: colors.focusRing,
-    transform: [{scale: 1.3}],
     backgroundColor: colors.textPrimary,
   },
 });

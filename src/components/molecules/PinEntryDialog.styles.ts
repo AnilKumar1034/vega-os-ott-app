@@ -12,7 +12,7 @@ export const styles = StyleSheet.create({
     zIndex: 1100,
   },
   dialog: {
-    width: 580,
+    width: 290,
     backgroundColor: colors.dialogBackground,
     borderRadius: borderRadius.dialog,
     borderWidth: spacing.borderThick,
@@ -26,9 +26,9 @@ export const styles = StyleSheet.create({
     elevation: spacing.xlarge,
   },
   lockIconCircle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: colors.cardBorder,
     borderWidth: spacing.borderThick,
     borderColor: colors.heroAccent,
@@ -37,7 +37,7 @@ export const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   lockIconText: {
-    fontSize: 28,
+    fontSize: 14,
   },
   title: {
     color: colors.textPrimary,
@@ -70,9 +70,9 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dot: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     borderWidth: 2,
     borderColor: colors.cardBorder,
     backgroundColor: colors.transparent,
@@ -99,7 +99,7 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
   },
   keypadContainer: {
-    width: 320,
+    width: 160,
     marginBottom: spacing.md,
   },
   keypadRow: {
@@ -108,8 +108,8 @@ export const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   keyButton: {
-    width: 90,
-    height: 52,
+    width: 45,
+    height: 26,
     borderRadius: borderRadius.lg,
     backgroundColor: colors.cardBorder,
     borderWidth: 2,

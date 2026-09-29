@@ -299,6 +299,44 @@ export const MyListScreen = () => {
                     {strings.myList.exploreButton}
                   </Text>
                 </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.secondaryActionButton,
+                    focusedAction === 'search' && styles.actionButtonFocused,
+                  ]}
+                  onFocus={() => {
+                    collapseMenu();
+                    setFocusedAction('search');
+                  }}
+                  onBlur={() => setFocusedAction(null)}
+                  onPress={() => {
+                    setIsSearchFocused(true);
+                  }}
+                  activeOpacity={1}
+                  accessibilityRole="button"
+                  accessibilityLabel="Search"
+                  testID="my-list-search-button">
+                  <Text style={styles.secondaryActionButtonText}>Search</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.secondaryActionButton,
+                    focusedAction === 'home' && styles.actionButtonFocused,
+                  ]}
+                  onFocus={() => {
+                    collapseMenu();
+                    setFocusedAction('home');
+                  }}
+                  onBlur={() => setFocusedAction(null)}
+                  onPress={() => navigation.navigate(Routes.Home)}
+                  activeOpacity={1}
+                  accessibilityRole="button"
+                  accessibilityLabel="Home"
+                  testID="my-list-home-button">
+                  <Text style={styles.secondaryActionButtonText}>Home</Text>
+                </TouchableOpacity>
               </>
             )}
           </View>

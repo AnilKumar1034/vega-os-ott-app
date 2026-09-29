@@ -105,7 +105,7 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
           <View style={styles.headerRow}>
             <View style={styles.badge}>
               <Text style={styles.badgeText}>
-                {strings.nextEpisode?.nextEpisodeBadge || 'NEXT EPISODE'}
+                {strings.nextEpisode.nextEpisodeBadge}
               </Text>
             </View>
             {nextEpisode.seriesTitle && (
@@ -201,20 +201,17 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
                 </View>
                 <View style={styles.countdownTextContainer}>
                   <Text style={styles.countdownText}>
-                    {strings.nextEpisode?.playingInSeconds(countdownSeconds) ||
-                      `Playing next episode in ${countdownSeconds}s`}
+                    {strings.nextEpisode.playingInSeconds(countdownSeconds)}
                   </Text>
                   <Text style={styles.countdownSubtext}>
-                    {strings.nextEpisode?.playingNext ||
-                      'Playing next episode...'}
+                    {strings.nextEpisode.playingNext}
                   </Text>
                 </View>
               </>
             ) : (
               <View style={styles.countdownTextContainer}>
                 <Text style={styles.disabledAutoplayText}>
-                  {strings.nextEpisode?.autoplayDisabled ||
-                    'Autoplay is turned off in settings'}
+                  {strings.nextEpisode.autoplayDisabled}
                 </Text>
               </View>
             )}
@@ -240,11 +237,11 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
                 activeOpacity={1}
                 accessibilityRole="button"
                 accessibilityLabel={
-                  strings.accessibility?.nextEpisodeCancelButton || 'Cancel'
+                  strings.accessibility.nextEpisodeCancelButton
                 }
                 testID="next-episode-cancel-btn">
                 <Text style={styles.cancelButtonText}>
-                  {strings.nextEpisode?.cancel || 'Cancel'}
+                  {strings.nextEpisode.cancel}
                 </Text>
               </TouchableOpacity>
 
@@ -268,14 +265,12 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
                 hasTVPreferredFocus
                 activeOpacity={1}
                 accessibilityRole="button"
-                accessibilityLabel={
-                  strings.accessibility?.nextEpisodePlayButton(
-                    nextEpisode.title,
-                  ) || `Play next episode: ${nextEpisode.title}`
-                }
+                accessibilityLabel={strings.accessibility.nextEpisodePlayButton(
+                  nextEpisode.title,
+                )}
                 testID="next-episode-play-now-btn">
                 <Text style={styles.playButtonText}>
-                  ▶ {strings.nextEpisode?.playNow || 'Play Now'}
+                  ▶ {strings.nextEpisode.playNow}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -292,18 +287,17 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
                 <Text
                   style={styles.episodesSectionTitle}
                   testID="next-episodes-section-title">
-                  {strings.nextEpisode?.nextEpisodesListTitle ||
-                    'Next Episodes'}
+                  {strings.nextEpisode.nextEpisodesListTitle}
                 </Text>
                 <View style={styles.episodesCountBadge}>
                   <Text style={styles.episodesCountText}>
                     {activeTab === 'all'
-                      ? strings.nextEpisode?.allEpisodesCount(
+                      ? strings.nextEpisode.allEpisodesCount(
                           fullEpisodesList.length,
-                        ) || `${fullEpisodesList.length} Episodes`
-                      : strings.nextEpisode?.episodesCount(
+                        )
+                      : strings.nextEpisode.episodesCount(
                           upcomingEpisodesList.length,
-                        ) || `${upcomingEpisodesList.length} Next Episodes`}
+                        )}
                   </Text>
                 </View>
               </View>
@@ -337,7 +331,7 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
                         styles.tabButtonText,
                         activeTab === 'upcoming' && styles.tabButtonTextActive,
                       ]}>
-                      {strings.nextEpisode?.upcomingEpisodes || 'Upcoming'} (
+                      {strings.nextEpisode.upcomingEpisodes} (
                       {upcomingEpisodesList.length})
                     </Text>
                   </TouchableOpacity>
@@ -368,7 +362,7 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
                         styles.tabButtonText,
                         activeTab === 'all' && styles.tabButtonTextActive,
                       ]}>
-                      {strings.nextEpisode?.allEpisodes || 'All Episodes'} (
+                      {strings.nextEpisode.allEpisodes} (
                       {fullEpisodesList.length})
                     </Text>
                   </TouchableOpacity>
@@ -429,13 +423,10 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
                         onPress={() => handleEpisodeSelect(episode)}
                         activeOpacity={1}
                         accessibilityRole="button"
-                        accessibilityLabel={
-                          strings.accessibility?.selectEpisodeCard(
-                            episode.title,
-                            episode.episodeNumber,
-                          ) ||
-                          `Play Episode ${episode.episodeNumber}: ${episode.title}`
-                        }
+                        accessibilityLabel={strings.accessibility.selectEpisodeCard(
+                          episode.title,
+                          episode.episodeNumber,
+                        )}
                         testID={`next-episode-card-${episode.id}`}>
                         {/* Thumbnail & Badges */}
                         <View style={styles.episodeCardThumbnailContainer}>
@@ -465,20 +456,15 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
                           {isCurrentPlaying ? (
                             <View style={styles.episodeCardBadgeWatched}>
                               <Text style={styles.episodeCardBadgeWatchedText}>
-                                {strings.nextEpisode?.watchedEpisode ||
-                                  'Watched'}
+                                {strings.nextEpisode.watchedEpisode}
                               </Text>
                             </View>
                           ) : isImmediateNext ? (
                             <View style={styles.episodeCardBadgeTopRight}>
                               <Text style={styles.episodeCardBadgeTopRightText}>
                                 {autoplayEnabled
-                                  ? `${
-                                      strings.nextEpisode?.upNextCardBadge ||
-                                      'UP NEXT'
-                                    } (${countdownSeconds}s)`
-                                  : strings.nextEpisode?.upNextCardBadge ||
-                                    'UP NEXT'}
+                                  ? `${strings.nextEpisode.upNextCardBadge} (${countdownSeconds}s)`
+                                  : strings.nextEpisode.upNextCardBadge}
                               </Text>
                             </View>
                           ) : null}
@@ -547,9 +533,7 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
 
                           {isCardFocused && (
                             <Text style={styles.episodeCardFocusedActionHint}>
-                              ▶{' '}
-                              {strings.nextEpisode?.selectEpisodeHint ||
-                                'Press OK to Play'}
+                              ▶ {strings.nextEpisode.selectEpisodeHint}
                             </Text>
                           )}
                         </View>
@@ -558,8 +542,7 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
                   })
                 ) : (
                   <Text style={styles.emptyEpisodesText}>
-                    {strings.nextEpisode?.finalEpisodeOfSeason ||
-                      'No further episodes available in this season.'}
+                    {strings.nextEpisode.noFurtherEpisodes}
                   </Text>
                 )}
               </ScrollView>

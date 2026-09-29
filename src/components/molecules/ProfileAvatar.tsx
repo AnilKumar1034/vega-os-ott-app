@@ -4,6 +4,7 @@ import {
   getAvatarMonogram,
   getProfileAvatar,
 } from '../../constants/profileOptions';
+import {strings} from '../../constants/strings';
 import {styles} from './ProfileAvatar.styles';
 
 interface ProfileAvatarProps {
@@ -29,7 +30,7 @@ export const ProfileAvatar = ({
         isLarge && styles.avatarLarge,
         {backgroundColor: option.background, borderColor: option.accent},
       ]}
-      accessibilityLabel={`${option.label} avatar`}>
+      accessibilityLabel={strings.accessibility.profileAvatar(option.label)}>
       <View
         style={[
           styles.accent,

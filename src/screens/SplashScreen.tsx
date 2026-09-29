@@ -18,14 +18,17 @@ export const SplashScreen = ({navigation}: SplashScreenProps) => {
   const {user, loading: authLoading} = useAuth();
   const {activeProfile, isLoadingProfiles} = useProfile();
   const hasNavigated = useRef(false);
+  const splashTimerDone = useRef(false);
 
   useEffect(() => {
     let isMounted = true;
 
     const timer = setTimeout(() => {
+      splashTimerDone.current = true;
       if (!isMounted || hasNavigated.current) {
         return;
       }
+
 
       // If still resolving auth or profiles, wait for completion in the next effect run
       if (authLoading) {
@@ -59,9 +62,10 @@ export const SplashScreen = ({navigation}: SplashScreenProps) => {
 
   // Handle case where auth/profile loading took longer than SPLASH_DURATION
   useEffect(() => {
-    if (hasNavigated.current || authLoading) {
+    if (!splashTimerDone.current || hasNavigated.current || authLoading) {
       return;
     }
+
 
     // Unauthenticated users can directly browse content on Home
     if (!user) {

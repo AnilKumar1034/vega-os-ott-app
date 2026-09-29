@@ -1,7 +1,10 @@
 import 'react-native';
-import {fireEvent, render, waitFor} from '@testing-library/react-native';
+import {act, fireEvent, render, waitFor} from '@testing-library/react-native';
 import * as React from 'react';
 import {VideoPlayerScreen} from '../src/screens/VideoPlayerScreen';
+
+import * as authContext from '../src/context/authContext';
+import * as profileContext from '../src/profiles/context/profileContext';
 
 const mockInitialize = jest.fn().mockResolvedValue(undefined);
 const mockSetSurfaceHandle = jest.fn();
@@ -17,6 +20,20 @@ jest.mock('@amazon-devices/react-native-w3cmedia', () => {
     autoplay = false;
     src = '';
     currentTime = 0;
+    duration = 3600;
+    captioning = false;
+    audioTracks = {
+      length: 0,
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      emitEvent: jest.fn(),
+    };
+    textTracks = {
+      length: 0,
+      addEventListener: jest.fn(),
+      removeEventListener: jest.fn(),
+      emitEvent: jest.fn(),
+    };
     initialize = mockInitialize;
     setSurfaceHandle = mockSetSurfaceHandle;
     clearSurfaceHandle = mockClearSurfaceHandle;
@@ -50,6 +67,7 @@ let mockRouteParams: any = {
       id: 'test-movie',
       title: 'Test Feature Movie',
       genre: 'Action',
+      videoUrl: 'https://vjs.zencdn.net/v/oceans.mp4',
     },
   },
 };
@@ -71,10 +89,14 @@ jest.mock('../src/shakaplayer/ShakaPlayer', () => ({
 }));
 
 const mockNavigate = jest.fn();
+const mockReplace = jest.fn();
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
   useNavigation: () => ({
     navigate: mockNavigate,
+    replace: mockReplace,
+    canGoBack: () => true,
+    goBack: jest.fn(),
   }),
   useRoute: () => mockRouteParams,
 }));
@@ -82,6 +104,29 @@ jest.mock('@react-navigation/native', () => ({
 describe('VideoPlayerScreen', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockRouteParams = {
+      params: {
+        movie: {
+          id: 'test-movie',
+          title: 'Test Feature Movie',
+          genre: 'Action',
+          videoUrl: 'https://vjs.zencdn.net/v/oceans.mp4',
+        },
+      },
+    };
+    jest.spyOn(authContext, 'useAuth').mockReturnValue({
+      user: {uid: 'test-user'} as any,
+      loading: false,
+    } as any);
+    jest.spyOn(profileContext, 'useProfile').mockReturnValue({
+      activeProfile: {
+        id: 'profile-primary',
+        name: 'Primary User',
+        isKids: false,
+        avatar: 'avatar1',
+        createdAt: 1000,
+      },
+    } as any);
   });
 
   it('renders VideoPlayerScreen with title, back button, and video surface', async () => {
@@ -98,6 +143,10 @@ describe('VideoPlayerScreen', () => {
 
   it('enables the native TV controls after player initialization', async () => {
     const screen = render(<VideoPlayerScreen />);
+
+    await act(async () => {
+      await new Promise<void>((resolve) => setTimeout(() => resolve(), 1100));
+    });
 
     await waitFor(() => {
       const surface = screen.getByTestId('w3c-video-surface');

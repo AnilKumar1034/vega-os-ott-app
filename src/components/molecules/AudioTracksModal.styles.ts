@@ -12,8 +12,8 @@ export const styles = StyleSheet.create({
     zIndex: 1000,
   },
   modalCard: {
-    width: 620,
-    maxHeight: 680,
+    width: 310,
+    maxHeight: 340,
     backgroundColor: colors.dialogBackground,
     borderRadius: borderRadius.dialog,
     borderWidth: spacing.borderThick,
@@ -58,7 +58,7 @@ export const styles = StyleSheet.create({
   },
   trackListContainer: {
     width: '100%',
-    maxHeight: 380,
+    maxHeight: 190,
     marginBottom: spacing.xl,
   },
   trackListContent: {
@@ -67,7 +67,7 @@ export const styles = StyleSheet.create({
   },
   trackButton: {
     width: '100%',
-    minHeight: 54,
+    minHeight: 28,
     backgroundColor: colors.cardBorder,
     borderRadius: borderRadius.lg,
     borderWidth: spacing.borderThick,
@@ -135,7 +135,7 @@ export const styles = StyleSheet.create({
   },
   closeButton: {
     height: sizes.dialogButtonHeight,
-    minWidth: 160,
+    minWidth: 80,
     paddingHorizontal: spacing.xxl,
     borderRadius: borderRadius.xl,
     backgroundColor: colors.cardBorder,

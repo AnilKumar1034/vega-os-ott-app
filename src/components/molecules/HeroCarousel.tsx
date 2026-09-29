@@ -10,7 +10,6 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {Routes} from '../../constants/routes';
-import {AppDetails} from '../../constants/appDetails';
 import {strings} from '../../constants/strings';
 import {HeroMetaTag} from '../atoms/HeroMetaTag';
 import {useAuth} from '../../context/authContext';
@@ -56,7 +55,7 @@ export const HeroCarousel = ({
   onLibraryChange,
   onUnauthenticatedFavourite,
   shouldPreferFocus = true,
-  testID = AppDetails.heroBannerTestId,
+  testID = 'hero-banner',
   autoPlayInterval = 6000,
   isMenuOpen = false,
   isPaused = false,
@@ -256,7 +255,7 @@ export const HeroCarousel = ({
                   currentSlide.title,
                 )}
                 testID="hero-play-button">
-                <Text style={styles.playButtonText}>{AppDetails.play}</Text>
+                <Text style={styles.playButtonText}>{strings.actions.playWithIcon}</Text>
               </TouchableOpacity>
 
               <TouchableOpacity
@@ -304,9 +303,9 @@ export const HeroCarousel = ({
                 onPress={goToPrevSlide}
                 activeOpacity={1}
                 accessibilityRole="button"
-                accessibilityLabel={AppDetails.previousSlide}
+                accessibilityLabel={strings.hero.previousSlide}
                 testID="hero-prev-slide">
-                <Text style={styles.navArrowText}>{AppDetails.prevArrow}</Text>
+                <Text style={styles.navArrowText}>{strings.hero.prevArrow}</Text>
               </TouchableOpacity>
 
               <View style={styles.paginationContainer}>
@@ -354,9 +353,9 @@ export const HeroCarousel = ({
                 onPress={goToNextSlide}
                 activeOpacity={1}
                 accessibilityRole="button"
-                accessibilityLabel={AppDetails.nextSlide}
+                accessibilityLabel={strings.hero.nextSlide}
                 testID="hero-next-slide">
-                <Text style={styles.navArrowText}>{AppDetails.nextArrow}</Text>
+                <Text style={styles.navArrowText}>{strings.hero.nextArrow}</Text>
               </TouchableOpacity>
             </View>
           )}

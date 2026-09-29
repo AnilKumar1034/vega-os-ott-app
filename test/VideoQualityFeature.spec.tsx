@@ -1,6 +1,6 @@
 import {AppState} from 'react-native';
 import React from 'react';
-import {fireEvent, render, waitFor} from '@testing-library/react-native';
+import {act, fireEvent, render, waitFor} from '@testing-library/react-native';
 import {
   findMatchingQuality,
   getSavedQualityPreference,
@@ -463,7 +463,9 @@ describe('Video Quality Selection Feature', () => {
       mockClearSurfaceHandle.mockClear();
 
       // Unmount the player screen
-      screen.unmount();
+      await act(async () => {
+        screen.unmount();
+      });
 
       // Native cleanup must be called on unmount
       await waitFor(() => {

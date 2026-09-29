@@ -1,6 +1,6 @@
 import {StyleSheet} from 'react-native';
 import {colors} from '../theme/colors';
-import {fontSizes, fontWeights} from '../theme/fonts';
+import {fontSizes, fontWeights, lineHeights} from '../theme/fonts';
 import {sizes, spacing} from '../theme/sizes';
 
 export const styles = StyleSheet.create({
@@ -10,7 +10,7 @@ export const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    paddingLeft: sizes.menuWidthCollapsed || 90,
+    paddingLeft: sizes.menuWidthCollapsed || 45,
     paddingBottom: spacing.contentBottom,
   },
   contentGuide: {
@@ -67,8 +67,8 @@ export const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: fontSizes.subheading,
     textAlign: 'center',
-    maxWidth: 600,
-    lineHeight: 28,
+    maxWidth: 300,
+    lineHeight: lineHeights.dialogBody,
     marginBottom: spacing.xxl,
   },
   actionButton: {
@@ -76,7 +76,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
     paddingVertical: spacing.lg,
     borderRadius: spacing.md,
-    minWidth: 180,
+    minWidth: 90,
     alignItems: 'center',
   },
   actionButtonFocused: {
@@ -103,7 +103,7 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.xxl,
     paddingVertical: spacing.lg,
     borderRadius: spacing.md,
-    minWidth: 180,
+    minWidth: 90,
     alignItems: 'center',
   },
   secondaryActionButtonText: {

@@ -1,5 +1,5 @@
-import 'react-native';
-import {fireEvent, render} from '@testing-library/react-native';
+import {StyleSheet} from 'react-native';
+import {act, fireEvent, render} from '@testing-library/react-native';
 import * as React from 'react';
 import {
   HeroCarousel,
@@ -86,5 +86,19 @@ describe('HeroCarousel component', () => {
     // Focus slide dot 1 directly
     fireEvent(screen.getByTestId('hero-slide-dot-1'), 'focus');
     expect(screen.getByText('Slide 2 Title')).toBeTruthy();
+  });
+
+  it('does not scale or enlarge the play button on focus', () => {
+    const screen = render(
+      <HeroCarousel slides={mockSlides} onContentFocus={mockOnContentFocus} />,
+    );
+
+    const playButton = screen.getByTestId('hero-play-button');
+    act(() => {
+      fireEvent(playButton, 'focus');
+    });
+
+    const flatStyle = StyleSheet.flatten(playButton.props.style);
+    expect(flatStyle.transform).toBeUndefined();
   });
 });

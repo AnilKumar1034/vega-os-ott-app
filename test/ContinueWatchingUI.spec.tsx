@@ -1,5 +1,5 @@
 import 'react-native';
-import {render, waitFor} from '@testing-library/react-native';
+import {act, render, waitFor} from '@testing-library/react-native';
 import * as React from 'react';
 import {HomeScreen} from '../src/screens/HomeScreen';
 import * as watchProgressService from '../src/services/watchProgressService';
@@ -38,7 +38,13 @@ jest.mock('../src/components/molecules/ContentRow', () => {
         row.items?.map((item: any) =>
           ReactMock.createElement(
             Text,
-            {key: item.id, testID: `item-${item.id}`},
+            {
+              key: item.id,
+              testID:
+                row.id === 'continue-watching'
+                  ? `item-${item.id}`
+                  : `catalog-${row.id}-item-${item.id}`,
+            },
             item.title,
           ),
         ),
@@ -118,6 +124,7 @@ describe('HomeScreen Continue Watching Profile-Aware Integration', () => {
     ]);
 
     const screen = render(<HomeScreen />);
+    await act(async () => {});
 
     await waitFor(() => {
       expect(mockFetchContinueWatchItems).toHaveBeenCalledWith('profile-anil');
@@ -221,6 +228,7 @@ describe('HomeScreen Continue Watching Profile-Aware Integration', () => {
       }));
 
     const screen = render(<HomeScreen />);
+    await act(async () => {});
 
     // Fast switch to Profile B before Profile A finishes loading
     currentProfile = {
@@ -233,21 +241,24 @@ describe('HomeScreen Continue Watching Profile-Aware Integration', () => {
     };
 
     screen.rerender(<HomeScreen />);
+    await act(async () => {});
 
     await waitFor(() => {
       expect(screen.getByTestId('item-jawan')).toBeTruthy();
     });
 
     // Profile A now finishes late
-    resolveProfileA([
-      {
-        contentId: 'kalki',
-        title: 'Kalki 2898 AD',
-        progress: 0.35,
-        currentTime: 3500,
-        updatedAt: '2026-08-25T10:00:00.000Z',
-      },
-    ]);
+    await act(async () => {
+      resolveProfileA([
+        {
+          contentId: 'kalki',
+          title: 'Kalki 2898 AD',
+          progress: 0.35,
+          currentTime: 3500,
+          updatedAt: '2026-08-25T10:00:00.000Z',
+        },
+      ]);
+    });
 
     // Profile A's late response must NOT overwrite Profile B's data
     await waitFor(() => {

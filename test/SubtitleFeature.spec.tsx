@@ -1,6 +1,6 @@
 import 'react-native';
 import React from 'react';
-import {fireEvent, render, waitFor} from '@testing-library/react-native';
+import {act, fireEvent, render, waitFor} from '@testing-library/react-native';
 import {
   findActiveSubtitleCue,
   parseWebVTT,
@@ -406,7 +406,9 @@ describe('Subtitles Feature', () => {
 
       // Select Telugu subtitles
       const teluguTrackBtn = screen.getByTestId('subtitle-track-kalki-te');
-      fireEvent.press(teluguTrackBtn);
+      await act(async () => {
+        fireEvent.press(teluguTrackBtn);
+      });
 
       await waitFor(() => {
         expect(screen.queryByTestId('subtitles-modal')).toBeNull();

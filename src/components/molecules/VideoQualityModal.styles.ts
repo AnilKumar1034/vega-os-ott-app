@@ -12,8 +12,8 @@ export const styles = StyleSheet.create({
     zIndex: 1000,
   },
   modalCard: {
-    width: 640,
-    maxHeight: 700,
+    width: 320,
+    maxHeight: 350,
     backgroundColor: colors.dialogBackground,
     borderRadius: borderRadius.dialog,
     borderWidth: spacing.borderThick,
@@ -58,7 +58,7 @@ export const styles = StyleSheet.create({
   },
   qualityListContainer: {
     width: '100%',
-    maxHeight: 400,
+    maxHeight: 200,
     marginBottom: spacing.xl,
   },
   qualityListContent: {
@@ -67,7 +67,7 @@ export const styles = StyleSheet.create({
   },
   qualityButton: {
     width: '100%',
-    minHeight: 56,
+    minHeight: 28,
     backgroundColor: colors.cardBorder,
     borderRadius: borderRadius.lg,
     borderWidth: spacing.borderThick,
@@ -148,7 +148,7 @@ export const styles = StyleSheet.create({
   },
   closeButton: {
     height: sizes.dialogButtonHeight,
-    minWidth: 160,
+    minWidth: 80,
     paddingHorizontal: spacing.xxl,
     borderRadius: borderRadius.xl,
     backgroundColor: colors.cardBorder,

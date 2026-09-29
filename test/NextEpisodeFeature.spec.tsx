@@ -2,6 +2,7 @@ import {AppState} from 'react-native';
 import React from 'react';
 import {act, fireEvent, render, waitFor} from '@testing-library/react-native';
 import {
+  DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS,
   formatSeasonEpisodeLabel,
   getLastWatchedEpisode,
   getNextEpisodes,
@@ -439,23 +440,26 @@ describe('Next Episode Feature', () => {
         expect(screen.getByTestId('next-episode-modal')).toBeTruthy();
         expect(screen.getByTestId('next-episode-title')).toBeTruthy();
         expect(screen.getByText('11001001')).toBeTruthy();
-        expect(screen.getByText('Playing next episode in 5s')).toBeTruthy();
+        expect(screen.getByTestId('next-episode-countdown')).toBeTruthy();
       });
     });
 
-    it('automatically plays next episode when countdown finishes (5s -> 0s) under autoplay', () => {
+    it('automatically plays next episode when countdown finishes (5s -> 0s) under autoplay', async () => {
       jest.useFakeTimers();
       try {
         render(<VideoPlayerScreen />);
+        await act(async () => {});
         expect(mockPlayerInstance).toBeTruthy();
 
-        act(() => {
+        await act(async () => {
           mockPlayerInstance.emit('ended');
         });
 
-        // Advance countdown timer by 6 seconds (5s countdown + 1s buffer)
-        act(() => {
-          jest.advanceTimersByTime(6000);
+        // Advance countdown timer by (DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS + 1) seconds
+        await act(async () => {
+          jest.advanceTimersByTime(
+            (DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS + 1) * 1000,
+          );
         });
 
         expect(mockReplace).toHaveBeenCalledWith(

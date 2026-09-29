@@ -25,7 +25,7 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     top: spacing.xl,
     left: '50%',
-    transform: [{translateX: -220 / 2}],
+    transform: [{translateX: -sizes.searchToastWidth / 2}],
     width: sizes.searchToastWidth,
     paddingHorizontal: spacing.large,
     paddingVertical: spacing.md,

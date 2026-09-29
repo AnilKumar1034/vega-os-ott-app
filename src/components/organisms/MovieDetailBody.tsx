@@ -3,7 +3,6 @@ import {FlatList, Image, Text, TouchableOpacity, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
 import {Routes} from '../../constants/routes';
 import {HomeContentItem} from '../../data/home';
-import {AppDetails} from '../../constants/appDetails';
 import {strings} from '../../constants/strings';
 import {ContentCard} from '../molecules/ContentCard';
 import {styles} from '../../screens/MovieDetailScreen.styles';
@@ -113,7 +112,7 @@ export const MovieDetailBody = ({
           {selectedMovie.cast && (
             <View style={styles.castRow}>
               <Text style={styles.castLabel}>
-                {AppDetails.castLabel}{' '}
+                {strings.movieDetail.castLabel}{' '}
                 <Text style={styles.castText}>{selectedMovie.cast}</Text>
               </Text>
             </View>
@@ -122,7 +121,7 @@ export const MovieDetailBody = ({
           {selectedMovie.director && (
             <View style={styles.castRow}>
               <Text style={styles.castLabel}>
-                {AppDetails.directorLabel}{' '}
+                {strings.movieDetail.directorLabel}{' '}
                 <Text style={styles.castText}>{selectedMovie.director}</Text>
               </Text>
             </View>
@@ -149,7 +148,7 @@ export const MovieDetailBody = ({
                 selectedMovie.title,
               )}
               testID="detail-play-button">
-              <Text style={styles.playButtonText}>{AppDetails.watchNow}</Text>
+              <Text style={styles.playButtonText}>{strings.actions.watchWithIcon}</Text>
             </TouchableOpacity>
 
             {continueWatchProgress !== null && continueWatchProgress > 0 && (
@@ -231,7 +230,7 @@ export const MovieDetailBody = ({
               accessibilityRole="button"
               accessibilityLabel={strings.actions.goBack}
               testID="detail-back-button">
-              <Text style={styles.backButtonText}>{AppDetails.back}</Text>
+              <Text style={styles.backButtonText}>{strings.actions.backWithChevron}</Text>
             </TouchableOpacity>
           </View>
           {toastMessage ? (
@@ -243,7 +242,7 @@ export const MovieDetailBody = ({
       </View>
 
       <View style={styles.recommendationsSection}>
-        <Text style={styles.sectionTitle}>{AppDetails.moreLikeThisTitle}</Text>
+        <Text style={styles.sectionTitle}>{strings.movieDetail.moreLikeThis}</Text>
         <FlatList
           horizontal
           data={recommendations}

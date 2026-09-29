@@ -29,6 +29,13 @@ jest.mock(
 );
 
 jest.mock('../src/profiles/data/profileRepository');
+jest.mock('../src/services/parentalControlsService', () => ({
+  parentalControlsService: {
+    getSettings: jest.fn().mockResolvedValue(null),
+    verifyPin: jest.fn().mockResolvedValue(true),
+    updateSettings: jest.fn().mockResolvedValue(null),
+  },
+}));
 
 const mockUser = {uid: 'user-123', email: 'test@example.com'};
 
@@ -64,8 +71,8 @@ const TestHarness = () => {
   );
 };
 
-const renderWithProviders = () => {
-  return render(
+const renderWithProviders = async () => {
+  const screen = render(
     <AuthContext.Provider
       value={{
         user: mockUser,
@@ -81,6 +88,8 @@ const renderWithProviders = () => {
       </ProfileProvider>
     </AuthContext.Provider>,
   );
+  await act(async () => {});
+  return screen;
 };
 
 beforeEach(() => {
@@ -93,7 +102,7 @@ describe('ProfileContext & ProfileProvider', () => {
   it('handles zero profiles gracefully', async () => {
     (profileRepository.getProfiles as jest.Mock).mockResolvedValueOnce([]);
 
-    const screen = renderWithProviders();
+    const screen = await renderWithProviders();
 
     await waitFor(() => {
       expect(screen.getByTestId('loading-state').props.children).toBe('ready');
@@ -121,7 +130,7 @@ describe('ProfileContext & ProfileProvider', () => {
       createdProfile,
     );
 
-    const screen = renderWithProviders();
+    const screen = await renderWithProviders();
 
     await waitFor(() => {
       expect(screen.getByTestId('loading-state').props.children).toBe('ready');
@@ -167,7 +176,7 @@ describe('ProfileContext & ProfileProvider', () => {
       existingProfiles,
     );
 
-    const screen = renderWithProviders();
+    const screen = await renderWithProviders();
 
     await waitFor(() => {
       expect(screen.getByTestId('loading-state').props.children).toBe('ready');
@@ -196,7 +205,7 @@ describe('ProfileContext & ProfileProvider', () => {
       existingProfiles,
     );
 
-    const screen = renderWithProviders();
+    const screen = await renderWithProviders();
 
     await waitFor(() => {
       expect(screen.getByTestId('loading-state').props.children).toBe('ready');
@@ -233,7 +242,7 @@ describe('ProfileContext & ProfileProvider', () => {
       existingProfiles,
     );
 
-    const screen = renderWithProviders();
+    const screen = await renderWithProviders();
 
     await waitFor(() => {
       expect(screen.getByTestId('loading-state').props.children).toBe('ready');
@@ -280,7 +289,7 @@ describe('ProfileContext & ProfileProvider', () => {
       updatedProfile,
     );
 
-    const screen = renderWithProviders();
+    const screen = await renderWithProviders();
 
     await waitFor(() => {
       expect(screen.getByTestId('loading-state').props.children).toBe('ready');
@@ -312,7 +321,7 @@ describe('ProfileContext & ProfileProvider', () => {
       fiveProfiles,
     );
 
-    const screen = renderWithProviders();
+    const screen = await renderWithProviders();
 
     await waitFor(() => {
       expect(screen.getByTestId('loading-state').props.children).toBe('ready');
@@ -342,7 +351,7 @@ describe('ProfileContext & ProfileProvider', () => {
       singleProfile,
     );
 
-    const screen = renderWithProviders();
+    const screen = await renderWithProviders();
 
     await waitFor(() => {
       expect(screen.getByTestId('loading-state').props.children).toBe('ready');
@@ -381,7 +390,7 @@ describe('ProfileContext & ProfileProvider', () => {
       undefined,
     );
 
-    const screen = renderWithProviders();
+    const screen = await renderWithProviders();
 
     await waitFor(() => {
       expect(screen.getByTestId('loading-state').props.children).toBe('ready');

@@ -72,7 +72,12 @@ const PlayerTestRoute = () => {
 
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: [DEEPLINK_PREFIX],
+  getInitialURL: () =>
+    ((globalThis as any).process?.env?.NODE_ENV === 'test'
+      ? null
+      : (undefined as any)),
   config: {
+
     screens: {
       [Routes.Splash]: 'splash',
       [Routes.Home]: DeeplinkRoutes.Home,

@@ -41,15 +41,14 @@ export const VideoQualityModal: React.FC<VideoQualityModalProps> = ({
           <View style={styles.header}>
             <View style={styles.iconBadge}>
               <Text style={styles.iconBadgeText}>
-                {strings.videoQuality?.qualityBadge || 'QUALITY'}
+                {strings.videoQuality.qualityBadge}
               </Text>
             </View>
             <Text style={styles.title}>
-              {strings.videoQuality?.selectQuality || 'Select Video Quality'}
+              {strings.videoQuality.selectQuality}
             </Text>
             <Text style={styles.subtitle}>
-              {strings.videoQuality?.selectQualityDesc ||
-                'Choose your preferred video streaming resolution and data usage.'}
+              {strings.videoQuality.selectQualityDesc}
             </Text>
           </View>
 
@@ -80,12 +79,10 @@ export const VideoQualityModal: React.FC<VideoQualityModalProps> = ({
                   }}
                   activeOpacity={0.85}
                   accessibilityRole="button"
-                  accessibilityLabel={
-                    strings.accessibility?.selectQuality?.(
-                      option.label,
-                      isSelected,
-                    ) || `${option.label} video quality`
-                  }
+                  accessibilityLabel={strings.accessibility.selectQuality(
+                    option.label,
+                    isSelected,
+                  )}
                   testID={`quality-option-${option.id}`}>
                   <View style={styles.qualityInfoRow}>
                     <Text
@@ -115,7 +112,7 @@ export const VideoQualityModal: React.FC<VideoQualityModalProps> = ({
                     {isSelected && (
                       <View style={styles.selectedBadge}>
                         <Text style={styles.selectedBadgeText}>
-                          {strings.videoQuality?.activeQuality || 'Active'}
+                          {strings.videoQuality.activeQuality}
                         </Text>
                       </View>
                     )}
@@ -138,13 +135,10 @@ export const VideoQualityModal: React.FC<VideoQualityModalProps> = ({
             onPress={onClose}
             activeOpacity={0.85}
             accessibilityRole="button"
-            accessibilityLabel={
-              strings.accessibility?.closeQualityModal ||
-              'Close video quality selection modal'
-            }
+            accessibilityLabel={strings.accessibility.closeQualityModal}
             testID="video-quality-modal-close">
             <Text style={styles.closeButtonText}>
-              {strings.videoQuality?.close || 'Close'}
+              {strings.videoQuality.close}
             </Text>
           </TouchableOpacity>
         </TVFocusGuideView>

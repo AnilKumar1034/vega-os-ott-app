@@ -72,6 +72,8 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.huge,
     paddingVertical: spacing.xxxl,
     backgroundColor: colors.white,
+    borderWidth: spacing.borderThin,
+    borderColor: colors.transparent,
   },
   listButton: {
     minWidth: spacing.heroActionAltMinWidth,
@@ -81,11 +83,12 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.huge,
     paddingVertical: spacing.xxxl,
     backgroundColor: colors.gold,
+    borderWidth: spacing.borderThin,
+    borderColor: colors.transparent,
   },
   focusedAction: {
-    borderWidth: spacing.borderUltra,
-    borderColor: colors.focusRing,
-    transform: [{scale: 1.05}],
+    borderWidth: spacing.borderThin,
+    borderColor: colors.heroAccent,
   },
   playButtonText: {
     color: colors.actionPrimaryText,

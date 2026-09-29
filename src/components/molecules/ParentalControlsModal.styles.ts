@@ -12,7 +12,7 @@ export const styles = StyleSheet.create({
     zIndex: 1050,
   },
   modal: {
-    width: 620,
+    width: 310,
     backgroundColor: colors.dialogBackground,
     borderRadius: borderRadius.dialog,
     borderWidth: spacing.borderThick,
@@ -29,9 +29,9 @@ export const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   iconCircle: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     backgroundColor: colors.cardBorder,
     alignItems: 'center',
     justifyContent: 'center',

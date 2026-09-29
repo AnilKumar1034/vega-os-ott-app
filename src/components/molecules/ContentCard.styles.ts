@@ -27,9 +27,8 @@ export const styles = StyleSheet.create({
     borderRadius: spacing.xl,
   },
   focused: {
-    borderWidth: spacing.borderUltra,
+    borderWidth: spacing.borderMedium,
     borderColor: colors.focusRing,
-    zIndex: 2,
   },
   image: {
     ...StyleSheet.absoluteFillObject,

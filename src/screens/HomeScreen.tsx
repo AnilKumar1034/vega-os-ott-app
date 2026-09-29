@@ -177,10 +177,15 @@ export const HomeScreen = () => {
   }, [activeProfile]);
 
   const rowsToDisplay = [
-    ...(continueWatchingRow ? [continueWatchingRow] : []),
+    ...(continueWatchingRow
+      ? [continueWatchingRow]
+      : (!user && !activeProfile?.id)
+      ? (homeContentRows.filter((r) => r.id === 'continue-watching') as HomeContentRow[])
+      : []),
     ...(watchlistRow ? [watchlistRow] : []),
     ...allowedCatalogRows,
   ];
+
 
   const allowedHeroSlides = useMemo(() => {
     return filterHeroSlidesForProfile(activeProfile, homeHeroSlides);

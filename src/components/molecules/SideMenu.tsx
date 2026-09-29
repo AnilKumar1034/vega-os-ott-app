@@ -3,14 +3,10 @@ import {Animated, FlatList, Text} from 'react-native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {Routes} from '../../constants/routes';
 import {styles} from './SideMenu.styles';
-import {AppDetails} from '../../constants/appDetails';
 import {MenuOptionItem, SideMenuItem} from './SideMenuItem';
 import {sizes} from '../../theme/sizes';
 
 import {strings} from '../../constants/strings';
-
-const AnimatedTVFocusGuideView =
-  Animated.createAnimatedComponent(TVFocusGuideView);
 
 const menuOptions: MenuOptionItem[] = [
   {
@@ -39,7 +35,7 @@ const menuOptions: MenuOptionItem[] = [
   },
   {
     route: Routes.Details,
-    title: AppDetails.details,
+    title: strings.sideMenu.details,
     name: 'Details',
     icon: require('../../assets/learn-more.png'),
   },
@@ -127,21 +123,23 @@ export const SideMenu = ({
   );
 
   return (
-    <AnimatedTVFocusGuideView
-      style={[styles.container, {width: widthAnim}]}
-      accessibilityRole="menu"
-      autoFocus
-      trapFocusLeft
-      destinations={destinations}>
-      <Animated.View style={{opacity: opacityAnim}}>
-        {isExpanded && <Text style={styles.menuTitle}>{AppDetails.name}</Text>}
-      </Animated.View>
-      <FlatList
-        data={menuOptions}
-        keyExtractor={(option) => option.route}
-        contentContainerStyle={styles.optionList}
-        renderItem={renderOptionItem}
-      />
-    </AnimatedTVFocusGuideView>
+    <Animated.View style={[styles.container, {width: widthAnim}]}>
+      <TVFocusGuideView
+        style={{flex: 1}}
+        accessibilityRole="menu"
+        autoFocus
+        trapFocusLeft
+        destinations={destinations}>
+        <Animated.View style={{opacity: opacityAnim}}>
+          {isExpanded && <Text style={styles.menuTitle}>{strings.appName}</Text>}
+        </Animated.View>
+        <FlatList
+          data={menuOptions}
+          keyExtractor={(option) => option.route}
+          contentContainerStyle={styles.optionList}
+          renderItem={renderOptionItem}
+        />
+      </TVFocusGuideView>
+    </Animated.View>
   );
 };

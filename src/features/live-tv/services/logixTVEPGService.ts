@@ -59,12 +59,18 @@ const providerCategoryIds: Record<string, number[]> = {
   Documentary: [10],
 };
 
-const fetchJson = async <T>(url: string): Promise<T> => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`LogixTV request failed: ${response.status}`);
+const fetchJson = async <T>(url: string, timeoutMs = 3000): Promise<T> => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {signal: controller.signal});
+    if (!response.ok) {
+      throw new Error(`LogixTV request failed: ${response.status}`);
+    }
+    return (await response.json()) as Promise<T>;
+  } finally {
+    clearTimeout(timer);
   }
-  return response.json() as Promise<T>;
 };
 
 const getSelectedChannels = (
@@ -93,7 +99,12 @@ const fetchLogixTVChannels = () => {
   if (!channelListPromise) {
     channelListPromise = fetchJson<{result?: LogixTVChannel[]}>(
       LOGIXSTREAM_CHANNELS_URL,
-    ).then((response) => response.result || []);
+    )
+      .then((response) => response.result || [])
+      .catch((error) => {
+        channelListPromise = null;
+        throw error;
+      });
   }
   return channelListPromise;
 };

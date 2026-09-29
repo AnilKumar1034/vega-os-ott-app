@@ -1,5 +1,5 @@
 import React from 'react';
-import {fireEvent, render, waitFor} from '@testing-library/react-native';
+import {act, fireEvent, render, waitFor} from '@testing-library/react-native';
 import {PinEntryDialog} from '../src/components/molecules/PinEntryDialog';
 
 (jest as any).now = Date.now;
@@ -70,7 +70,9 @@ describe('PinEntryDialog Component', () => {
     fireEvent.press(screen.getByTestId('pin-key-9'));
     fireEvent.press(screen.getByTestId('pin-key-8'));
     fireEvent.press(screen.getByTestId('pin-key-7'));
-    fireEvent.press(screen.getByTestId('pin-key-6'));
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('pin-key-6'));
+    });
 
     await waitFor(() => {
       expect(validatePin).toHaveBeenCalledWith('9876');

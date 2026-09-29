@@ -1,0 +1,19 @@
+diff --git a/node_modules/@amazon-devices/react-native-kepler/Libraries/Utilities/registerGeneratedViewConfig.js b/node_modules/@amazon-devices/react-native-kepler/Libraries/Utilities/registerGeneratedViewConfig.js
+index 3136ac6..16196ad 100644
+--- a/node_modules/@amazon-devices/react-native-kepler/Libraries/Utilities/registerGeneratedViewConfig.js
++++ b/node_modules/@amazon-devices/react-native-kepler/Libraries/Utilities/registerGeneratedViewConfig.js
+@@ -32,14 +32,6 @@
+    const staticViewConfig = createViewConfig(partialViewConfig);
+  
+    ReactNativeViewConfigRegistry.register(componentName, () => {
+-      // TODO(gniademi): - this is always true?
+-     if (!global.RN$Bridgeless) {
+-       const nativeViewConfig = getNativeComponentAttributes(componentName);
+- 
+-       //  TODO(tomaboro): - removed from 76 
+-       verifyComponentAttributeEquivalence(nativeViewConfig, staticViewConfig);
+-     }
+- 
+      return staticViewConfig;
+    });
+  }

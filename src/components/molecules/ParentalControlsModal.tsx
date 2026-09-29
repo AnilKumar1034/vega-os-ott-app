@@ -101,7 +101,9 @@ export const ParentalControlsModal = ({
 
         <View style={styles.statusCard} testID="parental-controls-status-card">
           <View>
-            <Text style={styles.statusLabel}>Parental Lock Status</Text>
+            <Text style={styles.statusLabel}>
+              {strings.parentalControls.lockStatus}
+            </Text>
             <Text style={styles.statusValue}>
               {isPinEnabled
                 ? strings.parentalControls.pinStatusEnabled
@@ -116,7 +118,9 @@ export const ParentalControlsModal = ({
                 : styles.statusBadgeInactive,
             ]}>
             <Text style={styles.statusBadgeText}>
-              {isPinEnabled ? 'PROTECTED' : 'UNLOCKED'}
+              {isPinEnabled
+                ? strings.parentalControls.statusProtected
+                : strings.parentalControls.statusUnlocked}
             </Text>
           </View>
         </View>
@@ -200,7 +204,9 @@ export const ParentalControlsModal = ({
           accessibilityRole="button"
           accessibilityLabel={strings.parentalControls.cancel}
           testID="parental-modal-close-button">
-          <Text style={styles.closeButtonText}>Close</Text>
+          <Text style={styles.closeButtonText}>
+            {strings.parentalControls.close}
+          </Text>
         </TouchableOpacity>
       </TVFocusGuideView>
 

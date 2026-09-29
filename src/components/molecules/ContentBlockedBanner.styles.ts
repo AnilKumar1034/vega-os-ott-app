@@ -11,7 +11,7 @@ export const styles = StyleSheet.create({
     padding: spacing.huge,
   },
   card: {
-    width: 600,
+    width: 300,
     backgroundColor: colors.dialogBackground,
     borderRadius: borderRadius.dialog,
     borderWidth: spacing.borderThick,

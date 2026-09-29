@@ -36,7 +36,7 @@ export const styles = StyleSheet.create({
     marginLeft: 'auto',
   },
   filterButton: {
-    minWidth: 180,
+    minWidth: 90,
     marginLeft: spacing.xlarge,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,

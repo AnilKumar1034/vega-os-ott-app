@@ -31,7 +31,7 @@ export const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   filterButton: {
-    minWidth: 180,
+    minWidth: 90,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
     borderWidth: spacing.borderMedium,
@@ -70,7 +70,7 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeights.semibold,
   },
   emptyChannelButton: {
-    minWidth: 220,
+    minWidth: 110,
     marginTop: spacing.huge,
     paddingHorizontal: spacing.huge,
     paddingVertical: spacing.xl,
@@ -97,8 +97,8 @@ export const styles = StyleSheet.create({
     elevation: 1000,
   },
   paginationLoader: {
-    width: 88,
-    height: 88,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
     borderRadius: borderRadius.circle,
@@ -107,7 +107,7 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.detailOverlay,
   },
   details: {
-    minHeight: 126,
+    minHeight: 63,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -121,10 +121,8 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.detailOverlay,
   },
   detailsImage: {
-    // width: 152,
-    // height: 86,
-    width: 352,
-    height: 286,
+    width: 176,
+    height: 143,
     marginRight: spacing.huge,
     borderRadius: borderRadius.sm,
     backgroundColor: colors.cardBackground,
@@ -162,12 +160,12 @@ export const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'flex-end',
     justifyContent: 'flex-start',
-    paddingTop: 170,
+    paddingTop: 85,
     paddingRight: spacing.screenPadding,
     backgroundColor: colors.darkOverlay,
   },
   categoryMenu: {
-    width: 300,
+    width: 150,
     paddingVertical: spacing.sm,
     borderWidth: spacing.borderMedium,
     borderColor: colors.borderLight,
@@ -190,7 +188,7 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeights.semibold,
   },
   alertCard: {
-    width: 560,
+    width: 280,
     padding: spacing.colossal,
     borderWidth: spacing.borderMedium,
     borderColor: colors.borderLight,
@@ -209,7 +207,7 @@ export const styles = StyleSheet.create({
   },
   alertButton: {
     alignSelf: 'flex-end',
-    minWidth: 132,
+    minWidth: 66,
     marginTop: spacing.huge,
     paddingHorizontal: spacing.huge,
     paddingVertical: spacing.xl,

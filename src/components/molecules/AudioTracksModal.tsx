@@ -41,15 +41,14 @@ export const AudioTracksModal: React.FC<AudioTracksModalProps> = ({
           <View style={styles.header}>
             <View style={styles.iconBadge}>
               <Text style={styles.iconBadgeText}>
-                {strings.audioTracks?.audioBadge || 'AUDIO'}
+                {strings.audioTracks.audioBadge}
               </Text>
             </View>
             <Text style={styles.title}>
-              {strings.audioTracks?.selectAudioTrack || 'Select Audio Track'}
+              {strings.audioTracks.selectAudioTrack}
             </Text>
             <Text style={styles.subtitle}>
-              {strings.audioTracks?.selectAudioTrackDesc ||
-                'Choose your preferred audio language and sound format.'}
+              {strings.audioTracks.selectAudioTrackDesc}
             </Text>
           </View>
 
@@ -80,12 +79,10 @@ export const AudioTracksModal: React.FC<AudioTracksModalProps> = ({
                   }}
                   activeOpacity={0.85}
                   accessibilityRole="button"
-                  accessibilityLabel={
-                    strings.accessibility?.selectAudioTrack?.(
-                      option.label,
-                      isSelected,
-                    ) || `${option.label} audio track`
-                  }
+                  accessibilityLabel={strings.accessibility.selectAudioTrack(
+                    option.label,
+                    isSelected,
+                  )}
                   testID={`audio-track-${option.id}`}>
                   <View style={styles.trackInfoRow}>
                     <Text
@@ -107,7 +104,7 @@ export const AudioTracksModal: React.FC<AudioTracksModalProps> = ({
                     {isSelected && (
                       <View style={styles.selectedBadge}>
                         <Text style={styles.selectedBadgeText}>
-                          {strings.audioTracks?.activeTrack || 'Active'}
+                          {strings.audioTracks.activeTrack}
                         </Text>
                       </View>
                     )}
@@ -130,13 +127,10 @@ export const AudioTracksModal: React.FC<AudioTracksModalProps> = ({
             onPress={onClose}
             activeOpacity={0.85}
             accessibilityRole="button"
-            accessibilityLabel={
-              strings.accessibility?.closeAudioTracksModal ||
-              'Close audio tracks selection modal'
-            }
+            accessibilityLabel={strings.accessibility.closeAudioTracksModal}
             testID="audio-tracks-modal-close">
             <Text style={styles.closeButtonText}>
-              {strings.audioTracks?.close || 'Close'}
+              {strings.audioTracks.close}
             </Text>
           </TouchableOpacity>
         </TVFocusGuideView>

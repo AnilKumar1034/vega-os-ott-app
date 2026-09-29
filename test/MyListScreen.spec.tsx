@@ -1,5 +1,5 @@
 import 'react-native';
-import {fireEvent, render, waitFor} from '@testing-library/react-native';
+import {act, fireEvent, render, waitFor} from '@testing-library/react-native';
 import * as React from 'react';
 import {MyListScreen} from '../src/screens/MyListScreen';
 import * as watchlistService from '../src/services/watchlistService';
@@ -95,6 +95,7 @@ describe('MyListScreen', () => {
 
   it('1. Renders My List screen and loads active profile watchlist items', async () => {
     const screen = render(<MyListScreen />);
+    await act(async () => {});
 
     await waitFor(() => {
       expect(mockFetchWatchlist).toHaveBeenCalledWith('profile-anil');
@@ -108,6 +109,7 @@ describe('MyListScreen', () => {
     mockFetchWatchlist.mockResolvedValueOnce([]);
 
     const screen = render(<MyListScreen />);
+    await act(async () => {});
 
     await waitFor(() => {
       expect(screen.getByTestId('my-list-empty-state')).toBeTruthy();
@@ -123,6 +125,7 @@ describe('MyListScreen', () => {
     mockFetchWatchlist.mockRejectedValueOnce(new Error('NETWORK_ERROR'));
 
     const screen = render(<MyListScreen />);
+    await act(async () => {});
 
     await waitFor(() => {
       expect(screen.getByTestId('my-list-error-state')).toBeTruthy();
@@ -130,7 +133,9 @@ describe('MyListScreen', () => {
     });
 
     mockFetchWatchlist.mockResolvedValueOnce(mockWatchlist);
-    fireEvent.press(screen.getByTestId('my-list-retry-button'));
+    await act(async () => {
+      fireEvent.press(screen.getByTestId('my-list-retry-button'));
+    });
 
     await waitFor(() => {
       expect(mockFetchWatchlist).toHaveBeenCalledTimes(2);
@@ -176,6 +181,7 @@ describe('MyListScreen', () => {
     mockFetchWatchlist.mockResolvedValueOnce([]);
 
     const screen = render(<MyListScreen />);
+    await act(async () => {});
 
     await waitFor(() => {
       expect(screen.getByTestId('my-list-empty-state')).toBeTruthy();
@@ -194,6 +200,7 @@ describe('MyListScreen', () => {
 
   it('6. Shows clear search button when search query has no matching items', async () => {
     const screen = render(<MyListScreen />);
+    await act(async () => {});
 
     await waitFor(() => {
       expect(screen.getByText('Kalki 2898 AD')).toBeTruthy();
