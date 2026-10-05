@@ -190,4 +190,103 @@ describe('VideoPlayerScreen', () => {
       expect(mockInitialize).toHaveBeenCalled();
     });
   });
+
+  it('handles TV remote playpause event via useTVEventHandler', async () => {
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    render(<VideoPlayerScreen />);
+
+    expect(useTVEventHandler).toHaveBeenCalled();
+    const tvEventHandler = useTVEventHandler.mock.calls
+      .map((c: any) => c[0])
+      .find((fn: any) => fn?.toString?.().includes('isSubtitlesModalOpenRef'));
+
+    expect(tvEventHandler).toBeDefined();
+
+    await act(async () => {
+      tvEventHandler({eventType: 'playpause', eventKeyAction: 0});
+    });
+
+    expect(mockPause).toHaveBeenCalled();
+  });
+
+  it('handles TV remote back event via useTVEventHandler and navigates to Home', async () => {
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    render(<VideoPlayerScreen />);
+
+    const tvEventHandler = useTVEventHandler.mock.calls
+      .map((c: any) => c[0])
+      .find((fn: any) => fn?.toString?.().includes('isSubtitlesModalOpenRef'));
+
+    expect(tvEventHandler).toBeDefined();
+
+    await act(async () => {
+      tvEventHandler({eventType: 'back', eventKeyAction: 0});
+    });
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('Home');
+    });
+  });
+
+  it('handles TV remote navigation and wake-up events', async () => {
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    const screen = render(<VideoPlayerScreen />);
+
+    const tvEventHandler = useTVEventHandler.mock.calls
+      .map((c: any) => c[0])
+      .find((fn: any) => fn?.toString?.().includes('isSubtitlesModalOpenRef'));
+
+    expect(tvEventHandler).toBeDefined();
+
+    // Simulate key down for directional/menu keys
+    await act(async () => {
+      tvEventHandler({eventType: 'up', eventKeyAction: 0});
+      tvEventHandler({eventType: 'down', eventKeyAction: 0});
+      tvEventHandler({eventType: 'left', eventKeyAction: 0});
+      tvEventHandler({eventType: 'right', eventKeyAction: 0});
+      tvEventHandler({eventType: 'menu', eventKeyAction: 0});
+    });
+
+    // Controls overlay should be visible
+    expect(screen.getByTestId('player-back-button')).toBeTruthy();
+  });
+
+  it('handles TV remote stop event by pausing playback', async () => {
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    render(<VideoPlayerScreen />);
+
+    const tvEventHandler = useTVEventHandler.mock.calls
+      .map((c: any) => c[0])
+      .find((fn: any) => fn?.toString?.().includes('isSubtitlesModalOpenRef'));
+
+    expect(tvEventHandler).toBeDefined();
+
+    await act(async () => {
+      tvEventHandler({eventType: 'stop', eventKeyAction: 0});
+    });
+
+    expect(mockPause).toHaveBeenCalled();
+  });
+
+  it('handles TV remote OK / kpenter on back button to navigate to Home', async () => {
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    const screen = render(<VideoPlayerScreen />);
+
+    // Focus back button
+    fireEvent(screen.getByTestId('player-back-button'), 'focus');
+
+    const tvEventHandler = useTVEventHandler.mock.calls
+      .map((c: any) => c[0])
+      .find((fn: any) => fn?.toString?.().includes('isSubtitlesModalOpenRef'));
+
+    expect(tvEventHandler).toBeDefined();
+
+    await act(async () => {
+      tvEventHandler({eventType: 'kpenter', eventKeyAction: 0});
+    });
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('Home');
+    });
+  });
 });

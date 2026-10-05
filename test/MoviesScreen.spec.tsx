@@ -143,4 +143,70 @@ describe('MoviesScreen (Real Continue Watching integration)', () => {
       expect(mockFetchContinueWatch).toHaveBeenCalledWith('profile-kids');
     });
   });
+
+  it('4. Opens side menu when remote left is pressed on the first card', async () => {
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    const {fireEvent} = require('@testing-library/react-native');
+    const screen = render(<MoviesScreen />);
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId('content-card-kalki').length).toBeGreaterThan(0);
+    });
+
+    const firstCard = screen.getAllByTestId('content-card-kalki')[0];
+    act(() => {
+      fireEvent(firstCard, 'focus');
+    });
+
+    act(() => {
+      useTVEventHandler.mock.calls.forEach(([fn]: any) => {
+        fn?.({eventType: 'left', eventKeyAction: 0});
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('LogiXstream')).toBeTruthy();
+      expect(screen.getByTestId('side-menu-label-Movies')).toBeTruthy();
+    });
+  });
+
+  it('5. Focuses the previous row (not the first row) when remote right is pressed on side menu', async () => {
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    const {fireEvent} = require('@testing-library/react-native');
+    const screen = render(<MoviesScreen />);
+
+    await waitFor(() => {
+      expect(screen.getByTestId('content-card-angel-one-hls')).toBeTruthy();
+    });
+
+    const row1FirstCard = screen.getByTestId('content-card-angel-one-hls');
+    act(() => {
+      fireEvent(row1FirstCard, 'focus');
+    });
+
+    // Press left to open side menu from row 1
+    act(() => {
+      useTVEventHandler.mock.calls.forEach(([fn]: any) => {
+        fn?.({eventType: 'left', eventKeyAction: 0});
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('LogiXstream')).toBeTruthy();
+    });
+
+    // Press right to escape side menu
+    act(() => {
+      useTVEventHandler.mock.calls.forEach(([fn]: any) => {
+        fn?.({eventType: 'right', eventKeyAction: 0});
+      });
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByText('LogiXstream')).toBeNull();
+      const row0FirstCard = screen.getAllByTestId('content-card-kalki')[0];
+      expect(row1FirstCard.props.hasTVPreferredFocus).toBe(true);
+      expect(row0FirstCard.props.hasTVPreferredFocus).toBe(false);
+    });
+  });
 });

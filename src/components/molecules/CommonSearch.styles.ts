@@ -40,7 +40,7 @@ export const styles = StyleSheet.create({
     flex: 1,
     height: '100%',
     color: colors.textPrimary,
-    fontSize: fontSizes.cardTitle,
+    fontSize: fontSizes.caption,
     fontWeight: fontWeights.medium,
     paddingVertical: spacing.xxxl,
     paddingHorizontal: spacing.large,

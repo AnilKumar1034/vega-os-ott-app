@@ -17,6 +17,8 @@ import {
 import {colors} from '../../theme/colors';
 import {circleStyle, styles} from './PlayerSeekBar.styles';
 import {strings} from '../../constants/strings';
+import {useTVEventHandler} from '@amazon-devices/react-native-kepler';
+import {isKeyDown, isSelectEvent} from '../../utils/inputUtils';
 
 export type {PartialDisablingConfiguration};
 
@@ -348,6 +350,8 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
   const [scrubPosition, setScrubPosition] = useState<number>(safeCurrentTime);
   const currentScrubPositionRef = useRef<number>(safeCurrentTime);
   const [focusedButton, setFocusedButton] = useState<string | null>(null);
+  const focusedButtonRef = useRef<string | null>(focusedButton);
+  focusedButtonRef.current = focusedButton;
 
   // 1. Markers State: Dynamic arrow position indicator
   const [selectedProgress, setSelectedProgress] = useState<number>(
@@ -371,7 +375,7 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
       list.push({
         position: i,
         node: (
-          <View style={[circleStyle(8), styles.tickStyle]} key={`tick-${i}`} />
+          <View style={[circleStyle(4), styles.tickStyle]} key={`tick-${i}`} />
         ),
       });
     }
@@ -879,6 +883,126 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
     [],
   );
   const effectiveThumbnailLabel = thumbnailLabel || defaultThumbnailLabel;
+
+  const handleSelectFocusedButton = useCallback(() => {
+    const btn = focusedButtonRef.current;
+    if (!btn) {
+      return false;
+    }
+
+    onInteraction?.();
+
+    switch (btn) {
+      case 'playPause':
+        onTogglePlayPause?.();
+        return true;
+      case 'startFromBeginning':
+        handleStartFromBeginning();
+        return true;
+      case 'skipIntro':
+        handleSkipIntro();
+        return true;
+      case 'nextEpisode':
+        onNextEpisodePress?.();
+        return true;
+      case 'removeMarker':
+        handleOnRemoveMarker();
+        return true;
+      case 'addMarker':
+        handleOnAddMarker();
+        return true;
+      case 'rewind':
+      case 'disablingRewind':
+        handleRewind();
+        return true;
+      case 'fastForward':
+      case 'disablingFastForward':
+        handleFastForward();
+        return true;
+      case 'master-toggle':
+        handleToggleMasterDisabling();
+        return true;
+      case 'toggle-dpad':
+        handleToggleAction('dpad');
+        return true;
+      case 'toggle-skip':
+        handleToggleAction('skip');
+        return true;
+      case 'toggle-playpause':
+        handleToggleAction('playPause');
+        return true;
+      case 'toggle-select':
+        handleToggleAction('select');
+        return true;
+      case 'toggle-focus':
+        handleToggleFocus();
+        return true;
+      case 'preset-auto':
+        setDisablingPreset('focus-auto');
+        return true;
+      case 'preset-dpad':
+        setDisablingPreset('block-dpad');
+        return true;
+      case 'preset-playpause':
+        setDisablingPreset('block-play-pause');
+        return true;
+      case 'preset-skip':
+        setDisablingPreset('block-skip');
+        return true;
+      case 'preset-all':
+        setDisablingPreset('all-enabled');
+        return true;
+      case 'type-markers':
+        onTypeChange?.('markers');
+        return true;
+      case 'type-break-markers':
+        onTypeChange?.('break-markers');
+        return true;
+      case 'type-limits':
+        onTypeChange?.('limits');
+        return true;
+      case 'type-long-press':
+        onTypeChange?.('long-press');
+        return true;
+      case 'type-fast-forward-rewind':
+        onTypeChange?.('fast-forward-rewind');
+        return true;
+      case 'type-thumbnail-images':
+        onTypeChange?.('thumbnail-images');
+        return true;
+      case 'type-custom-disabling':
+        onTypeChange?.('custom-disabling');
+        return true;
+      default:
+        return false;
+    }
+  }, [
+    handleFastForward,
+    handleOnAddMarker,
+    handleOnRemoveMarker,
+    handleRewind,
+    handleSkipIntro,
+    handleStartFromBeginning,
+    handleToggleAction,
+    handleToggleFocus,
+    handleToggleMasterDisabling,
+    onInteraction,
+    onNextEpisodePress,
+    onTogglePlayPause,
+    onTypeChange,
+  ]);
+
+  useTVEventHandler((evt: any) => {
+    if (!evt) {
+      return;
+    }
+    if (!isKeyDown(evt.eventKeyAction)) {
+      return;
+    }
+    if (isSelectEvent(evt.eventType)) {
+      handleSelectFocusedButton();
+    }
+  });
 
   return (
     <View style={styles.container} testID={testID}>

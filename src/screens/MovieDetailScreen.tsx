@@ -1,7 +1,7 @@
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {FlatList, ImageBackground, View} from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {CommonHeader} from '../components/molecules/CommonHeader';
 import {ContentBlockedBanner} from '../components/molecules/ContentBlockedBanner';
 import {MovieDetailBody} from '../components/organisms/MovieDetailBody';
@@ -28,18 +28,47 @@ import {
   removeFromWatchlist,
 } from '../services/watchlistService';
 import {findContentById} from '../utils/deeplink';
+import {isBackEvent, isKeyDown, isPlayPauseEvent} from '../utils/inputUtils';
 
 export const MovieDetailScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
+  const contentGuideRef = useRef<any>(null);
   const {user} = useAuth();
   const {activeProfile} = useProfile();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
+  const [lastFocusedArea, setLastFocusedArea] = useState<'actions' | 'recommendations'>('actions');
   const [focusedAction, setFocusedAction] = useState<
     'play' | 'list' | 'back' | 'favourites' | 'continueWatch' | null
   >(null);
+
+  useTVEventHandler((evt) => {
+    if (!evt) return;
+    if (!isKeyDown(evt.eventKeyAction)) return;
+    const type = evt.eventType?.toLowerCase();
+
+    if (isBackEvent(type)) {
+      if (isMenuExpanded) {
+        setIsMenuExpanded(false);
+      } else if (isSearchFocused) {
+        setIsSearchFocused(false);
+      } else {
+        navigation.navigate(Routes.Home);
+      }
+      return;
+    }
+
+    if (isPlayPauseEvent(type)) {
+      if (!isMenuExpanded && isContentAllowed) {
+        navigation.navigate(Routes.VideoPlayer, {
+          movie: selectedMovie,
+          videoUrl: selectedMovie.videoUrl,
+        });
+      }
+    }
+  });
   const [continueWatchProgress, setContinueWatchProgress] = useState<
     number | null
   >(null);
@@ -189,6 +218,11 @@ export const MovieDetailScreen = () => {
       isInWatchlist={isInWatchlist}
       isFavourite={isInWatchlist}
       toastMessage={toastMsg}
+      isMenuOpen={isMenuExpanded}
+      lastFocusedArea={lastFocusedArea}
+      onMenuEscapeLeft={() => {
+        setIsMenuExpanded(true);
+      }}
       onRemoveContinueWatch={async () => {
         try {
           if (activeProfile?.id) {
@@ -206,11 +240,15 @@ export const MovieDetailScreen = () => {
       onAddFavourite={handleToggleWatchlist}
       onRemoveFavourite={handleToggleWatchlist}
       onFocusAction={(action) => {
+        setLastFocusedArea('actions');
         setIsMenuExpanded(false);
         setFocusedAction(action);
       }}
       onBlurAction={() => setFocusedAction(null)}
-      onCardFocus={collapseMenu}
+      onCardFocus={() => {
+        setLastFocusedArea('recommendations');
+        collapseMenu();
+      }}
     />
   );
 
@@ -230,6 +268,10 @@ export const MovieDetailScreen = () => {
         isExpanded={isMenuExpanded}
         onMenuFocus={handleMenuFocus}
         onMenuBlur={handleMenuBlur}
+        preferActiveFocus={isMenuExpanded}
+        destinations={
+          contentGuideRef.current ? [contentGuideRef.current] : undefined
+        }
       />
       <View style={styles.contentContainer}>
         <View style={styles.headerRow}>
@@ -256,7 +298,8 @@ export const MovieDetailScreen = () => {
           />
         ) : (
           <TVFocusGuideView
-            autoFocus={!isSearchFocused}
+            ref={contentGuideRef}
+            autoFocus={!isSearchFocused && !isMenuExpanded}
             style={styles.background}>
             <FlatList
               data={[selectedMovie]}

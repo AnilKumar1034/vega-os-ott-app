@@ -101,4 +101,57 @@ describe('HeroCarousel component', () => {
     const flatStyle = StyleSheet.flatten(playButton.props.style);
     expect(flatStyle.transform).toBeUndefined();
   });
+
+  it('handles TV remote playpause event to start video playback', () => {
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    render(
+      <HeroCarousel slides={mockSlides} onContentFocus={mockOnContentFocus} />,
+    );
+
+    const tvEventHandler = useTVEventHandler.mock.calls
+      .map((c: any) => c[0])
+      .find((fn: any) => fn?.toString?.().includes('focusedActionRef'));
+
+    expect(tvEventHandler).toBeDefined();
+
+    tvEventHandler({eventType: 'playpause', eventKeyAction: 0});
+    expect(mockNavigate).toHaveBeenCalledWith('VideoPlayer', {
+      movie: mockSlides[0],
+      videoUrl: undefined,
+    });
+  });
+
+  it('handles TV remote select and left events when play button is focused', () => {
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    const mockOnMenuEscapeLeft = jest.fn();
+    const screen = render(
+      <HeroCarousel
+        slides={mockSlides}
+        onContentFocus={mockOnContentFocus}
+        onMenuEscapeLeft={mockOnMenuEscapeLeft}
+      />,
+    );
+
+    const playButton = screen.getByTestId('hero-play-button');
+    act(() => {
+      fireEvent(playButton, 'focus');
+    });
+
+    const tvEventHandler = useTVEventHandler.mock.calls
+      .map((c: any) => c[0])
+      .find((fn: any) => fn?.toString?.().includes('focusedActionRef'));
+
+    expect(tvEventHandler).toBeDefined();
+
+    // Select triggers play
+    tvEventHandler({eventType: 'select', eventKeyAction: 0});
+    expect(mockNavigate).toHaveBeenCalledWith('VideoPlayer', {
+      movie: mockSlides[0],
+      videoUrl: undefined,
+    });
+
+    // Left triggers onMenuEscapeLeft
+    tvEventHandler({eventType: 'left', eventKeyAction: 0});
+    expect(mockOnMenuEscapeLeft).toHaveBeenCalledTimes(1);
+  });
 });

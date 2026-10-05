@@ -8,9 +8,10 @@ import {
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {Routes} from '../../constants/routes';
 import {strings} from '../../constants/strings';
+import {isSelectEvent, isKeyDown} from '../../utils/inputUtils';
 import {HeroMetaTag} from '../atoms/HeroMetaTag';
 import {useAuth} from '../../context/authContext';
 import {useProfile} from '../../profiles/hooks/useProfile';
@@ -43,23 +44,29 @@ interface HeroCarouselProps {
   onLibraryChange?: () => void;
   onUnauthenticatedFavourite?: () => void;
   shouldPreferFocus?: boolean;
+  onMenuEscapeLeft?: () => void;
   testID?: string;
   autoPlayInterval?: number;
   isMenuOpen?: boolean;
   isPaused?: boolean;
 }
 
-export const HeroCarousel = ({
-  slides,
-  onContentFocus,
-  onLibraryChange,
-  onUnauthenticatedFavourite,
-  shouldPreferFocus = true,
-  testID = 'hero-banner',
-  autoPlayInterval = 6000,
-  isMenuOpen = false,
-  isPaused = false,
-}: HeroCarouselProps) => {
+export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
+  (
+    {
+      slides,
+      onContentFocus,
+      onLibraryChange,
+      onUnauthenticatedFavourite,
+      shouldPreferFocus = true,
+      onMenuEscapeLeft,
+      testID = 'hero-banner',
+      autoPlayInterval = 6000,
+      isMenuOpen = false,
+      isPaused = false,
+    }: HeroCarouselProps,
+    ref,
+  ) => {
   const navigation = useNavigation<any>();
   const {user} = useAuth();
   const {activeProfile} = useProfile();
@@ -80,6 +87,37 @@ export const HeroCarousel = ({
 
   const totalSlides = slides?.length || 0;
   const currentSlide = slides?.[activeIndex] || slides?.[0];
+
+  const focusedActionRef = useRef(focusedAction);
+  focusedActionRef.current = focusedAction;
+
+  const currentSlideRef = useRef(currentSlide);
+  currentSlideRef.current = currentSlide;
+
+  useTVEventHandler((evt) => {
+    if (!evt) return;
+    if (!isKeyDown(evt.eventKeyAction)) return;
+    const type = evt.eventType?.toLowerCase();
+
+    if (type === 'play' || type === 'playpause') {
+      if (!isPaused && !isMenuOpen) {
+        playVideo();
+      }
+      return;
+    }
+
+    if (focusedActionRef.current === 'play') {
+      if (isSelectEvent(type)) {
+        playVideo();
+      } else if (type === 'left') {
+        onMenuEscapeLeft?.();
+      }
+    } else if (focusedActionRef.current === 'list') {
+      if (isSelectEvent(type)) {
+        toggleWatchlist();
+      }
+    }
+  });
 
   // Auto-play feature: Pauses when carousel is focused, side menu is open, OR any content card is focused
   useEffect(() => {
@@ -237,7 +275,10 @@ export const HeroCarousel = ({
           />
         )}
 
-        <TVFocusGuideView style={styles.actionsRow} autoFocus>
+        <TVFocusGuideView
+          ref={ref}
+          style={styles.actionsRow}
+          autoFocus={shouldPreferFocus}>
           <View style={styles.actionsWrap}>
             <View style={styles.actions}>
               <TouchableOpacity
@@ -249,6 +290,7 @@ export const HeroCarousel = ({
                 onBlur={handleBlur}
                 onPress={playVideo}
                 activeOpacity={1}
+                focusable={true}
                 hasTVPreferredFocus={shouldPreferFocus && activeIndex === 0}
                 accessibilityRole="button"
                 accessibilityLabel={strings.hero.playAccessibility(
@@ -267,6 +309,7 @@ export const HeroCarousel = ({
                 onBlur={handleBlur}
                 onPress={toggleWatchlist}
                 activeOpacity={1}
+                focusable={true}
                 accessibilityRole="button"
                 accessibilityLabel={
                   isSavedInList
@@ -363,4 +406,4 @@ export const HeroCarousel = ({
       </View>
     </ImageBackground>
   );
-};
+});

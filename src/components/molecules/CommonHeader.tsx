@@ -1,10 +1,14 @@
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {Image, ImageSourcePropType, Pressable, Text, View} from 'react-native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import {
+  TVFocusGuideView,
+  useTVEventHandler,
+} from '@amazon-devices/react-native-kepler';
 import {CommonSearch} from './CommonSearch';
 import {styles} from './CommonHeader.styles';
 
 import {strings} from '../../constants/strings';
+import {isKeyDown, isSelectEvent} from '../../utils/inputUtils';
 
 export interface CommonHeaderProps {
   title: string;
@@ -18,6 +22,7 @@ export interface CommonHeaderProps {
   showSearch?: boolean;
   filterLabel?: string;
   onFilterPress?: () => void;
+  onFocusEscapeDown?: () => void;
   filterFocusGuideRef?: React.Ref<React.ElementRef<typeof TVFocusGuideView>>;
   filterHasTVPreferredFocus?: boolean;
 }
@@ -34,6 +39,7 @@ export const CommonHeader = ({
   showSearch = true,
   filterLabel,
   onFilterPress,
+  onFocusEscapeDown,
   filterFocusGuideRef,
   filterHasTVPreferredFocus,
 }: CommonHeaderProps) => {
@@ -41,6 +47,24 @@ export const CommonHeader = ({
   const [filterButton, setFilterButton] = useState<React.ElementRef<
     typeof Pressable
   > | null>(null);
+
+  const isFilterFocusedRef = useRef(isFilterFocused);
+  isFilterFocusedRef.current = isFilterFocused;
+
+  useTVEventHandler((evt) => {
+    if (!isFilterFocusedRef.current || !evt) {
+      return;
+    }
+    if (!isKeyDown(evt.eventKeyAction)) {
+      return;
+    }
+    const type = evt.eventType?.toLowerCase();
+    if (isSelectEvent(type)) {
+      onFilterPress?.();
+    } else if (type === 'down') {
+      onFocusEscapeDown?.();
+    }
+  });
 
   return (
     <TVFocusGuideView

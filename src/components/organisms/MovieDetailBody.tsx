@@ -1,11 +1,13 @@
 import React from 'react';
 import {FlatList, Image, Text, TouchableOpacity, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
+import {useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {Routes} from '../../constants/routes';
 import {HomeContentItem} from '../../data/home';
 import {strings} from '../../constants/strings';
 import {ContentCard} from '../molecules/ContentCard';
 import {styles} from '../../screens/MovieDetailScreen.styles';
+import {isKeyDown, isSelectEvent} from '../../utils/inputUtils';
 
 interface MovieDetailBodyProps {
   selectedMovie: HomeContentItem;
@@ -21,6 +23,9 @@ interface MovieDetailBodyProps {
   isFavourite?: boolean;
   isInWatchlist?: boolean;
   toastMessage?: string | null;
+  isMenuOpen?: boolean;
+  onMenuEscapeLeft?: () => void;
+  lastFocusedArea?: 'actions' | 'recommendations';
   onFocusAction: (
     action: 'play' | 'list' | 'back' | 'favourites' | 'continueWatch',
   ) => void;
@@ -40,6 +45,9 @@ export const MovieDetailBody = ({
   isFavourite = false,
   isInWatchlist = false,
   toastMessage,
+  isMenuOpen = false,
+  onMenuEscapeLeft,
+  lastFocusedArea = 'actions',
   onFocusAction,
   onBlurAction,
   onCardFocus,
@@ -52,6 +60,50 @@ export const MovieDetailBody = ({
   const inList = isInWatchlist || isFavourite;
   const handleToggleList =
     onToggleWatchlist || (inList ? onRemoveFavourite : onAddFavourite);
+
+  const handleWatchPress = () => {
+    navigation.navigate(Routes.VideoPlayer, {
+      movie: selectedMovie,
+      videoUrl: selectedMovie.videoUrl,
+    });
+  };
+
+  const handleBackPress = () => {
+    navigation.navigate(Routes.Home);
+  };
+
+  useTVEventHandler((evt) => {
+    if (!evt) return;
+    if (!isKeyDown(evt.eventKeyAction)) return;
+    const type = evt.eventType?.toLowerCase();
+
+    if (focusedAction === 'play' && type === 'left') {
+      onMenuEscapeLeft?.();
+      return;
+    }
+
+    if (isSelectEvent(type)) {
+      if (focusedAction === 'back') {
+        handleBackPress();
+        return;
+      }
+      if (focusedAction === 'favourites' || focusedAction === 'list') {
+        handleToggleList?.();
+        return;
+      }
+      if (focusedAction === 'continueWatch') {
+        onRemoveContinueWatch?.();
+        return;
+      }
+      if (
+        focusedAction === 'play' ||
+        (!focusedAction && lastFocusedArea === 'actions' && !isMenuOpen)
+      ) {
+        handleWatchPress();
+        return;
+      }
+    }
+  });
 
   return (
     <View style={styles.mainCardContainer}>
@@ -135,13 +187,8 @@ export const MovieDetailBody = ({
               ]}
               onFocus={() => onFocusAction('play')}
               onBlur={onBlurAction}
-              onPress={() =>
-                navigation.navigate(Routes.VideoPlayer, {
-                  movie: selectedMovie,
-                  videoUrl: selectedMovie.videoUrl,
-                })
-              }
-              hasTVPreferredFocus
+              onPress={handleWatchPress}
+              hasTVPreferredFocus={lastFocusedArea === 'actions' && !isMenuOpen}
               activeOpacity={1}
               accessibilityRole="button"
               accessibilityLabel={strings.hero.playAccessibility(
@@ -225,7 +272,7 @@ export const MovieDetailBody = ({
               ]}
               onFocus={() => onFocusAction('back')}
               onBlur={onBlurAction}
-              onPress={() => navigation.navigate(Routes.Home)}
+              onPress={handleBackPress}
               activeOpacity={1}
               accessibilityRole="button"
               accessibilityLabel={strings.actions.goBack}
@@ -247,8 +294,18 @@ export const MovieDetailBody = ({
           horizontal
           data={recommendations}
           keyExtractor={(item) => `rec-${item.id}`}
-          renderItem={({item}) => (
-            <ContentCard {...item} layout="portrait" onFocus={onCardFocus} />
+          renderItem={({item, index}) => (
+            <ContentCard
+              {...item}
+              layout="portrait"
+              onFocus={onCardFocus}
+              hasTVPreferredFocus={
+                lastFocusedArea === 'recommendations' &&
+                !isMenuOpen &&
+                index === 0
+              }
+              onMenuEscapeLeft={index === 0 ? onMenuEscapeLeft : undefined}
+            />
           )}
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.recList}

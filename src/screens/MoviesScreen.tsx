@@ -1,6 +1,7 @@
-import React, {useEffect, useMemo, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {FlatList, ImageBackground, Text, View} from 'react-native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import {useNavigation} from '@react-navigation/native';
+import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {CommonHeader} from '../components/molecules/CommonHeader';
 import {ContentRow} from '../components/molecules/ContentRow';
 import {SideMenu} from '../components/molecules/SideMenu';
@@ -22,15 +23,57 @@ import {findContentById} from '../utils/deeplink';
 import {filterContentRows} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
 
+const useSafeNavigation = () => {
+  try {
+    return useNavigation<any>();
+  } catch {
+    return {
+      navigate: () => {},
+      dispatch: () => {},
+      goBack: () => {},
+      replace: () => {},
+    } as any;
+  }
+};
+
 export const MoviesScreen = () => {
+  const navigation = useSafeNavigation();
+  const contentGuideRef = useRef<any>(null);
   const {user} = useAuth();
   const {activeProfile} = useProfile();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
+  const [lastFocusedRowIndex, setLastFocusedRowIndex] = useState(0);
+  const rowRefs = useRef<{[key: number]: any}>({});
   const [continueWatchRecords, setContinueWatchRecords] = useState<
     ContinueWatchRecord[]
   >([]);
+
+  useTVEventHandler((evt) => {
+    if (!evt) return;
+    if (evt.eventKeyAction !== undefined && evt.eventKeyAction !== 0) return;
+    const type = evt.eventType?.toLowerCase();
+
+    if (type === 'back') {
+      if (isMenuExpanded) {
+        setIsMenuExpanded(false);
+      } else if (isSearchFocused) {
+        setIsSearchFocused(false);
+      }
+      return;
+    }
+
+    if (type === 'play' || type === 'playpause') {
+      if (!isMenuExpanded && filteredRows.length > 0 && filteredRows[0].items.length > 0) {
+        const firstMovie = filteredRows[0].items[0];
+        navigation.navigate(Routes.VideoPlayer, {
+          movie: firstMovie,
+          videoUrl: firstMovie.videoUrl,
+        });
+      }
+    }
+  });
 
   useEffect(() => {
     let isCurrent = true;
@@ -129,11 +172,26 @@ export const MoviesScreen = () => {
     index: number;
   }) => (
     <ContentRow
+      ref={(node) => {
+        rowRefs.current[index] = node;
+      }}
       row={row}
-      onContentFocus={collapseMenu}
-      shouldPreferFocus={index === 0}
+      onContentFocus={() => {
+        setLastFocusedRowIndex(index);
+        collapseMenu();
+      }}
+      shouldPreferFocus={
+        index === lastFocusedRowIndex && !isMenuExpanded && !isSearchFocused
+      }
+      onMenuEscapeLeft={() => {
+        setLastFocusedRowIndex(index);
+        setIsMenuExpanded(true);
+      }}
     />
   );
+
+  const activeDestination =
+    rowRefs.current[lastFocusedRowIndex] || contentGuideRef.current;
 
   return (
     <ImageBackground
@@ -145,6 +203,10 @@ export const MoviesScreen = () => {
         isExpanded={isMenuExpanded}
         onMenuFocus={handleMenuFocus}
         onMenuBlur={handleMenuBlur}
+        preferActiveFocus={isMenuExpanded}
+        destinations={
+          activeDestination ? [activeDestination] : undefined
+        }
       />
       <View style={styles.content}>
         <CommonHeader
@@ -161,8 +223,9 @@ export const MoviesScreen = () => {
           searchHasTVPreferredFocus={isSearchFocused}
         />
         <TVFocusGuideView
+          ref={contentGuideRef}
           style={styles.contentGuide}
-          autoFocus={!isSearchFocused}>
+          autoFocus={!isSearchFocused && !isMenuExpanded}>
           <FlatList
             data={filteredRows}
             keyExtractor={(row) => `movies-${row.id}`}

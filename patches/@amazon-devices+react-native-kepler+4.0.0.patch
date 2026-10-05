@@ -1,3 +1,76 @@
+diff --git a/node_modules/@amazon-devices/react-native-kepler/Libraries/TV/TVEventHandler.js b/node_modules/@amazon-devices/react-native-kepler/Libraries/TV/TVEventHandler.js
+index 2ecf8a1..349f2f4 100644
+--- a/node_modules/@amazon-devices/react-native-kepler/Libraries/TV/TVEventHandler.js
++++ b/node_modules/@amazon-devices/react-native-kepler/Libraries/TV/TVEventHandler.js
+@@ -49,7 +49,14 @@ class TVEventHandler {
+                 // Run callback
+                 Systrace.beginEvent('TVEventHandler::onHWKeyEvent', args);
+                 try {
+-                    callback(component, data);
++                    let evtData = data;
++                    if (evtData && evtData.eventType) {
++                        const lower = evtData.eventType.toLowerCase();
++                        if (lower === 'kpenter' || lower === 'key_kpenter' || lower === 'ok' || lower === 'dpad_center') {
++                            evtData = {...evtData, eventType: 'select'};
++                        }
++                    }
++                    callback(component, evtData);
+                 } catch (error) {
+                     console.error("[TVEventHandler] Error in callback: ", error);
+                 } finally {
+diff --git a/node_modules/@amazon-devices/react-native-kepler/Libraries/TV/TVFocusGuideView.js b/node_modules/@amazon-devices/react-native-kepler/Libraries/TV/TVFocusGuideView.js
+index 769ba41..f3e7890 100644
+--- a/node_modules/@amazon-devices/react-native-kepler/Libraries/TV/TVFocusGuideView.js
++++ b/node_modules/@amazon-devices/react-native-kepler/Libraries/TV/TVFocusGuideView.js
+@@ -124,7 +124,9 @@ function TVFocusGuideView(
+     // $FlowFixMe[prop-missing]
+     <ReactNative.View
+       {...props}
+-      destinations={dests} // amznmod_react - Using destinationProp as prop instead of method
++      destinations={
++        destinationsProp != null && dests.length > 0 ? dests : undefined
++      } // amznmod_react - Using destinationProp as prop instead of method
+       style={style}
+       ref={mergedRef}
+       collapsable={false}
+diff --git a/node_modules/@amazon-devices/react-native-kepler/Libraries/TV/useTVEventHandler.js b/node_modules/@amazon-devices/react-native-kepler/Libraries/TV/useTVEventHandler.js
+index 41eccbf..c96900b 100644
+--- a/node_modules/@amazon-devices/react-native-kepler/Libraries/TV/useTVEventHandler.js
++++ b/node_modules/@amazon-devices/react-native-kepler/Libraries/TV/useTVEventHandler.js
+@@ -22,19 +22,31 @@ import Platform from '../Utilities/Platform';
+ import type { EventSubscription } from '../vendor/emitter/EventEmitter';
+ import { useAddHWEventListenerCallback } from '../UserInputManager/UserInputManager';
+ 
++const normalizeTVEvent = (evt: HWEvent): HWEvent => {
++    if (!evt || !evt.eventType) return evt;
++    const type = evt.eventType.toLowerCase();
++    if (type === 'kpenter' || type === 'key_kpenter' || type === 'ok' || type === 'dpad_center') {
++        return {...evt, eventType: 'select'};
++    }
++    return evt;
++};
++
+ // amznmod_react - use root tag based API to register callbacks
+ const useTVEventHandler = (handleEvent: (evt: HWEvent) => void) => {
+     const addHWEventListenerCallback = useAddHWEventListenerCallback();
+     useEffect(() => {
++      const normalizedCallback = (evt: HWEvent) => {
++        handleEvent(normalizeTVEvent(evt));
++      };
+       if (Platform.OS === 'kepler') {
+-        const eventSubscription: EventSubscription = addHWEventListenerCallback(handleEvent);
++        const eventSubscription: EventSubscription = addHWEventListenerCallback(normalizedCallback);
+         return () => {
+           eventSubscription.remove();
+         };
+       } else {
+         const handler: TVEventHandler = new TVEventHandler();
+         handler.enable(null, function(cmp, evt) {
+-          handleEvent(evt);
++          normalizedCallback(evt);
+         });
+         return () => {
+           handler.disable();
 diff --git a/node_modules/@amazon-devices/react-native-kepler/Libraries/Utilities/registerGeneratedViewConfig.js b/node_modules/@amazon-devices/react-native-kepler/Libraries/Utilities/registerGeneratedViewConfig.js
 index 3136ac6..16196ad 100644
 --- a/node_modules/@amazon-devices/react-native-kepler/Libraries/Utilities/registerGeneratedViewConfig.js

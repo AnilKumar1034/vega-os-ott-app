@@ -1,8 +1,10 @@
 import React from 'react';
 import {ImageSourcePropType, Text, TouchableOpacity} from 'react-native';
 import {CommonActions, useNavigation} from '@react-navigation/native';
+import {useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {MenuIcon} from '../atoms/MenuIcon';
 import {RouteName} from '../../constants/routes';
+import {isSelectEvent, isKeyDown} from '../../utils/inputUtils';
 import {styles} from './SideMenu.styles';
 
 export interface MenuOptionItem {
@@ -33,6 +35,15 @@ export const SideMenuItem = ({
 }: SideMenuItemProps) => {
   const navigation = useNavigation();
 
+  useTVEventHandler((evt) => {
+    if (!isFocused || !evt) return;
+    if (!isKeyDown(evt.eventKeyAction)) return;
+    const type = evt.eventType?.toLowerCase();
+    if (isSelectEvent(type)) {
+      navigation.dispatch(CommonActions.navigate({name: option.route}));
+    }
+  });
+
   return (
     <TouchableOpacity
       style={[
@@ -47,7 +58,8 @@ export const SideMenuItem = ({
       onPress={() =>
         navigation.dispatch(CommonActions.navigate({name: option.route}))
       }
-      hasTVPreferredFocus={preferActiveFocus && isActive}
+      focusable={true}
+      hasTVPreferredFocus={preferActiveFocus && isFocused}
       accessibilityRole="button"
       accessibilityLabel={option.title}
       testID={`side-menu-${option.route}`}>

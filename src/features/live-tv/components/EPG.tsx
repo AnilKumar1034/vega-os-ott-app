@@ -26,6 +26,7 @@ import {
 import {colors} from '../../../theme/colors';
 import {fontSizes, fontWeights} from '../../../theme/fonts';
 import {borderRadius, spacing} from '../../../theme/sizes';
+import {isKeyDown, isSelectEvent} from '../../../utils/inputUtils';
 import {
   formatEPGTime,
   getCurrentEPGSlotTimeMs,
@@ -345,6 +346,9 @@ const EPGComponent = forwardRef<KeplerEPGRef, KeplerEPGProps>((props, ref) => {
   const currentInfoRef = useRef(currentFocusedInfo);
   currentInfoRef.current = currentFocusedInfo;
 
+  const channelSegmentsRef = useRef(channelSegments);
+  channelSegmentsRef.current = channelSegments;
+
   const handleTileFocus = useCallback(
     (
       rIdx: number,
@@ -356,6 +360,14 @@ const EPGComponent = forwardRef<KeplerEPGRef, KeplerEPGProps>((props, ref) => {
       setFocusedRow(rIdx);
       setFocusedCol(cIdx);
       setIsEpgFocused(true);
+      focusedRowRef.current = rIdx;
+      focusedColRef.current = cIdx;
+      isEpgFocusedRef.current = true;
+      currentInfoRef.current = {
+        channel,
+        program,
+        seg: undefined,
+      };
 
       if (program) {
         onTileFocus({
@@ -407,7 +419,7 @@ const EPGComponent = forwardRef<KeplerEPGRef, KeplerEPGProps>((props, ref) => {
         }
 
         // On Kepler, 0 is key down, 1 is key up
-        if (evt.eventKeyAction !== undefined && evt.eventKeyAction !== 0) {
+        if (evt.eventKeyAction !== undefined && !isKeyDown(evt.eventKeyAction)) {
           return;
         }
 
@@ -438,9 +450,18 @@ const EPGComponent = forwardRef<KeplerEPGRef, KeplerEPGProps>((props, ref) => {
               channel: currentChannel || ({} as Channel),
             },
           });
+        } else if (isSelectEvent(evt.eventType)) {
+          const ch = currentInfoRef.current?.channel ?? currentChannel;
+          let prog = currentInfoRef.current?.program;
+          if (!prog && ch) {
+            prog = channelSegmentsRef.current[r]?.[c]?.program;
+          }
+          if (ch && prog) {
+            handleTilePress(r, prog, ch);
+          }
         }
       },
-      [onMenu, onFocusEscapeUp],
+      [onMenu, onFocusEscapeUp, handleTilePress],
     ),
   );
 

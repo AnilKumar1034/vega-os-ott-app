@@ -1,6 +1,7 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {FlatList, ImageBackground, View} from 'react-native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import {useNavigation} from '@react-navigation/native';
+import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {CommonHeader} from '../components/molecules/CommonHeader';
 import {ContentRow} from '../components/molecules/ContentRow';
 import {HeroCarousel} from '../components/molecules/HeroCarousel';
@@ -35,17 +36,60 @@ import {findContentById} from '../utils/deeplink';
 import {filterContentRows, filterHeroSlides} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
 
+const useSafeNavigation = () => {
+  try {
+    return useNavigation<any>();
+  } catch {
+    return {
+      navigate: () => {},
+      dispatch: () => {},
+      goBack: () => {},
+      replace: () => {},
+    } as any;
+  }
+};
+
 export const HomeScreen = () => {
+  const navigation = useSafeNavigation();
+  const contentGuideRef = useRef<any>(null);
   const {user} = useAuth();
   const {activeProfile} = useProfile();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [isAnyCardFocused, setIsAnyCardFocused] = useState(false);
+  const [lastFocusedRow, setLastFocusedRow] = useState<'hero' | number>('hero');
+  const rowRefs = useRef<{[key: number]: any}>({});
+  const heroRef = useRef<any>(null);
   const [continueWatchRecords, setContinueWatchRecords] = useState<
     ContinueWatchRecord[]
   >([]);
   const [watchlistRecords, setWatchlistRecords] = useState<WatchlistItem[]>([]);
+
+  useTVEventHandler((evt) => {
+    if (!evt) return;
+    if (evt.eventKeyAction !== undefined && evt.eventKeyAction !== 0) return;
+    const type = evt.eventType?.toLowerCase();
+
+    if (type === 'back') {
+      if (isMenuExpanded) {
+        setIsMenuExpanded(false);
+      } else if (isSearchFocused) {
+        setIsSearchFocused(false);
+      }
+      return;
+    }
+
+    if (type === 'play' || type === 'playpause') {
+      if (filteredHeroSlides.length > 0 && !isAnyCardFocused && !isMenuExpanded) {
+        const currentHero = filteredHeroSlides[0];
+        navigation.navigate(Routes.VideoPlayer, {
+          movie: currentHero,
+          videoUrl: (currentHero as any).videoUrl,
+        });
+      }
+    }
+  });
 
   const loadLibraryState = useCallback(async () => {
     if (!user) {
@@ -204,11 +248,13 @@ export const HomeScreen = () => {
   };
 
   const handleHeroFocus = () => {
+    setLastFocusedRow('hero');
     setIsMenuExpanded(false);
     setIsAnyCardFocused(false);
   };
 
-  const handleCardFocus = () => {
+  const handleCardFocus = (rowIndex: number) => {
+    setLastFocusedRow(rowIndex);
     setIsMenuExpanded(false);
     setIsAnyCardFocused(true);
   };
@@ -221,11 +267,30 @@ export const HomeScreen = () => {
     index: number;
   }) => (
     <ContentRow
+      ref={(node) => {
+        rowRefs.current[index] = node;
+      }}
       row={row}
-      onContentFocus={handleCardFocus}
-      shouldPreferFocus={index === 0}
+      onContentFocus={() => handleCardFocus(index)}
+      shouldPreferFocus={
+        (filteredHeroSlides.length === 0 && lastFocusedRow === 'hero'
+          ? index === 0
+          : lastFocusedRow === index) &&
+        !isMenuExpanded &&
+        !isSearchFocused
+      }
+      onMenuEscapeLeft={() => {
+        setLastFocusedRow(index);
+        setIsAnyCardFocused(false);
+        setIsMenuExpanded(true);
+      }}
     />
   );
+
+  const activeDestination =
+    lastFocusedRow === 'hero'
+      ? heroRef.current || contentGuideRef.current
+      : rowRefs.current[lastFocusedRow] || contentGuideRef.current;
 
   return (
     <ImageBackground
@@ -237,6 +302,10 @@ export const HomeScreen = () => {
         isExpanded={isMenuExpanded}
         onMenuFocus={handleMenuFocus}
         onMenuBlur={handleMenuBlur}
+        preferActiveFocus={isMenuExpanded}
+        destinations={
+          activeDestination ? [activeDestination] : undefined
+        }
       />
       <View style={styles.content}>
         <CommonHeader
@@ -252,18 +321,31 @@ export const HomeScreen = () => {
           onSearchBlur={() => setIsSearchFocused(false)}
           searchHasTVPreferredFocus={isSearchFocused}
         />
-        <TVFocusGuideView style={styles.contentGuide} autoFocus>
+        <TVFocusGuideView
+          ref={contentGuideRef}
+          style={styles.contentGuide}
+          autoFocus={!isSearchFocused && !isMenuExpanded}>
           <FlatList
             data={filteredRows}
             keyExtractor={(row) => row.id}
             ListHeaderComponent={
               filteredHeroSlides.length > 0 ? (
                 <HeroCarousel
+                  ref={heroRef}
                   slides={filteredHeroSlides}
                   onContentFocus={handleHeroFocus}
                   onLibraryChange={() => void loadLibraryState()}
                   isMenuOpen={isMenuExpanded}
                   isPaused={isAnyCardFocused}
+                  shouldPreferFocus={
+                    lastFocusedRow === 'hero' &&
+                    !isMenuExpanded &&
+                    !isSearchFocused
+                  }
+                  onMenuEscapeLeft={() => {
+                    setLastFocusedRow('hero');
+                    setIsMenuExpanded(true);
+                  }}
                   testID={AppDetails.heroBannerTestId}
                 />
               ) : null

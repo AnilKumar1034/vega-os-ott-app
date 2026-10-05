@@ -124,4 +124,46 @@ describe('EPG Component', () => {
       ref.current?.focusOnEPG(false);
     });
   });
+
+  it('handles TV remote select event via useTVEventHandler and triggers onTilePress', () => {
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    const onTileFocus = jest.fn();
+    const onTilePress = jest.fn();
+    const ref = React.createRef<EPGActions>();
+
+    const {getByText} = render(
+      <EPG
+        ref={ref}
+        onTileFocus={onTileFocus}
+        onTilePress={onTilePress}
+        timeRange={{
+          startTimeMs: 1720000000000,
+          initialPosition: 1720000000000,
+        }}
+      />,
+    );
+
+    act(() => {
+      ref.current?.resetData(mockChannels, {
+        startTimeMs: 1720000000000,
+        endTimeMs: 1720005400000,
+      });
+      ref.current?.focusOnEPG(true);
+    });
+
+    fireEvent(getByText('Morning News'), 'focus');
+
+    const tvEventHandler = useTVEventHandler.mock.calls[
+      useTVEventHandler.mock.calls.length - 1
+    ][0];
+
+    act(() => {
+      tvEventHandler({eventType: 'select', eventKeyAction: 0});
+    });
+
+    expect(onTilePress).toHaveBeenCalled();
+    expect(onTilePress.mock.calls[0][0].payload.program.title).toBe(
+      'Morning News',
+    );
+  });
 });

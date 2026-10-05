@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {
   FlatList,
   ImageBackground,
@@ -26,11 +26,13 @@ import {styles} from './MyListScreen.styles';
 
 export const MyListScreen = () => {
   const navigation = useNavigation<any>();
+  const contentGuideRef = useRef<any>(null);
   const {user} = useAuth();
   const {activeProfile} = useProfile();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
+  const [lastFocusedCardIndex, setLastFocusedCardIndex] = useState(0);
   const [focusedAction, setFocusedAction] = useState<string | null>(null);
   const [watchlistItems, setWatchlistItems] = useState<WatchlistItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -148,8 +150,21 @@ export const MyListScreen = () => {
     <ContentCard
       {...item}
       layout="grid"
-      onFocus={collapseMenu}
-      hasTVPreferredFocus={index === 0 && !isSearchFocused}
+      onFocus={() => {
+        setLastFocusedCardIndex(index);
+        collapseMenu();
+      }}
+      hasTVPreferredFocus={
+        index === lastFocusedCardIndex && !isSearchFocused && !isMenuExpanded
+      }
+      onMenuEscapeLeft={
+        index % 4 === 0
+          ? () => {
+              setLastFocusedCardIndex(index);
+              setIsMenuExpanded(true);
+            }
+          : undefined
+      }
       testID={`my-list-card-${item.id}`}
     />
   );
@@ -358,6 +373,9 @@ export const MyListScreen = () => {
         onMenuFocus={handleMenuFocus}
         onMenuBlur={handleMenuBlur}
         preferActiveFocus={isMenuExpanded}
+        destinations={
+          contentGuideRef.current ? [contentGuideRef.current] : undefined
+        }
       />
       <View style={styles.content}>
         <CommonHeader
@@ -375,8 +393,9 @@ export const MyListScreen = () => {
           searchHasTVPreferredFocus={isSearchFocused}
         />
         <TVFocusGuideView
+          ref={contentGuideRef}
           style={styles.contentGuide}
-          autoFocus={filteredItems.length > 0 && !isSearchFocused}>
+          autoFocus={filteredItems.length > 0 && !isSearchFocused && !isMenuExpanded}>
           <FlatList
             data={filteredItems}
             keyExtractor={(item) => `watchlist-${item.id}`}

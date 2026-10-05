@@ -8,14 +8,14 @@ export const styles = StyleSheet.create({
     position: 'absolute',
     left: spacing.huge,
     right: spacing.huge,
-    bottom: 48,
+    bottom: 24,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 8,
     pointerEvents: 'none',
   },
   containerWithControls: {
-    bottom: 120,
+    bottom: 72,
   },
   textCapsule: {
     backgroundColor: 'rgba(0, 0, 0, 0.82)',
@@ -30,13 +30,13 @@ export const styles = StyleSheet.create({
   },
   subtitleText: {
     color: colors.textPrimary,
-    fontSize: fontSizes.userName ? fontSizes.userName - 4 : 22,
+    fontSize: fontSizes.userName ? fontSizes.userName - 4 : 10,
     fontWeight: fontWeights.bold,
     textAlign: 'center',
-    lineHeight: 32,
+    lineHeight: 16,
     textShadowColor: 'rgba(0, 0, 0, 0.95)',
     textShadowOffset: {width: 1, height: 1},
-    textShadowRadius: 4,
+    textShadowRadius: 2,
     letterSpacing: 0.3,
   },
 });

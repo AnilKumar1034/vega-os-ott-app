@@ -1,9 +1,10 @@
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {Modal, ScrollView, Text, TouchableOpacity, View} from 'react-native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {strings} from '../../constants/strings';
 import {AudioTrack} from '../../types/audioTracks';
 import {styles} from './AudioTracksModal.styles';
+import {isBackEvent, isKeyDown, isSelectEvent} from '../../utils/inputUtils';
 
 export interface AudioTracksModalProps {
   isOpen: boolean;
@@ -21,6 +22,35 @@ export const AudioTracksModal: React.FC<AudioTracksModalProps> = ({
   onClose,
 }) => {
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  const focusedIdRef = useRef<string | null>(focusedId);
+  focusedIdRef.current = focusedId;
+
+  useTVEventHandler((evt) => {
+    if (!isOpen) {
+      return;
+    }
+    if (!evt) {
+      return;
+    }
+    if (!isKeyDown(evt.eventKeyAction)) {
+      return;
+    }
+    const type = evt.eventType?.toLowerCase();
+
+    if (isBackEvent(type)) {
+      onClose();
+      return;
+    }
+
+    if (isSelectEvent(type)) {
+      const current = focusedIdRef.current;
+      if (current === 'close') {
+        onClose();
+      } else if (current) {
+        onSelectTrack(current);
+      }
+    }
+  });
 
   if (!isOpen) {
     return null;

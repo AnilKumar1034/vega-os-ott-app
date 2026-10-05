@@ -31,16 +31,16 @@ export const styles = StyleSheet.create({
   },
   iconBadge: {
     backgroundColor: colors.heroAccent,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.xs,
-    borderRadius: borderRadius.sm,
-    marginBottom: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xxs,
+    borderRadius: borderRadius.xs,
+    marginBottom: spacing.xs,
   },
   iconBadgeText: {
     color: colors.textPrimary,
-    fontSize: fontSizes.cardBadge,
+    fontSize: 6.5,
     fontWeight: fontWeights.extraBold,
-    letterSpacing: 1.5,
+    letterSpacing: 1,
   },
   title: {
     color: colors.textPrimary,
@@ -166,5 +166,5 @@ export const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: fontSizes.caption,
     fontWeight: fontWeights.boldWeight,
-  },
+  }, 
 });

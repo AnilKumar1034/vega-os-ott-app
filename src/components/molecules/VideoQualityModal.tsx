@@ -1,9 +1,10 @@
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {Modal, ScrollView, Text, TouchableOpacity, View} from 'react-native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {strings} from '../../constants/strings';
 import {VideoQualityOption} from '../../types/videoQuality';
 import {styles} from './VideoQualityModal.styles';
+import {isBackEvent, isKeyDown, isSelectEvent} from '../../utils/inputUtils';
 
 export interface VideoQualityModalProps {
   isOpen: boolean;
@@ -21,6 +22,35 @@ export const VideoQualityModal: React.FC<VideoQualityModalProps> = ({
   onClose,
 }) => {
   const [focusedId, setFocusedId] = useState<string | null>(null);
+  const focusedIdRef = useRef<string | null>(focusedId);
+  focusedIdRef.current = focusedId;
+
+  useTVEventHandler((evt) => {
+    if (!isOpen) {
+      return;
+    }
+    if (!evt) {
+      return;
+    }
+    if (!isKeyDown(evt.eventKeyAction)) {
+      return;
+    }
+    const type = evt.eventType?.toLowerCase();
+
+    if (isBackEvent(type)) {
+      onClose();
+      return;
+    }
+
+    if (isSelectEvent(type)) {
+      const current = focusedIdRef.current;
+      if (current === 'close') {
+        onClose();
+      } else if (current) {
+        onSelectQuality(current);
+      }
+    }
+  });
 
   if (!isOpen) {
     return null;

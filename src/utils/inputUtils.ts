@@ -37,3 +37,56 @@ export const sanitizeEmailInput = (input: string): string => {
 
   return sanitized;
 };
+
+/**
+ * Determines whether a TV hardware event corresponds to a Select/OK/Enter action.
+ * Handles standard TV remote 'select', keyboard 'enter', virtual remote 'kpenter', 'ok', etc.
+ */
+export const isSelectEvent = (eventType?: string): boolean => {
+  if (!eventType) return false;
+  const type = eventType.toLowerCase();
+  return (
+    type === 'select' ||
+    type === 'enter' ||
+    type === 'kpenter' ||
+    type === 'key_kpenter' ||
+    type === 'ok' ||
+    type === 'dpad_center'
+  );
+};
+
+/**
+ * Checks whether an eventKeyAction corresponds to key down (pressed).
+ * On TV/Kepler, 0 represents key pressed down. Undefined is also treated as down.
+ */
+export const isKeyDown = (eventKeyAction?: number): boolean => {
+  return eventKeyAction === undefined || eventKeyAction === 0;
+};
+
+/**
+ * Determines whether a TV hardware event corresponds to a Back/Escape action.
+ */
+export const isBackEvent = (eventType?: string): boolean => {
+  if (!eventType) return false;
+  const type = eventType.toLowerCase();
+  return type === 'back' || type === 'escape';
+};
+
+/**
+ * Determines whether a TV hardware event corresponds to a Play/Pause action.
+ */
+export const isPlayPauseEvent = (eventType?: string): boolean => {
+  if (!eventType) return false;
+  const type = eventType.toLowerCase();
+  return type === 'playpause' || type === 'play' || type === 'pause';
+};
+
+/**
+ * Determines whether a TV hardware event corresponds to a Stop action.
+ */
+export const isStopEvent = (eventType?: string): boolean => {
+  if (!eventType) return false;
+  const type = eventType.toLowerCase();
+  return type === 'stop';
+};
+

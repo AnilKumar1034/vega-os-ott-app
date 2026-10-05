@@ -11,7 +11,10 @@ import {
   View,
 } from 'react-native';
 import {useNavigation, useRoute} from '@react-navigation/native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import {
+  TVFocusGuideView,
+  useTVEventHandler,
+} from '@amazon-devices/react-native-kepler';
 import {
   DEFAULT_MOCK_VIDEO_URL,
   getSeekbarTypeForContent,
@@ -1893,10 +1896,66 @@ export const VideoPlayerScreen = () => {
     releaseMediaResourcesSync,
   ]);
 
+  const showControlsRef = useRef(showControls);
+  showControlsRef.current = showControls;
+  const isPlaybackPausedRef = useRef(isPlaybackPaused);
+  isPlaybackPausedRef.current = isPlaybackPaused;
+  const playbackTimeRef = useRef(playbackTime);
+  playbackTimeRef.current = playbackTime;
+  const isSubtitlesModalOpenRef = useRef(isSubtitlesModalOpen);
+  isSubtitlesModalOpenRef.current = isSubtitlesModalOpen;
+  const isAudioTracksModalOpenRef = useRef(isAudioTracksModalOpen);
+  isAudioTracksModalOpenRef.current = isAudioTracksModalOpen;
+  const isVideoQualityModalOpenRef = useRef(isVideoQualityModalOpen);
+  isVideoQualityModalOpenRef.current = isVideoQualityModalOpen;
+  const isNextEpisodeModalOpenRef = useRef(isNextEpisodeModalOpen);
+  isNextEpisodeModalOpenRef.current = isNextEpisodeModalOpen;
+  const isBackFocusedRef = useRef(isBackFocused);
+  isBackFocusedRef.current = isBackFocused;
+  const isCCFocusedRef = useRef(isCCFocused);
+  isCCFocusedRef.current = isCCFocused;
+  const isAudioFocusedRef = useRef(isAudioFocused);
+  isAudioFocusedRef.current = isAudioFocused;
+  const isQualityFocusedRef = useRef(isQualityFocused);
+  isQualityFocusedRef.current = isQualityFocused;
+
   const handleBackFocus = () => {
     resetHideTimer();
     setIsBackFocused(true);
   };
+
+  const handleBack = useCallback(async () => {
+    if (isSubtitlesModalOpenRef.current) {
+      setIsSubtitlesModalOpen(false);
+      resetHideTimer();
+      return;
+    }
+    if (isAudioTracksModalOpenRef.current) {
+      setIsAudioTracksModalOpen(false);
+      resetHideTimer();
+      return;
+    }
+    if (isVideoQualityModalOpenRef.current) {
+      setIsVideoQualityModalOpen(false);
+      resetHideTimer();
+      return;
+    }
+    if (isNextEpisodeModalOpenRef.current) {
+      setIsNextEpisodeModalOpen(false);
+      resetHideTimer();
+      return;
+    }
+
+    if (isLive && Date.now() - playerOpenedAtRef.current < 750) {
+      return;
+    }
+    await persistProgress();
+    if (isLive && navigation.canGoBack?.()) {
+      navigation.goBack();
+      return;
+    }
+    navigation.navigate(Routes.Home);
+  }, [isLive, navigation, persistProgress, resetHideTimer]);
 
   const togglePlayback = useCallback(async () => {
     resetHideTimer();
@@ -1913,6 +1972,116 @@ export const VideoPlayerScreen = () => {
       setVideoError(error?.message || strings.errors.videoPlaybackUnavailable);
     }
   }, [isPlaybackPaused, player, resetHideTimer]);
+
+  useTVEventHandler(
+    useCallback(
+      (evt: any) => {
+        if (!evt) {
+          return;
+        }
+
+        // On Kepler/TV, 0 is key down, 1 is key up. Ignore key up to avoid duplicate action.
+        if (evt.eventKeyAction !== undefined && evt.eventKeyAction !== 0) {
+          return;
+        }
+
+        const anyModalOpen =
+          isSubtitlesModalOpenRef.current ||
+          isAudioTracksModalOpenRef.current ||
+          isVideoQualityModalOpenRef.current ||
+          isNextEpisodeModalOpenRef.current;
+
+        if (evt.eventType === 'back') {
+          handleBack().catch(() => {});
+          return;
+        }
+
+        if (anyModalOpen) {
+          return;
+        }
+
+        switch (evt.eventType) {
+          case 'playpause':
+            resetHideTimer();
+            togglePlayback().catch(() => {});
+            break;
+
+          case 'play':
+            resetHideTimer();
+            if (isPlaybackPausedRef.current) {
+              togglePlayback().catch(() => {});
+            }
+            break;
+
+          case 'pause':
+            resetHideTimer();
+            if (!isPlaybackPausedRef.current) {
+              togglePlayback().catch(() => {});
+            }
+            break;
+
+          case 'rewind':
+          case 'skip_backward':
+            resetHideTimer();
+            handleUserSeek(Math.max(0, playbackTimeRef.current - 10));
+            break;
+
+          case 'forward':
+          case 'fastforward':
+          case 'skip_forward':
+            resetHideTimer();
+            handleUserSeek(playbackTimeRef.current + 10);
+            break;
+
+          case 'stop':
+            resetHideTimer();
+            if (!isPlaybackPausedRef.current) {
+              togglePlayback().catch(() => {});
+            }
+            break;
+
+          case 'select':
+          case 'enter':
+          case 'kpenter':
+          case 'ok':
+            resetHideTimer();
+            if (isBackFocusedRef.current) {
+              handleBack().catch(() => {});
+              break;
+            }
+            if (isCCFocusedRef.current) {
+              setIsSubtitlesModalOpen(true);
+              break;
+            }
+            if (isAudioFocusedRef.current) {
+              setIsAudioTracksModalOpen(true);
+              break;
+            }
+            if (isQualityFocusedRef.current) {
+              setIsVideoQualityModalOpen(true);
+              break;
+            }
+            if (!showControlsRef.current) {
+              togglePlayback().catch(() => {});
+            }
+            break;
+
+          case 'up':
+          case 'down':
+          case 'left':
+          case 'right':
+          case 'menu':
+          case 'info':
+            resetHideTimer();
+            break;
+
+          default:
+            break;
+        }
+      },
+      [handleBack, handleUserSeek, resetHideTimer, togglePlayback],
+    ),
+  );
 
   const backdropSource =
     movie.image && typeof movie.image === 'object' && 'uri' in movie.image
@@ -1990,11 +2159,14 @@ export const VideoPlayerScreen = () => {
 
       {/* Header Overlay at zIndex: 10 */}
       {showControls && (
-        <View style={styles.overlayContainer} pointerEvents="box-none">
+        <TVFocusGuideView
+          style={styles.overlayContainer}
+          pointerEvents="box-none"
+          autoFocus>
           <TVFocusGuideView
             style={styles.topHeader}
             pointerEvents="box-none"
-            destinations={backButtonNode ? [backButtonNode] : []}>
+            autoFocus>
             <TouchableOpacity
               ref={(node) => {
                 backButtonRef.current = node;
@@ -2009,17 +2181,7 @@ export const VideoPlayerScreen = () => {
               hasTVPreferredFocus
               onFocus={handleBackFocus}
               onBlur={() => setIsBackFocused(false)}
-              onPress={async () => {
-                if (isLive && Date.now() - playerOpenedAtRef.current < 750) {
-                  return;
-                }
-                await persistProgress();
-                if (isLive && navigation.canGoBack?.()) {
-                  navigation.goBack();
-                  return;
-                }
-                navigation.navigate(Routes.Home);
-              }}
+              onPress={handleBack}
               activeOpacity={0.8}
               accessibilityRole="button"
               accessibilityLabel={strings.accessibility.backToHome}
@@ -2223,7 +2385,7 @@ export const VideoPlayerScreen = () => {
             }}
             onInteraction={resetHideTimer}
           />
-        </View>
+        </TVFocusGuideView>
       )}
 
       {/* Subtitles Selection Modal */}

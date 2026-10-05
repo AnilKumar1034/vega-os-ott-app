@@ -49,4 +49,44 @@ describe('MovieDetailScreen', () => {
     fireEvent.press(screen.getByTestId('detail-back-button'));
     expect(mockNavigate).toHaveBeenCalledWith('Home');
   });
+
+  it('navigates to VideoPlayer when Watch button is pressed', () => {
+    const screen = render(<MovieDetailScreen />);
+
+    fireEvent.press(screen.getByTestId('detail-play-button'));
+    expect(mockNavigate).toHaveBeenCalledWith('VideoPlayer', expect.objectContaining({
+      movie: expect.objectContaining({id: 'test-movie'}),
+    }));
+  });
+
+  it('handles TV remote OK / kpenter event to play movie', () => {
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    render(<MovieDetailScreen />);
+
+    const handlers = useTVEventHandler.mock.calls.map((c: any) => c[0]);
+    // Call handlers with kpenter
+    handlers.forEach((h: any) => {
+      try {
+        h({eventType: 'kpenter', eventKeyAction: 0});
+      } catch {}
+    });
+
+    expect(mockNavigate).toHaveBeenCalledWith('VideoPlayer', expect.objectContaining({
+      movie: expect.objectContaining({id: 'test-movie'}),
+    }));
+  });
+
+  it('handles TV remote back event to return to Home', () => {
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    render(<MovieDetailScreen />);
+
+    const handlers = useTVEventHandler.mock.calls.map((c: any) => c[0]);
+    handlers.forEach((h: any) => {
+      try {
+        h({eventType: 'back', eventKeyAction: 0});
+      } catch {}
+    });
+
+    expect(mockNavigate).toHaveBeenCalledWith('Home');
+  });
 });

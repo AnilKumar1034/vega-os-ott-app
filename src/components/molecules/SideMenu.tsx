@@ -1,6 +1,6 @@
 import React, {useEffect, useRef, useState} from 'react';
 import {Animated, FlatList, Text} from 'react-native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {Routes} from '../../constants/routes';
 import {styles} from './SideMenu.styles';
 import {MenuOptionItem, SideMenuItem} from './SideMenuItem';
@@ -64,9 +64,48 @@ export const SideMenu = ({
   onMenuFocus,
   onMenuBlur,
   destinations,
-  preferActiveFocus = true,
+  preferActiveFocus = false,
 }: SideMenuProps) => {
   const [focusedRoute, setFocusedRoute] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isExpanded) {
+      setFocusedRoute((prev) => prev || activeRoute);
+    } else {
+      setFocusedRoute(null);
+    }
+  }, [isExpanded, activeRoute]);
+
+  useTVEventHandler((evt) => {
+    if (!evt) return;
+    if (evt.eventKeyAction !== undefined && evt.eventKeyAction !== 0) return;
+    const type = evt.eventType?.toLowerCase();
+    if ((isExpanded || focusedRoute !== null) && (type === 'right' || type === 'back')) {
+      setFocusedRoute(null);
+      if (onMenuBlur) {
+        onMenuBlur();
+      }
+      return;
+    }
+
+    if (isExpanded) {
+      if (type === 'up') {
+        const currentIndex = menuOptions.findIndex(
+          (opt) => opt.route === (focusedRoute || activeRoute),
+        );
+        if (currentIndex > 0) {
+          setFocusedRoute(menuOptions[currentIndex - 1].route);
+        }
+      } else if (type === 'down') {
+        const currentIndex = menuOptions.findIndex(
+          (opt) => opt.route === (focusedRoute || activeRoute),
+        );
+        if (currentIndex >= 0 && currentIndex < menuOptions.length - 1) {
+          setFocusedRoute(menuOptions[currentIndex + 1].route);
+        }
+      }
+    }
+  });
 
   const widthAnim = useRef(
     new Animated.Value(
@@ -102,34 +141,39 @@ export const SideMenu = ({
 
   const handleItemBlur = (route: string) => {
     setFocusedRoute((prev) => (prev === route ? null : prev));
-    if (onMenuBlur) {
-      onMenuBlur();
-    }
   };
 
-  const renderOptionItem = ({item: option}: {item: MenuOptionItem}) => (
-    <SideMenuItem
-      option={option}
-      isActive={option.route === activeRoute}
-      isFocused={option.route === focusedRoute}
-      isExpanded={isExpanded}
-      preferActiveFocus={preferActiveFocus}
-      onFocus={() => {
-        setFocusedRoute(option.route);
-        onMenuFocus();
-      }}
-      onBlur={() => handleItemBlur(option.route)}
-    />
-  );
+  const renderOptionItem = ({item: option}: {item: MenuOptionItem}) => {
+    const isCurrentFocused = focusedRoute
+      ? option.route === focusedRoute
+      : isExpanded && option.route === activeRoute;
+
+    return (
+      <SideMenuItem
+        option={option}
+        isActive={option.route === activeRoute}
+        isFocused={isCurrentFocused}
+        isExpanded={isExpanded}
+        preferActiveFocus={preferActiveFocus}
+        onFocus={() => {
+          setFocusedRoute(option.route);
+          onMenuFocus();
+        }}
+        onBlur={() => handleItemBlur(option.route)}
+      />
+    );
+  };
 
   return (
     <Animated.View style={[styles.container, {width: widthAnim}]}>
       <TVFocusGuideView
         style={{flex: 1}}
         accessibilityRole="menu"
-        autoFocus
+        autoFocus={isExpanded}
         trapFocusLeft
-        destinations={destinations}>
+        destinations={
+          destinations && destinations.length > 0 ? destinations : undefined
+        }>
         <Animated.View style={{opacity: opacityAnim}}>
           {isExpanded && <Text style={styles.menuTitle}>{strings.appName}</Text>}
         </Animated.View>

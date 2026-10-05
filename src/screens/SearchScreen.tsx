@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {FlatList, ImageBackground, View} from 'react-native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {CommonHeader} from '../components/molecules/CommonHeader';
@@ -17,9 +17,12 @@ export const SearchScreen = () => {
   const route = useRoute<any>();
   const {activeProfile} = useProfile();
   const initialQuery = route.params?.q || '';
+  const contentGuideRef = useRef<any>(null);
   const [searchQuery, setSearchQuery] = useState(initialQuery);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
+  const [lastFocusedRowIndex, setLastFocusedRowIndex] = useState(0);
+  const rowRefs = useRef<{[key: number]: any}>({});
 
   const allowedRows = filterContentRowsForProfile(
     activeProfile,
@@ -51,11 +54,26 @@ export const SearchScreen = () => {
     index: number;
   }) => (
     <ContentRow
+      ref={(node) => {
+        rowRefs.current[index] = node;
+      }}
       row={row}
-      onContentFocus={handleCardFocus}
-      shouldPreferFocus={index === 0}
+      onContentFocus={() => {
+        setLastFocusedRowIndex(index);
+        handleCardFocus();
+      }}
+      shouldPreferFocus={
+        index === lastFocusedRowIndex && !isMenuExpanded && !isSearchFocused
+      }
+      onMenuEscapeLeft={() => {
+        setLastFocusedRowIndex(index);
+        setIsMenuExpanded(true);
+      }}
     />
   );
+
+  const activeDestination =
+    rowRefs.current[lastFocusedRowIndex] || contentGuideRef.current;
 
   return (
     <ImageBackground
@@ -67,6 +85,10 @@ export const SearchScreen = () => {
         isExpanded={isMenuExpanded}
         onMenuFocus={handleMenuFocus}
         onMenuBlur={handleMenuBlur}
+        preferActiveFocus={isMenuExpanded}
+        destinations={
+          activeDestination ? [activeDestination] : undefined
+        }
       />
       <View style={styles.content}>
         <CommonHeader
@@ -82,7 +104,10 @@ export const SearchScreen = () => {
           onSearchBlur={() => setIsSearchFocused(false)}
           searchHasTVPreferredFocus={isSearchFocused}
         />
-        <TVFocusGuideView style={styles.contentGuide} autoFocus>
+        <TVFocusGuideView
+          ref={contentGuideRef}
+          style={styles.contentGuide}
+          autoFocus={!isSearchFocused && !isMenuExpanded}>
           <FlatList
             data={filteredRows}
             keyExtractor={(row) => `search-${row.id}`}

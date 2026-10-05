@@ -230,7 +230,7 @@ export const styles = StyleSheet.create({
     fontWeight: fontWeights.semibold,
   },
   focusedAction: {
-    borderWidth: spacing.borderUltra,
+    borderWidth: spacing.borderThin,
     borderColor: colors.focusRing,
     // transform: [{scale: 1.06}],
   },

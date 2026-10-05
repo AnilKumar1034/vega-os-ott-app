@@ -25,7 +25,7 @@ export const ScreenLayout = ({
   children,
   showSearch,
   compactHeader = false,
-  preferContentFocus = false,
+  preferContentFocus = true,
 }: ScreenLayoutProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -50,7 +50,7 @@ export const ScreenLayout = ({
         isExpanded={isMenuExpanded}
         onMenuFocus={handleMenuFocus}
         onMenuBlur={handleMenuBlur}
-        preferActiveFocus={!preferContentFocus}
+        preferActiveFocus={isMenuExpanded}
       />
       <View style={styles.content}>
         <CommonHeader

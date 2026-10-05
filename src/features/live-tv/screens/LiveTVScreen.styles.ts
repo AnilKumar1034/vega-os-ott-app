@@ -75,9 +75,12 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.huge,
     paddingVertical: spacing.xl,
     borderWidth: spacing.borderThick,
-    borderColor: colors.focusRing,
+    borderColor: colors.cardBorder,
     borderRadius: borderRadius.sm,
     backgroundColor: colors.heroAccent,
+  },
+  emptyChannelButtonFocused: {
+    borderColor: colors.focusRing,
   },
   emptyChannelButtonText: {
     color: colors.textPrimary,
@@ -182,6 +185,11 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.cardBorder,
   },
   categoryOptionSelected: {backgroundColor: colors.heroAccent},
+  categoryOptionFocused: {
+    borderWidth: spacing.borderThin,
+    borderColor: colors.focusRing,
+    backgroundColor: colors.cardBackgroundSubtle,
+  },
   categoryOptionText: {
     color: colors.textPrimary,
     fontSize: fontSizes.button,

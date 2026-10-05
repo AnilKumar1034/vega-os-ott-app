@@ -13,6 +13,7 @@ import {useNavigation} from '@react-navigation/native';
 import {
   I18nManager,
   TVFocusGuideView,
+  useTVEventHandler,
 } from '@amazon-devices/react-native-kepler';
 import {EPG, type EPGActions} from '../components/EPG';
 import {CommonHeader} from '../../../components/molecules/CommonHeader';
@@ -22,6 +23,7 @@ import {strings} from '../../../constants/strings';
 import {colors} from '../../../theme/colors';
 import {fontSizes} from '../../../theme/fonts';
 import {borderRadius, spacing} from '../../../theme/sizes';
+import {isBackEvent, isKeyDown, isSelectEvent} from '../../../utils/inputUtils';
 import {
   EPG_END_TIME,
   EPG_START_TIME,
@@ -93,6 +95,12 @@ export const LiveTVScreen = () => {
   const [isEPGReady, setIsEPGReady] = useState(false);
   const [isLoadingNextPage, setIsLoadingNextPage] = useState(false);
   const [hasNoFreeLiveChannels, setHasNoFreeLiveChannels] = useState(false);
+  const [focusedCategoryOption, setFocusedCategoryOption] = useState<string | null>(null);
+  const focusedCategoryOptionRef = useRef(focusedCategoryOption);
+  focusedCategoryOptionRef.current = focusedCategoryOption;
+  const [isEmptyButtonFocused, setIsEmptyButtonFocused] = useState(false);
+  const isEmptyButtonFocusedRef = useRef(isEmptyButtonFocused);
+  isEmptyButtonFocusedRef.current = isEmptyButtonFocused;
   const epgRef = useRef<EPGActions>(null);
   const epgOpacity = useRef(new Animated.Value(0)).current;
   const nextChannelOffsetRef = useRef(EPG_INITIAL_CHANNEL_COUNT);
@@ -159,6 +167,7 @@ export const LiveTVScreen = () => {
   const handleEPGFocusEscapeUp = useCallback(() => {
     // Let the native EPG finish processing its directional event before moving
     // focus, otherwise its own navigation can override this request.
+    epgRef.current?.focusOnEPG(false);
     setTimeout(() => categoryFilterFocusGuideRef.current?.requestTVFocus(), 50);
   }, []);
 
@@ -171,6 +180,60 @@ export const LiveTVScreen = () => {
     setProgrammeAlert(null);
     epgRef.current?.focusOnEPG(true);
   }, []);
+
+  useTVEventHandler((evt) => {
+    if (!evt) return;
+    if (!isKeyDown(evt.eventKeyAction)) return;
+    const type = evt.eventType?.toLowerCase();
+
+    if (programmeAlert) {
+      if (isSelectEvent(type) || isBackEvent(type)) {
+        dismissFutureProgrammeAlert();
+      }
+      return;
+    }
+
+    if (isCategoryMenuVisible) {
+      if (isBackEvent(type)) {
+        dismissCategoryMenu();
+        return;
+      }
+      if (isSelectEvent(type)) {
+        const option =
+          focusedCategoryOptionRef.current ||
+          (showFreeLiveOnly ? 'free' : selectedCategory);
+        if (option === 'all') {
+          setShowFreeLiveOnly(false);
+          dismissCategoryMenu();
+        } else if (option === 'free') {
+          setShowFreeLiveOnly(true);
+          dismissCategoryMenu();
+        } else if (option) {
+          setSelectedCategory(option);
+          dismissCategoryMenu();
+        }
+        return;
+      }
+    }
+
+    if (hasNoFreeLiveChannels && isEPGReady) {
+      if (isSelectEvent(type) && isEmptyButtonFocusedRef.current) {
+        setShowFreeLiveOnly(false);
+        setSelectedCategory(strings.liveTV.allCategories);
+        return;
+      }
+    }
+
+    if (isBackEvent(type)) {
+      if (isMenuExpanded) {
+        setIsMenuExpanded(false);
+        epgRef.current?.focusOnEPG(true);
+      } else {
+        navigation.navigate(Routes.Home);
+      }
+      return;
+    }
+  });
 
   const alertTitle =
     programmeAlert === 'future'
@@ -374,7 +437,13 @@ export const LiveTVScreen = () => {
           logo={require('../../../assets/vega.png')}
           filterLabel={strings.liveTV.filters}
           filterFocusGuideRef={categoryFilterFocusGuideRef}
-          onFilterPress={() => setIsCategoryMenuVisible((visible) => !visible)}
+          onFilterPress={() => {
+            epgRef.current?.focusOnEPG(false);
+            setIsCategoryMenuVisible((visible) => !visible);
+          }}
+          onFocusEscapeDown={() => {
+            epgRef.current?.focusOnEPG(true);
+          }}
         />
         <ProgramDetails program={focusedProgram} now={now} />
         <Animated.View style={[styles.guide, {opacity: epgOpacity}]}>
@@ -389,15 +458,27 @@ export const LiveTVScreen = () => {
               }
             }}
             onTilePress={(event) => {
+              const progPayload = event?.payload?.program;
               const program =
-                event?.payload?.program?.extras?.sourceProgram;
+                progPayload?.extras?.sourceProgram ||
+                (progPayload
+                  ? {
+                      id: progPayload.programId,
+                      title: progPayload.title,
+                      description: progPayload.shortDescription || '',
+                      startTime: new Date(progPayload.startTime).toISOString(),
+                      endTime: new Date(progPayload.endTime).toISOString(),
+                      category: '',
+                      channelId: event?.payload?.channel?.id || '',
+                    }
+                  : null);
               if (program) {
                 handleProgramPress(
                   program,
-                  event.payload.program.extras.streamUrl,
-                  event.payload.program.extras.streamType,
-                  event.payload.program.extras.isVideoOnly,
-                  event.payload.program.extras.drm,
+                  progPayload?.extras?.streamUrl,
+                  progPayload?.extras?.streamType,
+                  progPayload?.extras?.isVideoOnly,
+                  progPayload?.extras?.drm,
                 );
               }
             }}
@@ -444,7 +525,12 @@ export const LiveTVScreen = () => {
               {strings.liveTV.noFreeLiveChannels}
             </Text>
             <TouchableOpacity
-              style={styles.emptyChannelButton}
+              style={[
+                styles.emptyChannelButton,
+                isEmptyButtonFocused && styles.emptyChannelButtonFocused,
+              ]}
+              onFocus={() => setIsEmptyButtonFocused(true)}
+              onBlur={() => setIsEmptyButtonFocused(false)}
               onPress={() => {
                 setShowFreeLiveOnly(false);
                 setSelectedCategory(strings.liveTV.allCategories);
@@ -470,7 +556,11 @@ export const LiveTVScreen = () => {
               style={[
                 styles.categoryOption,
                 !showFreeLiveOnly && styles.categoryOptionSelected,
+                focusedCategoryOption === 'all' &&
+                  styles.categoryOptionFocused,
               ]}
+              onFocus={() => setFocusedCategoryOption('all')}
+              onBlur={() => setFocusedCategoryOption(null)}
               onPress={() => {
                 setShowFreeLiveOnly(false);
                 dismissCategoryMenu();
@@ -486,7 +576,11 @@ export const LiveTVScreen = () => {
               style={[
                 styles.categoryOption,
                 showFreeLiveOnly && styles.categoryOptionSelected,
+                focusedCategoryOption === 'free' &&
+                  styles.categoryOptionFocused,
               ]}
+              onFocus={() => setFocusedCategoryOption('free')}
+              onBlur={() => setFocusedCategoryOption(null)}
               onPress={() => {
                 setShowFreeLiveOnly(true);
                 dismissCategoryMenu();
@@ -506,7 +600,11 @@ export const LiveTVScreen = () => {
                   styles.categoryOption,
                   selectedCategory === category &&
                     styles.categoryOptionSelected,
+                  focusedCategoryOption === category &&
+                    styles.categoryOptionFocused,
                 ]}
+                onFocus={() => setFocusedCategoryOption(category)}
+                onBlur={() => setFocusedCategoryOption(null)}
                 onPress={() => {
                   setSelectedCategory(category);
                   dismissCategoryMenu();

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {
   Image,
   ImageSourcePropType,
@@ -7,7 +7,9 @@ import {
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
+import {useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {Routes} from '../../constants/routes';
+import {isSelectEvent, isKeyDown} from '../../utils/inputUtils';
 import {styles} from './ContentCard.styles';
 
 export type CardLayoutType = 'horizontal' | 'portrait' | 'grid';
@@ -30,7 +32,21 @@ export interface ContentCardProps {
   onFocus?: () => void;
   onPress?: () => void;
   hasTVPreferredFocus?: boolean;
+  onMenuEscapeLeft?: () => void;
 }
+
+const useSafeNavigation = () => {
+  try {
+    return useNavigation<any>();
+  } catch {
+    return {
+      navigate: () => {},
+      dispatch: () => {},
+      goBack: () => {},
+      replace: () => {},
+    } as any;
+  }
+};
 
 export const ContentCard = ({
   id,
@@ -50,9 +66,12 @@ export const ContentCard = ({
   onFocus,
   onPress,
   hasTVPreferredFocus,
+  onMenuEscapeLeft,
 }: ContentCardProps) => {
-  const navigation = useNavigation<any>();
+  const navigation = useSafeNavigation();
   const [isFocused, setIsFocused] = useState(false);
+  const isFocusedRef = useRef(isFocused);
+  isFocusedRef.current = isFocused;
 
   const handlePress = () => {
     if (onPress) {
@@ -76,6 +95,41 @@ export const ContentCard = ({
     }
   };
 
+  useTVEventHandler((evt) => {
+    if (!isFocusedRef.current || !evt) return;
+    if (!isKeyDown(evt.eventKeyAction)) return;
+    const type = evt.eventType?.toLowerCase();
+    if (isSelectEvent(type)) {
+      handlePress();
+    } else if (type === 'left') {
+      if (onMenuEscapeLeft) {
+        setIsFocused(false);
+        onMenuEscapeLeft();
+      }
+    } else if (type === 'play' || type === 'playpause') {
+      if (videoUrl) {
+        navigation.navigate(Routes.VideoPlayer, {
+          movie: {
+            id: id || title.toLowerCase().replace(/\s+/g, '-'),
+            title,
+            image,
+            description,
+            meta,
+            badge,
+            rating,
+            genre,
+            cast,
+            director,
+            videoUrl,
+          },
+          videoUrl,
+        });
+      } else {
+        handlePress();
+      }
+    }
+  });
+
   const containerStyle = [
     styles.container,
     layout === 'portrait' && styles.portraitContainer,
@@ -92,6 +146,7 @@ export const ContentCard = ({
       }}
       onBlur={() => setIsFocused(false)}
       onPress={handlePress}
+      focusable={true}
       hasTVPreferredFocus={hasTVPreferredFocus}
       activeOpacity={1}
       testID={testID}

@@ -1,5 +1,6 @@
 import React, {ReactNode, useEffect, useRef} from 'react';
 import {Animated, StyleSheet, View} from 'react-native';
+import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {
   createNavigatorFactory,
   StackRouter,
@@ -64,7 +65,9 @@ const StackNavigator = ({children, initialRouteName}: StackNavigatorProps) => {
               ],
             },
           ]}>
-          {descriptors[activeRoute.key].render()}
+          <TVFocusGuideView style={styles.container} autoFocus>
+            {descriptors[activeRoute.key].render()}
+          </TVFocusGuideView>
         </Animated.View>
       </View>
     </NavigationContent>

@@ -70,7 +70,7 @@ export const CommonSearch = ({
       <View style={styles.searchIconContainer} focusable={false}>
         <MenuIcon
           name="Search"
-          size={26}
+          size={12}
           color={isFocused ? colors.textPrimary : colors.textSecondary}
           style={styles.searchIcon}
           testID="search-icon"
@@ -111,7 +111,7 @@ export const CommonSearch = ({
           testID="clear-search-button">
           <MenuIcon
             name="Close"
-            size={18}
+            size={12}
             color={
               focusedTarget === 'clear'
                 ? colors.textPrimary

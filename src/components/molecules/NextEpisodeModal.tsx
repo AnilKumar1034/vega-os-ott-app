@@ -7,11 +7,12 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {strings} from '../../constants/strings';
 import {EpisodeItem} from '../../types/episode';
 import {formatSeasonEpisodeLabel} from '../../services/episodeService';
 import {styles} from './NextEpisodeModal.styles';
+import {isBackEvent, isKeyDown, isSelectEvent} from '../../utils/inputUtils';
 
 export interface NextEpisodeModalProps {
   isOpen: boolean;
@@ -72,6 +73,62 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
     activeTab === 'all' && fullEpisodesList.length > 0
       ? fullEpisodesList
       : upcomingEpisodesList;
+
+  const focusedActionRef = useRef(focusedAction);
+  focusedActionRef.current = focusedAction;
+  const focusedEpisodeIdRef = useRef(focusedEpisodeId);
+  focusedEpisodeIdRef.current = focusedEpisodeId;
+  const focusedTabRef = useRef(focusedTab);
+  focusedTabRef.current = focusedTab;
+
+  useTVEventHandler((evt) => {
+    if (!isOpen) {
+      return;
+    }
+    if (!evt) {
+      return;
+    }
+    if (!isKeyDown(evt.eventKeyAction)) {
+      return;
+    }
+    const type = evt.eventType?.toLowerCase();
+
+    if (isBackEvent(type)) {
+      onCancel();
+      return;
+    }
+
+    if (isSelectEvent(type)) {
+      if (focusedActionRef.current === 'cancel') {
+        onCancel();
+        return;
+      }
+      if (focusedActionRef.current === 'play') {
+        onPlayNow(nextEpisode ?? undefined);
+        return;
+      }
+      if (focusedTabRef.current === 'upcoming') {
+        setActiveTab('upcoming');
+        return;
+      }
+      if (focusedTabRef.current === 'all') {
+        setActiveTab('all');
+        return;
+      }
+      if (focusedEpisodeIdRef.current) {
+        const ep = fullEpisodesList.find(
+          (e) => e.id === focusedEpisodeIdRef.current,
+        );
+        if (ep) {
+          if (onSelectEpisode) {
+            onSelectEpisode(ep);
+          } else {
+            onPlayNow(ep);
+          }
+        }
+      }
+    }
+  });
 
   if (!isOpen || !nextEpisode) {
     return null;
