@@ -1,5 +1,5 @@
-import React, {useRef, useState} from 'react';
-import {Modal, ScrollView, Text, TouchableOpacity, View} from 'react-native';
+import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {BackHandler, Modal, ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {strings} from '../../constants/strings';
 import {SUBTITLE_OFF_ID} from '../../data/subtitles';
@@ -22,9 +22,28 @@ export const SubtitlesModal: React.FC<SubtitlesModalProps> = ({
   onSelectTrack,
   onClose,
 }) => {
-  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const allOptions = useMemo<Array<{id: string; label: string; kind?: string}>>(() => [
+    {id: SUBTITLE_OFF_ID, label: strings.subtitles.off},
+    ...tracks.map((t) => ({
+      id: t.id,
+      label: t.label,
+      kind: t.kind,
+    })),
+  ], [tracks]);
+
+  const defaultTrackId = selectedTrackId || SUBTITLE_OFF_ID;
+  const [focusedId, setFocusedId] = useState<string | null>(defaultTrackId);
   const focusedIdRef = useRef<string | null>(focusedId);
   focusedIdRef.current = focusedId;
+  const elementRefs = useRef<Record<string, any>>({});
+
+  const focusElement = useCallback((id: string) => {
+    setFocusedId(id);
+    const target = elementRefs.current[id];
+    if (target && typeof target.requestTVFocus === 'function') {
+      target.requestTVFocus();
+    }
+  }, []);
 
   useTVEventHandler((evt) => {
     if (!isOpen) {
@@ -43,6 +62,32 @@ export const SubtitlesModal: React.FC<SubtitlesModalProps> = ({
       return;
     }
 
+    if (type === 'down') {
+      const current = focusedIdRef.current;
+      const currentIndex = allOptions.findIndex((o) => o.id === current);
+      if (currentIndex >= 0 && currentIndex < allOptions.length - 1) {
+        focusElement(allOptions[currentIndex + 1].id);
+      } else if (currentIndex === allOptions.length - 1) {
+        focusElement('close');
+      }
+      return;
+    }
+
+    if (type === 'up') {
+      const current = focusedIdRef.current;
+      if (current === 'close') {
+        if (allOptions.length > 0) {
+          focusElement(allOptions[allOptions.length - 1].id);
+        }
+      } else {
+        const currentIndex = allOptions.findIndex((o) => o.id === current);
+        if (currentIndex > 0) {
+          focusElement(allOptions[currentIndex - 1].id);
+        }
+      }
+      return;
+    }
+
     if (isSelectEvent(type)) {
       const current = focusedIdRef.current;
       if (current === 'close') {
@@ -53,18 +98,36 @@ export const SubtitlesModal: React.FC<SubtitlesModalProps> = ({
     }
   });
 
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        onClose();
+        return true;
+      },
+    );
+    return () => {
+      subscription.remove();
+    };
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const initial = selectedTrackId || SUBTITLE_OFF_ID;
+      setFocusedId(initial);
+      const timer = setTimeout(() => {
+        focusElement(initial);
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, selectedTrackId, focusElement]);
+
   if (!isOpen) {
     return null;
   }
-
-  const allOptions: Array<{id: string; label: string; kind?: string}> = [
-    {id: SUBTITLE_OFF_ID, label: strings.subtitles.off},
-    ...tracks.map((t) => ({
-      id: t.id,
-      label: t.label,
-      kind: t.kind,
-    })),
-  ];
 
   return (
     <Modal
@@ -95,24 +158,25 @@ export const SubtitlesModal: React.FC<SubtitlesModalProps> = ({
             style={styles.trackListContainer}
             contentContainerStyle={styles.trackListContent}
             showsVerticalScrollIndicator={false}>
-            {allOptions.map((option, index) => {
+            {allOptions.map((option) => {
               const isSelected = option.id === selectedTrackId;
               const isFocused = focusedId === option.id;
 
               return (
                 <TouchableOpacity
+                  ref={(el) => {
+                    elementRefs.current[option.id] = el;
+                  }}
                   key={option.id}
                   style={[
                     styles.trackButton,
                     isSelected && styles.trackButtonSelected,
                     isFocused && styles.trackButtonFocused,
                   ]}
-                  hasTVPreferredFocus={index === 0 && !focusedId}
+                  hasTVPreferredFocus={focusedId === option.id}
                   onFocus={() => setFocusedId(option.id)}
-                  onBlur={() => setFocusedId(null)}
-                  onPress={() => {
-                    onSelectTrack(option.id);
-                  }}
+                  onBlur={() => {}}
+                  onPress={() => onSelectTrack(option.id)}
                   activeOpacity={0.85}
                   accessibilityRole="button"
                   accessibilityLabel={strings.accessibility.selectSubtitleTrack(
@@ -145,13 +209,17 @@ export const SubtitlesModal: React.FC<SubtitlesModalProps> = ({
 
           {/* Close / Done Button */}
           <TouchableOpacity
+            ref={(el) => {
+              elementRefs.current['close'] = el;
+            }}
             style={[
               styles.closeButton,
               focusedId === 'close' && styles.closeButtonFocused,
             ]}
             onFocus={() => setFocusedId('close')}
-            onBlur={() => setFocusedId(null)}
+            onBlur={() => {}}
             onPress={onClose}
+            hasTVPreferredFocus={focusedId === 'close'}
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel={strings.accessibility.closeSubtitlesModal}

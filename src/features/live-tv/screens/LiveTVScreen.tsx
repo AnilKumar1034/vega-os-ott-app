@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   Animated,
   ActivityIndicator,
+  BackHandler,
   Image,
   ImageBackground,
   Modal,
@@ -234,6 +235,39 @@ export const LiveTVScreen = () => {
       return;
     }
   });
+
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        if (programmeAlert) {
+          dismissFutureProgrammeAlert();
+          return true;
+        }
+        if (isCategoryMenuVisible) {
+          dismissCategoryMenu();
+          return true;
+        }
+        if (isMenuExpanded) {
+          setIsMenuExpanded(false);
+          epgRef.current?.focusOnEPG(true);
+          return true;
+        }
+        navigation.navigate(Routes.Home);
+        return true;
+      },
+    );
+    return () => {
+      subscription.remove();
+    };
+  }, [
+    programmeAlert,
+    isCategoryMenuVisible,
+    isMenuExpanded,
+    dismissFutureProgrammeAlert,
+    dismissCategoryMenu,
+    navigation,
+  ]);
 
   const alertTitle =
     programmeAlert === 'future'

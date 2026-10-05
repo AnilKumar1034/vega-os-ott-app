@@ -1,13 +1,14 @@
-import React, {useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
+  BackHandler,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {ProfileAvatar} from '../components/molecules/ProfileAvatar';
 import {ScreenLayout} from '../components/templates/ScreenLayout';
 import {PROFILE_AVATARS, PROFILE_THEMES} from '../constants/profileOptions';
@@ -26,7 +27,7 @@ import {
   DEFAULT_KIDS_MATURITY_LIMIT,
 } from '../types/maturity';
 import {colors} from '../theme/colors';
-import {sanitizeEmailInput} from '../utils/inputUtils';
+import {isBackEvent, isKeyDown, sanitizeEmailInput} from '../utils/inputUtils';
 import {styles} from './EditProfileScreen.styles';
 
 interface PreferenceToggleProps {
@@ -137,13 +138,59 @@ export const EditProfileScreen = () => {
     }
   }, [authLoading, navigation, user]);
 
-  const leaveEditor = () => {
+  const leaveEditor = useCallback(() => {
     if (navigation.canGoBack()) {
       navigation.goBack();
       return;
     }
     navigation.navigate(Routes.Profile);
-  };
+  }, [navigation]);
+
+  const showPinDialogRef = useRef(showPinDialog);
+  showPinDialogRef.current = showPinDialog;
+  const showDeleteDialogRef = useRef(showDeleteDialog);
+  showDeleteDialogRef.current = showDeleteDialog;
+
+  useTVEventHandler((evt) => {
+    if (!evt) return;
+    if (!isKeyDown(evt.eventKeyAction)) return;
+    const type = evt.eventType?.toLowerCase();
+
+    if (isBackEvent(type)) {
+      if (showPinDialogRef.current) {
+        setShowPinDialog(false);
+        setPendingPinAction(null);
+        return;
+      }
+      if (showDeleteDialogRef.current) {
+        setShowDeleteDialog(false);
+        return;
+      }
+      leaveEditor();
+    }
+  });
+
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        if (showPinDialogRef.current) {
+          setShowPinDialog(false);
+          setPendingPinAction(null);
+          return true;
+        }
+        if (showDeleteDialogRef.current) {
+          setShowDeleteDialog(false);
+          return true;
+        }
+        leaveEditor();
+        return true;
+      },
+    );
+    return () => {
+      subscription.remove();
+    };
+  }, [leaveEditor]);
 
   const executeSave = async () => {
     const validation = validateProfileName(profileName);

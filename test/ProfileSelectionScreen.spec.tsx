@@ -1,5 +1,5 @@
 import React from 'react';
-import {render, fireEvent} from '@testing-library/react-native';
+import {act, render, fireEvent} from '@testing-library/react-native';
 import {strings} from '../src/constants/strings';
 import {ProfileSelectionScreen} from '../src/profiles/screens/ProfileSelectionScreen';
 import {useProfile} from '../src/profiles/hooks/useProfile';
@@ -104,5 +104,87 @@ describe('ProfileSelectionScreen', () => {
 
     const screen = render(<ProfileSelectionScreen />);
     expect(screen.getByText(strings.profiles.loadingProfiles)).toBeTruthy();
+  });
+
+  it('closes switch-profile PIN dialog on remote Back event', async () => {
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    useTVEventHandler.mockClear();
+
+    (useProfile as jest.Mock).mockReturnValue({
+      profiles: mockProfiles,
+      activeProfile: mockProfiles[1], // Kids profile active
+      isLoadingProfiles: false,
+      error: null,
+      parentalSettings: {pinEnabled: true},
+      isParentAuthorized: false,
+      verifyParentPin: jest.fn().mockResolvedValue(true),
+      switchProfile: jest.fn(),
+      refreshProfiles: jest.fn(),
+    });
+
+    const screen = render(<ProfileSelectionScreen />);
+
+    // Click Adult profile Anil
+    const adultCard = screen.getByTestId('profile-card-p1');
+    act(() => {
+      fireEvent.press(adultCard);
+    });
+
+    // PIN dialog should now be visible
+    expect(screen.getByTestId('switch-adult-pin-dialog-overlay')).toBeTruthy();
+
+    // Send remote Back event
+    act(() => {
+      useTVEventHandler.mock.calls.forEach(([fn]: any) => {
+        try {
+          fn({eventType: 'back', eventKeyAction: 0});
+        } catch {}
+      });
+    });
+
+    // PIN dialog should now be dismissed
+    expect(
+      screen.queryByTestId('switch-adult-pin-dialog-overlay'),
+    ).toBeNull();
+  });
+
+  it('closes switch-profile PIN dialog on hardwareBackPress', () => {
+    const {BackHandler} = require('react-native');
+    (BackHandler.addEventListener as jest.Mock).mockClear();
+
+    (useProfile as jest.Mock).mockReturnValue({
+      profiles: mockProfiles,
+      activeProfile: mockProfiles[1], // Kids profile active
+      isLoadingProfiles: false,
+      error: null,
+      parentalSettings: {pinEnabled: true},
+      isParentAuthorized: false,
+      verifyParentPin: jest.fn().mockResolvedValue(true),
+      switchProfile: jest.fn(),
+      refreshProfiles: jest.fn(),
+    });
+
+    const screen = render(<ProfileSelectionScreen />);
+
+    const adultCard = screen.getByTestId('profile-card-p1');
+    act(() => {
+      fireEvent.press(adultCard);
+    });
+
+    expect(screen.getByTestId('switch-adult-pin-dialog-overlay')).toBeTruthy();
+
+    const backCalls = (BackHandler.addEventListener as jest.Mock).mock.calls;
+    const lastBackHandler = [...backCalls]
+      .reverse()
+      .find((c: any) => c[0] === 'hardwareBackPress')?.[1];
+
+    let result;
+    act(() => {
+      result = lastBackHandler();
+    });
+    expect(result).toBe(true);
+    expect(
+      screen.queryByTestId('switch-adult-pin-dialog-overlay'),
+    ).toBeNull();
   });
 });

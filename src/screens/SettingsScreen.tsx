@@ -1,7 +1,9 @@
-import React, {useEffect, useState} from 'react';
-import {Text, TouchableOpacity, View} from 'react-native';
+import React, {useEffect, useRef, useState} from 'react';
+import {BackHandler, Text, TouchableOpacity, View} from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
+import {ParentalControlsModal} from '../components/molecules/ParentalControlsModal';
+import {PinEntryDialog} from '../components/molecules/PinEntryDialog';
 import {ProfileAvatar} from '../components/molecules/ProfileAvatar';
 import {ScreenLayout} from '../components/templates/ScreenLayout';
 import {
@@ -12,7 +14,22 @@ import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
 import {useProfile} from '../profiles/hooks/useProfile';
+import {isBackEvent, isKeyDown, isSelectEvent} from '../utils/inputUtils';
 import {styles} from './SettingsScreen.styles';
+
+const useSafeNavigation = () => {
+  try {
+    return useNavigation<any>();
+  } catch {
+    return {
+      navigate: () => {},
+      dispatch: () => {},
+      goBack: () => {},
+      replace: () => {},
+      canGoBack: () => false,
+    } as any;
+  }
+};
 
 interface ActionButtonProps {
   id: string;
@@ -23,6 +40,8 @@ interface ActionButtonProps {
   onPress: () => void;
   destructive?: boolean;
   testID?: string;
+  hasTVPreferredFocus?: boolean;
+  buttonRef?: (node: any) => void;
 }
 
 const ActionButton = ({
@@ -34,8 +53,11 @@ const ActionButton = ({
   onPress,
   destructive = false,
   testID,
+  hasTVPreferredFocus = false,
+  buttonRef,
 }: ActionButtonProps) => (
   <TouchableOpacity
+    ref={buttonRef}
     style={[
       styles.actionButton,
       destructive && styles.actionButtonDestructive,
@@ -44,6 +66,7 @@ const ActionButton = ({
     onFocus={() => onFocus(id)}
     onBlur={() => onFocus(null)}
     onPress={onPress}
+    hasTVPreferredFocus={hasTVPreferredFocus}
     activeOpacity={1}
     accessibilityRole="button"
     accessibilityLabel={label}
@@ -65,6 +88,9 @@ interface ToggleCardProps {
   disabled: boolean;
   onFocus: (id: string | null) => void;
   onPress: () => void;
+  hasTVPreferredFocus?: boolean;
+  cardRef?: (node: any) => void;
+  testID?: string;
 }
 
 const ToggleCard = ({
@@ -76,8 +102,12 @@ const ToggleCard = ({
   disabled,
   onFocus,
   onPress,
+  hasTVPreferredFocus = false,
+  cardRef,
+  testID,
 }: ToggleCardProps) => (
   <TouchableOpacity
+    ref={cardRef}
     style={[
       styles.toggleCard,
       focusedId === id && styles.focusedControl,
@@ -87,9 +117,11 @@ const ToggleCard = ({
     onBlur={() => onFocus(null)}
     onPress={onPress}
     disabled={disabled}
+    hasTVPreferredFocus={hasTVPreferredFocus}
     activeOpacity={1}
     accessibilityRole="switch"
-    accessibilityState={{checked: enabled, disabled}}>
+    accessibilityState={{checked: enabled, disabled}}
+    testID={testID}>
     <View style={styles.toggleCopy}>
       <Text style={styles.toggleLabel}>{label}</Text>
       <Text style={styles.toggleHint}>{hint}</Text>
@@ -102,11 +134,8 @@ const ToggleCard = ({
   </TouchableOpacity>
 );
 
-import {ParentalControlsModal} from '../components/molecules/ParentalControlsModal';
-import {PinEntryDialog} from '../components/molecules/PinEntryDialog';
-
 export const SettingsScreen = () => {
-  const navigation = useNavigation<any>();
+  const navigation = useSafeNavigation();
   const {user, userProfile, logout, updateProfile, loading} = useAuth();
   const {
     activeProfile,
@@ -115,10 +144,26 @@ export const SettingsScreen = () => {
     isParentAuthorized,
     verifyParentPin,
   } = useProfile();
-  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const [focusedId, setFocusedId] = useState<string | null>(
+    user ? 'profile' : 'login',
+  );
+  const focusedIdRef = useRef<string | null>(focusedId);
+  focusedIdRef.current = focusedId;
+  const lastFocusedAccountActionRef = useRef<string>(
+    user ? 'profile' : 'login',
+  );
+  const [isMenuExpanded, setIsMenuExpanded] = useState(false);
+  const elementRefs = useRef<{[key: string]: any}>({});
+  const contentGuideRef = useRef<any>(null);
+  const themeRowGuideRef = useRef<any>(null);
+  const toggleRowGuideRef = useRef<any>(null);
+
   const [themePreference, setThemePreference] = useState(
     userProfile?.themePreference || 'cinematic',
   );
+  const themePreferenceRef = useRef<string>(themePreference);
+  themePreferenceRef.current = themePreference;
+
   const [notificationsEnabled, setNotificationsEnabled] = useState(
     userProfile?.notificationsEnabled ?? true,
   );
@@ -138,6 +183,36 @@ export const SettingsScreen = () => {
       parentalSettings?.pinEnabled &&
       !isParentAuthorized,
   );
+
+  const focusElement = (id: string) => {
+    setFocusedId(id);
+    if (
+      id === 'profile' ||
+      id === 'edit' ||
+      id === 'parental-controls' ||
+      id === 'switch-profile' ||
+      id === 'logout'
+    ) {
+      lastFocusedAccountActionRef.current = id;
+    }
+    const target = elementRefs.current[id];
+    if (target && typeof target.requestTVFocus === 'function') {
+      target.requestTVFocus();
+    }
+  };
+
+  const handleAccountFocus = (id: string | null) => {
+    setFocusedId(id);
+    if (id) {
+      lastFocusedAccountActionRef.current = id;
+    }
+    setIsMenuExpanded(false);
+  };
+
+  const handlePreferenceFocus = (id: string | null) => {
+    setFocusedId(id);
+    setIsMenuExpanded(false);
+  };
 
   const handleOpenParentalControls = () => {
     if (isPinLockActive) {
@@ -166,6 +241,268 @@ export const SettingsScreen = () => {
     }
     setPendingAction(null);
   };
+
+  const isMenuExpandedRef = useRef(isMenuExpanded);
+  isMenuExpandedRef.current = isMenuExpanded;
+  const showPinAuthDialogRef = useRef(showPinAuthDialog);
+  showPinAuthDialogRef.current = showPinAuthDialog;
+  const showParentalModalRef = useRef(showParentalModal);
+  showParentalModalRef.current = showParentalModal;
+
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        if (showPinAuthDialogRef.current) {
+          setShowPinAuthDialog(false);
+          setPendingAction(null);
+          return true;
+        }
+        if (showParentalModalRef.current) {
+          return true;
+        }
+        if (isMenuExpandedRef.current) {
+          setIsMenuExpanded(false);
+          return true;
+        }
+        if (navigation.canGoBack && navigation.canGoBack()) {
+          navigation.goBack();
+        } else {
+          navigation.navigate(Routes.Home);
+        }
+        return true;
+      },
+    );
+    return () => {
+      subscription.remove();
+    };
+  }, [navigation]);
+
+  useTVEventHandler((evt) => {
+    if (!evt) return;
+    if (!isKeyDown(evt.eventKeyAction)) return;
+    const type = evt.eventType?.toLowerCase();
+
+    // 1. Back button handling
+    if (isBackEvent(type)) {
+      if (showPinAuthDialogRef.current) {
+        setShowPinAuthDialog(false);
+        setPendingAction(null);
+        return;
+      }
+      if (showParentalModalRef.current) {
+        // Modal handles its own back navigation
+        return;
+      }
+      if (isMenuExpandedRef.current) {
+        setIsMenuExpanded(false);
+        return;
+      }
+      if (navigation.canGoBack && navigation.canGoBack()) {
+        navigation.goBack();
+      } else {
+        navigation.navigate(Routes.Home);
+      }
+      return;
+    }
+
+    // Modal or Side Menu captures remaining keys while open
+    if (
+      showPinAuthDialogRef.current ||
+      showParentalModalRef.current ||
+      isMenuExpandedRef.current
+    ) {
+      return;
+    }
+
+    // 2. Left button handling
+    if (type === 'left') {
+      const current = focusedIdRef.current;
+      // If focused in account panel or signed out button
+      if (
+        !current ||
+        current === 'profile' ||
+        current === 'edit' ||
+        current === 'parental-controls' ||
+        current === 'switch-profile' ||
+        current === 'logout' ||
+        current === 'login'
+      ) {
+        setIsMenuExpanded(true);
+        return;
+      }
+
+      if (current === 'register') {
+        focusElement('login');
+        return;
+      }
+
+      // If at leftmost theme option (theme-ocean)
+      if (current === `theme-${PROFILE_THEMES[0].id}`) {
+        focusElement(lastFocusedAccountActionRef.current || 'profile');
+        return;
+      }
+
+      // If at intermediate theme option
+      const currentThemeIdx = PROFILE_THEMES.findIndex(
+        (t) => `theme-${t.id}` === current,
+      );
+      if (currentThemeIdx > 0) {
+        focusElement(`theme-${PROFILE_THEMES[currentThemeIdx - 1].id}`);
+        return;
+      }
+
+      // If at notifications (leftmost toggle)
+      if (current === 'notifications') {
+        const fallback =
+          lastFocusedAccountActionRef.current === 'logout'
+            ? 'logout'
+            : lastFocusedAccountActionRef.current || 'parental-controls';
+        focusElement(fallback);
+        return;
+      }
+
+      // If at autoplay (second toggle)
+      if (current === 'autoplay') {
+        focusElement('notifications');
+        return;
+      }
+    }
+
+    // 3. Right button handling
+    if (type === 'right') {
+      const current = focusedIdRef.current;
+      if (current === 'login') {
+        focusElement('register');
+        return;
+      }
+
+      if (current === 'profile' || current === 'edit') {
+        const targetTheme = `theme-${themePreferenceRef.current || PROFILE_THEMES[0].id}`;
+        focusElement(targetTheme);
+        return;
+      }
+
+      if (
+        current === 'parental-controls' ||
+        current === 'switch-profile' ||
+        current === 'logout'
+      ) {
+        focusElement('notifications');
+        return;
+      }
+
+      // Inside theme row
+      const currentThemeIdx = PROFILE_THEMES.findIndex(
+        (t) => `theme-${t.id}` === current,
+      );
+      if (currentThemeIdx >= 0 && currentThemeIdx < PROFILE_THEMES.length - 1) {
+        focusElement(`theme-${PROFILE_THEMES[currentThemeIdx + 1].id}`);
+        return;
+      }
+
+      // Inside toggle row
+      if (current === 'notifications') {
+        focusElement('autoplay');
+        return;
+      }
+    }
+
+    // 4. Down button handling
+    if (type === 'down') {
+      const current = focusedIdRef.current;
+      if (current === 'profile') {
+        focusElement('edit');
+        return;
+      }
+      if (current === 'edit') {
+        focusElement('parental-controls');
+        return;
+      }
+      if (current === 'parental-controls') {
+        focusElement('switch-profile');
+        return;
+      }
+      if (current === 'switch-profile') {
+        focusElement('logout');
+        return;
+      }
+
+      // From theme row to toggle row
+      if (current && current.startsWith('theme-')) {
+        const themeIdx = PROFILE_THEMES.findIndex(
+          (t) => `theme-${t.id}` === current,
+        );
+        if (themeIdx >= 2) {
+          focusElement('autoplay');
+        } else {
+          focusElement('notifications');
+        }
+        return;
+      }
+    }
+
+    // 5. Up button handling
+    if (type === 'up') {
+      const current = focusedIdRef.current;
+      if (current === 'logout') {
+        focusElement('switch-profile');
+        return;
+      }
+      if (current === 'switch-profile') {
+        focusElement('parental-controls');
+        return;
+      }
+      if (current === 'parental-controls') {
+        focusElement('edit');
+        return;
+      }
+      if (current === 'edit') {
+        focusElement('profile');
+        return;
+      }
+
+      // From toggle row to theme row
+      if (current === 'notifications') {
+        const targetTheme = `theme-${themePreferenceRef.current || PROFILE_THEMES[0].id}`;
+        focusElement(targetTheme);
+        return;
+      }
+      if (current === 'autoplay') {
+        focusElement(`theme-${PROFILE_THEMES[PROFILE_THEMES.length - 1].id}`);
+        return;
+      }
+    }
+
+    // 6. Select button handling
+    if (isSelectEvent(type)) {
+      const current = focusedIdRef.current;
+      if (!current) return;
+
+      if (current === 'profile') {
+        navigation.navigate(Routes.Profile);
+      } else if (current === 'edit') {
+        navigation.navigate(Routes.EditProfile);
+      } else if (current === 'parental-controls') {
+        handleOpenParentalControls();
+      } else if (current === 'switch-profile') {
+        handleSwitchProfile();
+      } else if (current === 'logout') {
+        handleLogout();
+      } else if (current.startsWith('theme-')) {
+        const themeId = current.replace('theme-', '');
+        updateTheme(themeId);
+      } else if (current === 'notifications') {
+        toggleNotifications();
+      } else if (current === 'autoplay') {
+        toggleAutoplay();
+      } else if (current === 'login') {
+        navigation.navigate(Routes.Login);
+      } else if (current === 'register') {
+        navigation.navigate(Routes.Register);
+      }
+    }
+  });
 
   useEffect(() => {
     setThemePreference(userProfile?.themePreference || 'cinematic');
@@ -270,6 +607,12 @@ export const SettingsScreen = () => {
     }
   };
 
+  const activeDestination =
+    (focusedId && elementRefs.current[focusedId]) ||
+    elementRefs.current[lastFocusedAccountActionRef.current] ||
+    elementRefs.current.profile ||
+    contentGuideRef.current;
+
   return (
     <ScreenLayout
       activeRoute={Routes.Settings}
@@ -277,8 +620,15 @@ export const SettingsScreen = () => {
       description={strings.nav.settingsDesc}
       compactHeader
       preferContentFocus
-      showSearch={false}>
-      <TVFocusGuideView style={styles.container} autoFocus>
+      showSearch={false}
+      isMenuExpanded={isMenuExpanded}
+      onMenuFocus={() => setIsMenuExpanded(true)}
+      onMenuBlur={() => setIsMenuExpanded(false)}
+      destinations={activeDestination ? [activeDestination] : undefined}>
+      <TVFocusGuideView
+        ref={contentGuideRef}
+        style={styles.container}
+        autoFocus={!isMenuExpanded}>
         {user ? (
           <View style={styles.card}>
             <View style={styles.accountPanel}>
@@ -336,8 +686,14 @@ export const SettingsScreen = () => {
                   label={strings.auth.viewProfile}
                   hint={strings.common.accountOverview}
                   focusedId={focusedId}
-                  onFocus={setFocusedId}
+                  onFocus={handleAccountFocus}
                   onPress={() => navigation.navigate(Routes.Profile)}
+                  hasTVPreferredFocus={
+                    focusedId === 'profile' && !isMenuExpanded
+                  }
+                  buttonRef={(node) => {
+                    elementRefs.current.profile = node;
+                  }}
                   testID="settings-profile-button"
                 />
                 <ActionButton
@@ -345,8 +701,12 @@ export const SettingsScreen = () => {
                   label={strings.auth.editProfile}
                   hint={strings.common.avatarAndDetails}
                   focusedId={focusedId}
-                  onFocus={setFocusedId}
+                  onFocus={handleAccountFocus}
                   onPress={() => navigation.navigate(Routes.EditProfile)}
+                  hasTVPreferredFocus={focusedId === 'edit' && !isMenuExpanded}
+                  buttonRef={(node) => {
+                    elementRefs.current.edit = node;
+                  }}
                   testID="settings-edit-profile-button"
                 />
                 <ActionButton
@@ -358,8 +718,14 @@ export const SettingsScreen = () => {
                       : strings.parentalControls.settingsHint
                   }
                   focusedId={focusedId}
-                  onFocus={setFocusedId}
+                  onFocus={handleAccountFocus}
                   onPress={handleOpenParentalControls}
+                  hasTVPreferredFocus={
+                    focusedId === 'parental-controls' && !isMenuExpanded
+                  }
+                  buttonRef={(node) => {
+                    elementRefs.current['parental-controls'] = node;
+                  }}
                   testID="settings-parental-controls-button"
                 />
                 <ActionButton
@@ -370,8 +736,14 @@ export const SettingsScreen = () => {
                     'Switch to another viewing profile'
                   }
                   focusedId={focusedId}
-                  onFocus={setFocusedId}
+                  onFocus={handleAccountFocus}
                   onPress={handleSwitchProfile}
+                  hasTVPreferredFocus={
+                    focusedId === 'switch-profile' && !isMenuExpanded
+                  }
+                  buttonRef={(node) => {
+                    elementRefs.current['switch-profile'] = node;
+                  }}
                   testID="settings-switch-profile-button"
                 />
               </View>
@@ -382,8 +754,14 @@ export const SettingsScreen = () => {
                   label={strings.actions.logOut}
                   hint={strings.common.signOutOfThisTV}
                   focusedId={focusedId}
-                  onFocus={setFocusedId}
+                  onFocus={handleAccountFocus}
                   onPress={handleLogout}
+                  hasTVPreferredFocus={
+                    focusedId === 'logout' && !isMenuExpanded
+                  }
+                  buttonRef={(node) => {
+                    elementRefs.current.logout = node;
+                  }}
                   destructive
                   testID="logout-button"
                 />
@@ -408,24 +786,30 @@ export const SettingsScreen = () => {
               </View>
 
               <Text style={styles.groupLabel}>{strings.auth.themeLabel}</Text>
-              <TVFocusGuideView style={styles.themeRow} autoFocus>
+              <TVFocusGuideView
+                ref={themeRowGuideRef}
+                style={styles.themeRow}
+                autoFocus={false}>
                 {PROFILE_THEMES.map((option) => {
                   const isSelected = themePreference === option.id;
                   const isFocused = focusedId === `theme-${option.id}`;
                   return (
                     <TouchableOpacity
                       key={option.id}
+                      ref={(node) => {
+                        elementRefs.current[`theme-${option.id}`] = node;
+                      }}
                       style={[
                         styles.themeCard,
                         isSelected && styles.themeCardSelected,
                         isFocused && styles.focusedControl,
                         savingPreference && styles.controlDisabled,
                       ]}
-                      onFocus={() => setFocusedId(`theme-${option.id}`)}
-                      onBlur={() => setFocusedId(null)}
+                      onFocus={() => handlePreferenceFocus(`theme-${option.id}`)}
+                      onBlur={() => handlePreferenceFocus(null)}
                       onPress={() => updateTheme(option.id)}
                       disabled={savingPreference}
-                      hasTVPreferredFocus={isSelected}
+                      hasTVPreferredFocus={isFocused && !isMenuExpanded}
                       activeOpacity={1}
                       accessibilityRole="radio"
                       accessibilityState={{
@@ -460,7 +844,10 @@ export const SettingsScreen = () => {
               <Text style={styles.groupLabel}>
                 {strings.common.playbackAndAlerts}
               </Text>
-              <TVFocusGuideView style={styles.toggleRow} autoFocus>
+              <TVFocusGuideView
+                ref={toggleRowGuideRef}
+                style={styles.toggleRow}
+                autoFocus={false}>
                 <ToggleCard
                   id="notifications"
                   label={strings.auth.notificationsLabel}
@@ -468,8 +855,15 @@ export const SettingsScreen = () => {
                   enabled={notificationsEnabled}
                   focusedId={focusedId}
                   disabled={savingPreference}
-                  onFocus={setFocusedId}
+                  onFocus={handlePreferenceFocus}
                   onPress={toggleNotifications}
+                  hasTVPreferredFocus={
+                    focusedId === 'notifications' && !isMenuExpanded
+                  }
+                  cardRef={(node) => {
+                    elementRefs.current.notifications = node;
+                  }}
+                  testID="settings-toggle-notifications"
                 />
                 <ToggleCard
                   id="autoplay"
@@ -478,8 +872,15 @@ export const SettingsScreen = () => {
                   enabled={autoplayEnabled}
                   focusedId={focusedId}
                   disabled={savingPreference}
-                  onFocus={setFocusedId}
+                  onFocus={handlePreferenceFocus}
                   onPress={toggleAutoplay}
+                  hasTVPreferredFocus={
+                    focusedId === 'autoplay' && !isMenuExpanded
+                  }
+                  cardRef={(node) => {
+                    elementRefs.current.autoplay = node;
+                  }}
+                  testID="settings-toggle-autoplay"
                 />
               </TVFocusGuideView>
 
@@ -502,14 +903,23 @@ export const SettingsScreen = () => {
             </Text>
             <View style={styles.signedOutActions}>
               <TouchableOpacity
+                ref={(node) => {
+                  elementRefs.current.login = node;
+                }}
                 style={[
                   styles.authButton,
                   focusedId === 'login' && styles.focusedControl,
                 ]}
-                onFocus={() => setFocusedId('login')}
+                onFocus={() => {
+                  setFocusedId('login');
+                  setIsMenuExpanded(false);
+                }}
                 onBlur={() => setFocusedId(null)}
                 onPress={() => navigation.navigate(Routes.Login)}
-                hasTVPreferredFocus
+                hasTVPreferredFocus={
+                  !isMenuExpanded &&
+                  (focusedId === 'login' || focusedId !== 'register')
+                }
                 activeOpacity={1}
                 accessibilityRole="button"
                 testID="settings-login-button">
@@ -518,14 +928,23 @@ export const SettingsScreen = () => {
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
+                ref={(node) => {
+                  elementRefs.current.register = node;
+                }}
                 style={[
                   styles.authButton,
                   styles.authButtonSecondary,
                   focusedId === 'register' && styles.focusedControl,
                 ]}
-                onFocus={() => setFocusedId('register')}
+                onFocus={() => {
+                  setFocusedId('register');
+                  setIsMenuExpanded(false);
+                }}
                 onBlur={() => setFocusedId(null)}
                 onPress={() => navigation.navigate(Routes.Register)}
+                hasTVPreferredFocus={
+                  !isMenuExpanded && focusedId === 'register'
+                }
                 activeOpacity={1}
                 accessibilityRole="button"
                 testID="settings-register-button">

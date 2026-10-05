@@ -99,4 +99,91 @@ describe('DeleteProfileDialog', () => {
     fireEvent.press(screen.getByTestId('delete-dialog-cancel-button'));
     expect(onCancelMock).toHaveBeenCalledTimes(1);
   });
+
+  it('calls onCancel when TV remote Back event is received', () => {
+    const onCancelMock = jest.fn();
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+
+    render(
+      <DeleteProfileDialog
+        visible={true}
+        profile={mockProfile}
+        isOnlyProfile={false}
+        isDeleting={false}
+        onConfirm={jest.fn()}
+        onCancel={onCancelMock}
+      />,
+    );
+
+    const tvHandlers = useTVEventHandler.mock.calls.map((c: any) => c[0]);
+    tvHandlers.forEach((h: any) => {
+      try {
+        h({eventType: 'back', eventKeyAction: 0});
+      } catch {}
+    });
+
+    expect(onCancelMock).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onCancel and returns true when hardwareBackPress is triggered', () => {
+    const onCancelMock = jest.fn();
+    const {BackHandler} = require('react-native');
+
+    render(
+      <DeleteProfileDialog
+        visible={true}
+        profile={mockProfile}
+        isOnlyProfile={false}
+        isDeleting={false}
+        onConfirm={jest.fn()}
+        onCancel={onCancelMock}
+      />,
+    );
+
+    const backCalls = (BackHandler.addEventListener as jest.Mock).mock.calls;
+    const lastBackHandler = [...backCalls]
+      .reverse()
+      .find((c: any) => c[0] === 'hardwareBackPress')?.[1];
+
+    expect(lastBackHandler).toBeDefined();
+    const result = lastBackHandler();
+
+    expect(onCancelMock).toHaveBeenCalledTimes(1);
+    expect(result).toBe(true);
+  });
+
+  it('does not call onCancel when isDeleting is true', () => {
+    const onCancelMock = jest.fn();
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    const {BackHandler} = require('react-native');
+
+    render(
+      <DeleteProfileDialog
+        visible={true}
+        profile={mockProfile}
+        isOnlyProfile={false}
+        isDeleting={true}
+        onConfirm={jest.fn()}
+        onCancel={onCancelMock}
+      />,
+    );
+
+    const tvHandlers = useTVEventHandler.mock.calls.map((c: any) => c[0]);
+    tvHandlers.forEach((h: any) => {
+      try {
+        h({eventType: 'back', eventKeyAction: 0});
+      } catch {}
+    });
+
+    const backCalls = (BackHandler.addEventListener as jest.Mock).mock.calls;
+    const lastBackHandler = [...backCalls]
+      .reverse()
+      .find((c: any) => c[0] === 'hardwareBackPress')?.[1];
+
+    expect(lastBackHandler).toBeDefined();
+    const result = lastBackHandler();
+
+    expect(onCancelMock).not.toHaveBeenCalled();
+    expect(result).toBe(true);
+  });
 });

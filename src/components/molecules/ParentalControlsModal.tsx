@@ -1,8 +1,9 @@
-import React, {useState} from 'react';
-import {Text, TouchableOpacity, View} from 'react-native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {BackHandler, Text, TouchableOpacity, View} from 'react-native';
+import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {strings} from '../../constants/strings';
 import {useProfile} from '../../profiles/hooks/useProfile';
+import {isBackEvent, isKeyDown, isSelectEvent} from '../../utils/inputUtils';
 import {PinEntryDialog} from './PinEntryDialog';
 import {styles} from './ParentalControlsModal.styles';
 
@@ -25,15 +26,129 @@ export const ParentalControlsModal = ({
   const {parentalSettings, setParentPin, removeParentPin, verifyParentPin} =
     useProfile();
 
+  const isPinEnabled = Boolean(parentalSettings?.pinEnabled);
+  const defaultOptionId = isPinEnabled ? 'opt-change' : 'opt-setup';
+
   const [dialogStep, setDialogStep] = useState<DialogStep>('none');
-  const [focusedId, setFocusedId] = useState<string | null>('opt-primary');
+  const [focusedId, setFocusedId] = useState<string | null>(defaultOptionId);
   const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
+
+  const dialogStepRef = useRef<DialogStep>(dialogStep);
+  dialogStepRef.current = dialogStep;
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  const focusedIdRef = useRef<string | null>(focusedId);
+  focusedIdRef.current = focusedId;
+  const openedAtRef = useRef<number>(0);
+  const elementRefs = useRef<Record<string, any>>({});
+
+  const focusElement = useCallback((id: string) => {
+    setFocusedId(id);
+    const target = elementRefs.current[id];
+    if (target && typeof target.requestTVFocus === 'function') {
+      target.requestTVFocus();
+    }
+  }, []);
+
+  const handleTVEvent = useCallback(
+    (evt: any) => {
+      if (!visible) {
+        return;
+      }
+      if (dialogStepRef.current !== 'none') {
+        // Sub-dialog (PinEntryDialog) is active and handles its own remote Back (onCancel -> setDialogStep('none'))
+        return;
+      }
+      if (!evt) {
+        return;
+      }
+      if (!isKeyDown(evt.eventKeyAction)) {
+        return;
+      }
+      const type = evt.eventType?.toLowerCase();
+      if (isBackEvent(type)) {
+        onCloseRef.current();
+        return;
+      }
+
+      if (type === 'down') {
+        const current = focusedIdRef.current;
+        if (current === 'opt-setup') {
+          focusElement('close');
+        } else if (current === 'opt-change') {
+          focusElement('opt-remove');
+        } else if (current === 'opt-remove') {
+          focusElement('close');
+        }
+        return;
+      }
+
+      if (type === 'up') {
+        const current = focusedIdRef.current;
+        if (current === 'close') {
+          focusElement(isPinEnabled ? 'opt-remove' : 'opt-setup');
+        } else if (current === 'opt-remove') {
+          focusElement('opt-change');
+        }
+        return;
+      }
+
+      if (isSelectEvent(type)) {
+        const current = focusedIdRef.current;
+        if (current === 'opt-setup') {
+          setDialogStep('setup_new');
+        } else if (current === 'opt-change') {
+          setDialogStep('verify_before_change');
+        } else if (current === 'opt-remove') {
+          setDialogStep('verify_before_remove');
+        } else if (current === 'close') {
+          onCloseRef.current();
+        }
+      }
+    },
+    [visible, isPinEnabled, focusElement],
+  );
+
+  useTVEventHandler(handleTVEvent);
+
+  useEffect(() => {
+    if (!visible) {
+      return;
+    }
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        if (dialogStepRef.current !== 'none') {
+          setDialogStep('none');
+          return true;
+        }
+        onCloseRef.current();
+        return true;
+      },
+    );
+    return () => {
+      subscription.remove();
+    };
+  }, [visible]);
+
+  useEffect(() => {
+    if (visible) {
+      const initial = isPinEnabled ? 'opt-change' : 'opt-setup';
+      setFocusedId(initial);
+      openedAtRef.current = Date.now();
+      const timer = setTimeout(() => {
+        focusElement(initial);
+      }, 50);
+      return () => clearTimeout(timer);
+    } else {
+      setDialogStep('none');
+      setFeedbackMessage(null);
+    }
+  }, [visible, isPinEnabled, focusElement]);
 
   if (!visible) {
     return null;
   }
-
-  const isPinEnabled = Boolean(parentalSettings?.pinEnabled);
 
   const showFeedback = (msg: string) => {
     setFeedbackMessage(msg);
@@ -128,6 +243,9 @@ export const ParentalControlsModal = ({
         <View style={styles.optionsList}>
           {!isPinEnabled ? (
             <TouchableOpacity
+              ref={(el) => {
+                elementRefs.current['opt-setup'] = el;
+              }}
               style={[
                 styles.optionButton,
                 focusedId === 'opt-setup' && styles.optionButtonFocused,
@@ -135,7 +253,7 @@ export const ParentalControlsModal = ({
               onFocus={() => setFocusedId('opt-setup')}
               onBlur={() => {}}
               onPress={() => setDialogStep('setup_new')}
-              hasTVPreferredFocus
+              hasTVPreferredFocus={focusedId === 'opt-setup'}
               activeOpacity={1}
               accessibilityRole="button"
               accessibilityLabel={strings.parentalControls.setPin}
@@ -148,6 +266,9 @@ export const ParentalControlsModal = ({
           ) : (
             <>
               <TouchableOpacity
+                ref={(el) => {
+                  elementRefs.current['opt-change'] = el;
+                }}
                 style={[
                   styles.optionButton,
                   focusedId === 'opt-change' && styles.optionButtonFocused,
@@ -155,7 +276,7 @@ export const ParentalControlsModal = ({
                 onFocus={() => setFocusedId('opt-change')}
                 onBlur={() => {}}
                 onPress={() => setDialogStep('verify_before_change')}
-                hasTVPreferredFocus
+                hasTVPreferredFocus={focusedId === 'opt-change'}
                 activeOpacity={1}
                 accessibilityRole="button"
                 accessibilityLabel={strings.parentalControls.changePin}
@@ -167,6 +288,9 @@ export const ParentalControlsModal = ({
               </TouchableOpacity>
 
               <TouchableOpacity
+                ref={(el) => {
+                  elementRefs.current['opt-remove'] = el;
+                }}
                 style={[
                   styles.optionButton,
                   styles.optionButtonDestructive,
@@ -193,6 +317,9 @@ export const ParentalControlsModal = ({
         </View>
 
         <TouchableOpacity
+          ref={(el) => {
+            elementRefs.current['close'] = el;
+          }}
           style={[
             styles.closeButton,
             focusedId === 'close' && styles.closeButtonFocused,
@@ -211,50 +338,58 @@ export const ParentalControlsModal = ({
       </TVFocusGuideView>
 
       {/* Setup New PIN */}
-      <PinEntryDialog
-        visible={dialogStep === 'setup_new'}
-        title={strings.parentalControls.setupPinTitle}
-        subtitle={strings.parentalControls.setupPinSubtitle}
-        isConfirmMode={true}
-        onSuccess={handleSetupPinSuccess}
-        onCancel={() => setDialogStep('none')}
-        testID="setup-pin-dialog"
-      />
+      {dialogStep === 'setup_new' && (
+        <PinEntryDialog
+          visible={true}
+          title={strings.parentalControls.setupPinTitle}
+          subtitle={strings.parentalControls.setupPinSubtitle}
+          isConfirmMode={true}
+          onSuccess={handleSetupPinSuccess}
+          onCancel={() => setDialogStep('none')}
+          testID="setup-pin-dialog"
+        />
+      )}
 
       {/* Verify Current PIN before change */}
-      <PinEntryDialog
-        visible={dialogStep === 'verify_before_change'}
-        title={strings.parentalControls.enterPinTitle}
-        subtitle={strings.parentalControls.enterCurrentPinSubtitle}
-        isConfirmMode={false}
-        validatePin={verifyParentPin}
-        onSuccess={handleVerifyBeforeChangeSuccess}
-        onCancel={() => setDialogStep('none')}
-        testID="verify-before-change-dialog"
-      />
+      {dialogStep === 'verify_before_change' && (
+        <PinEntryDialog
+          visible={true}
+          title={strings.parentalControls.enterPinTitle}
+          subtitle={strings.parentalControls.enterCurrentPinSubtitle}
+          isConfirmMode={false}
+          validatePin={verifyParentPin}
+          onSuccess={handleVerifyBeforeChangeSuccess}
+          onCancel={() => setDialogStep('none')}
+          testID="verify-before-change-dialog"
+        />
+      )}
 
       {/* Change: Enter new PIN */}
-      <PinEntryDialog
-        visible={dialogStep === 'change_new'}
-        title={strings.parentalControls.changePinTitle}
-        subtitle={strings.parentalControls.changePinSubtitle}
-        isConfirmMode={true}
-        onSuccess={handleChangePinSuccess}
-        onCancel={() => setDialogStep('none')}
-        testID="change-pin-dialog"
-      />
+      {dialogStep === 'change_new' && (
+        <PinEntryDialog
+          visible={true}
+          title={strings.parentalControls.changePinTitle}
+          subtitle={strings.parentalControls.changePinSubtitle}
+          isConfirmMode={true}
+          onSuccess={handleChangePinSuccess}
+          onCancel={() => setDialogStep('none')}
+          testID="change-pin-dialog"
+        />
+      )}
 
       {/* Verify before remove */}
-      <PinEntryDialog
-        visible={dialogStep === 'verify_before_remove'}
-        title={strings.parentalControls.enterPinTitle}
-        subtitle={strings.parentalControls.enterCurrentPinSubtitle}
-        isConfirmMode={false}
-        validatePin={verifyParentPin}
-        onSuccess={handleVerifyBeforeRemoveSuccess}
-        onCancel={() => setDialogStep('none')}
-        testID="verify-before-remove-dialog"
-      />
+      {dialogStep === 'verify_before_remove' && (
+        <PinEntryDialog
+          visible={true}
+          title={strings.parentalControls.enterPinTitle}
+          subtitle={strings.parentalControls.enterCurrentPinSubtitle}
+          isConfirmMode={false}
+          validatePin={verifyParentPin}
+          onSuccess={handleVerifyBeforeRemoveSuccess}
+          onCancel={() => setDialogStep('none')}
+          testID="verify-before-remove-dialog"
+        />
+      )}
     </View>
   );
 };

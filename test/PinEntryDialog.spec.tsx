@@ -170,4 +170,82 @@ describe('PinEntryDialog Component', () => {
     // 4th digit not reached
     expect(handleSuccess).not.toHaveBeenCalled();
   });
+
+  it('calls onCancel when TV remote Back event is received', () => {
+    const handleSuccess = jest.fn();
+    const handleCancel = jest.fn();
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+
+    render(
+      <PinEntryDialog
+        visible={true}
+        onSuccess={handleSuccess}
+        onCancel={handleCancel}
+      />,
+    );
+
+    const tvHandlers = useTVEventHandler.mock.calls.map((c: any) => c[0]);
+    act(() => {
+      tvHandlers.forEach((h: any) => {
+        try {
+          h({eventType: 'back', eventKeyAction: 0});
+        } catch {}
+      });
+    });
+
+    expect(handleCancel).toHaveBeenCalledTimes(1);
+  });
+
+  it('calls onCancel and returns true when hardwareBackPress is triggered', () => {
+    const handleSuccess = jest.fn();
+    const handleCancel = jest.fn();
+    const {BackHandler} = require('react-native');
+
+    render(
+      <PinEntryDialog
+        visible={true}
+        onSuccess={handleSuccess}
+        onCancel={handleCancel}
+      />,
+    );
+
+    const backCalls = (BackHandler.addEventListener as jest.Mock).mock.calls;
+    const lastBackHandler = [...backCalls]
+      .reverse()
+      .find((c: any) => c[0] === 'hardwareBackPress')?.[1];
+
+    expect(lastBackHandler).toBeDefined();
+    let result;
+    act(() => {
+      result = lastBackHandler();
+    });
+
+    expect(handleCancel).toHaveBeenCalledTimes(1);
+    expect(result).toBe(true);
+  });
+
+  it('does not invoke onCancel when visible is false', () => {
+    const handleCancel = jest.fn();
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+
+    render(
+      <PinEntryDialog
+        visible={false}
+        onSuccess={jest.fn()}
+        onCancel={handleCancel}
+      />,
+    );
+
+    const tvHandlers = useTVEventHandler.mock.calls.map((c: any) => c[0]);
+    act(() => {
+      tvHandlers.forEach((h: any) => {
+        try {
+          h({eventType: 'back', eventKeyAction: 0});
+        } catch {}
+      });
+    });
+
+    expect(handleCancel).not.toHaveBeenCalled();
+  });
 });
+

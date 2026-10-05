@@ -1,5 +1,6 @@
-import React, {useMemo, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import {
+  BackHandler,
   Image,
   Modal,
   ScrollView,
@@ -80,6 +81,11 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
   focusedEpisodeIdRef.current = focusedEpisodeId;
   const focusedTabRef = useRef(focusedTab);
   focusedTabRef.current = focusedTab;
+  useEffect(() => {
+    if (isOpen) {
+      setFocusedAction('play');
+    }
+  }, [isOpen]);
 
   useTVEventHandler((evt) => {
     if (!isOpen) {
@@ -95,6 +101,24 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
 
     if (isBackEvent(type)) {
       onCancel();
+      return;
+    }
+
+    if (type === 'left') {
+      if (focusedActionRef.current === 'play') {
+        setFocusedAction('cancel');
+        setFocusedEpisodeId(null);
+        setFocusedTab(null);
+      }
+      return;
+    }
+
+    if (type === 'right') {
+      if (focusedActionRef.current === 'cancel') {
+        setFocusedAction('play');
+        setFocusedEpisodeId(null);
+        setFocusedTab(null);
+      }
       return;
     }
 
@@ -129,6 +153,22 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
       }
     }
   });
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        onCancel();
+        return true;
+      },
+    );
+    return () => {
+      subscription.remove();
+    };
+  }, [isOpen, onCancel]);
 
   if (!isOpen || !nextEpisode) {
     return null;
@@ -278,7 +318,7 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
           <TVFocusGuideView
             style={styles.actionRowGuide}
             autoFocus
-            destinations={firstCardNode ? [firstCardNode] : []}>
+            destinations={playButtonNode ? [playButtonNode] : undefined}>
             <View style={styles.actionRow}>
               <TouchableOpacity
                 style={[
@@ -291,6 +331,7 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
                   setFocusedTab(null);
                 }}
                 onPress={onCancel}
+                hasTVPreferredFocus={focusedAction === 'cancel'}
                 activeOpacity={1}
                 accessibilityRole="button"
                 accessibilityLabel={
@@ -319,7 +360,7 @@ export const NextEpisodeModal: React.FC<NextEpisodeModalProps> = ({
                   setFocusedTab(null);
                 }}
                 onPress={() => onPlayNow(nextEpisode)}
-                hasTVPreferredFocus
+                hasTVPreferredFocus={focusedAction === 'play'}
                 activeOpacity={1}
                 accessibilityRole="button"
                 accessibilityLabel={strings.accessibility.nextEpisodePlayButton(

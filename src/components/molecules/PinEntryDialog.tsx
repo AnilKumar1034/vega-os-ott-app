@@ -1,8 +1,9 @@
-import React, {useCallback, useEffect, useState} from 'react';
-import {ActivityIndicator, Text, TouchableOpacity, View} from 'react-native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {ActivityIndicator, BackHandler, Text, TouchableOpacity, View} from 'react-native';
+import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {strings} from '../../constants/strings';
 import {colors} from '../../theme/colors';
+import {isBackEvent, isKeyDown, isSelectEvent} from '../../utils/inputUtils';
 import {styles} from './PinEntryDialog.styles';
 
 export interface PinEntryDialogProps {
@@ -15,6 +16,13 @@ export interface PinEntryDialogProps {
   validatePin?: (pin: string) => Promise<boolean> | boolean;
   testID?: string;
 }
+
+const KEYPAD_ROWS = [
+  ['1', '2', '3'],
+  ['4', '5', '6'],
+  ['7', '8', '9'],
+  ['clear', '0', 'cancel'],
+];
 
 export const PinEntryDialog = ({
   visible,
@@ -33,16 +41,28 @@ export const PinEntryDialog = ({
   const [isVerifying, setIsVerifying] = useState<boolean>(false);
   const [focusedKey, setFocusedKey] = useState<string | null>('key-1');
 
-  useEffect(() => {
-    if (visible) {
-      setCurrentPin('');
-      setFirstPin('');
-      setIsConfirmingStep(false);
-      setErrorMessage(null);
-      setIsVerifying(false);
-      setFocusedKey('key-1');
+  const onCancelRef = useRef(onCancel);
+  onCancelRef.current = onCancel;
+  const focusedKeyRef = useRef<string | null>(focusedKey);
+  focusedKeyRef.current = focusedKey;
+  const openedAtRef = useRef<number>(0);
+  const elementRefs = useRef<Record<string, any>>({});
+
+  const focusKey = useCallback((keyId: string) => {
+    setFocusedKey(keyId);
+    const target = elementRefs.current[keyId];
+    if (target && typeof target.requestTVFocus === 'function') {
+      target.requestTVFocus();
     }
-  }, [visible]);
+  }, []);
+
+  const handleClear = useCallback(() => {
+    if (isVerifying) {
+      return;
+    }
+    setErrorMessage(null);
+    setCurrentPin('');
+  }, [isVerifying]);
 
   const handleDigitPress = useCallback(
     async (digit: string) => {
@@ -118,13 +138,123 @@ export const PinEntryDialog = ({
     ],
   );
 
-  const handleClear = useCallback(() => {
-    if (isVerifying) {
+  const handleTVEvent = useCallback(
+    (evt: any) => {
+      if (!visible) {
+        return;
+      }
+      if (!evt) {
+        return;
+      }
+      if (!isKeyDown(evt.eventKeyAction)) {
+        return;
+      }
+      const type = evt.eventType?.toLowerCase();
+      if (isBackEvent(type)) {
+        onCancelRef.current();
+        return;
+      }
+
+      const current = focusedKeyRef.current;
+      let currentRow = -1;
+      let currentCol = -1;
+      if (current) {
+        for (let r = 0; r < KEYPAD_ROWS.length; r++) {
+          for (let c = 0; c < KEYPAD_ROWS[r].length; c++) {
+            if (`key-${KEYPAD_ROWS[r][c]}` === current) {
+              currentRow = r;
+              currentCol = c;
+              break;
+            }
+          }
+          if (currentRow !== -1) break;
+        }
+      }
+
+      if (type === 'left') {
+        if (currentRow !== -1 && currentCol > 0) {
+          focusKey(`key-${KEYPAD_ROWS[currentRow][currentCol - 1]}`);
+        }
+        return;
+      }
+
+      if (type === 'right') {
+        if (currentRow !== -1 && currentCol < KEYPAD_ROWS[currentRow].length - 1) {
+          focusKey(`key-${KEYPAD_ROWS[currentRow][currentCol + 1]}`);
+        }
+        return;
+      }
+
+      if (type === 'up') {
+        if (current === 'bottom-cancel') {
+          focusKey('key-0');
+        } else if (currentRow > 0) {
+          focusKey(`key-${KEYPAD_ROWS[currentRow - 1][currentCol]}`);
+        }
+        return;
+      }
+
+      if (type === 'down') {
+        if (currentRow !== -1 && currentRow < KEYPAD_ROWS.length - 1) {
+          focusKey(`key-${KEYPAD_ROWS[currentRow + 1][currentCol]}`);
+        } else if (currentRow === KEYPAD_ROWS.length - 1) {
+          focusKey('bottom-cancel');
+        }
+        return;
+      }
+
+      if (isSelectEvent(type)) {
+        if (!current) {
+          return;
+        }
+        if (current === 'bottom-cancel' || current === 'key-cancel') {
+          onCancelRef.current();
+        } else if (current === 'key-clear') {
+          handleClear();
+        } else if (current.startsWith('key-')) {
+          const digit = current.replace('key-', '');
+          if (/^\d$/.test(digit)) {
+            handleDigitPress(digit);
+          }
+        }
+      }
+    },
+    [visible, focusKey, handleClear, handleDigitPress],
+  );
+
+  useTVEventHandler(handleTVEvent);
+
+  useEffect(() => {
+    if (!visible) {
       return;
     }
-    setErrorMessage(null);
-    setCurrentPin('');
-  }, [isVerifying]);
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        onCancelRef.current();
+        return true;
+      },
+    );
+    return () => {
+      subscription.remove();
+    };
+  }, [visible]);
+
+  useEffect(() => {
+    if (visible) {
+      setCurrentPin('');
+      setFirstPin('');
+      setIsConfirmingStep(false);
+      setErrorMessage(null);
+      setIsVerifying(false);
+      setFocusedKey('key-1');
+      openedAtRef.current = Date.now();
+      const timer = setTimeout(() => {
+        focusKey('key-1');
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [visible, focusKey]);
 
   if (!visible) {
     return null;
@@ -213,6 +343,9 @@ export const PinEntryDialog = ({
 
                   return (
                     <TouchableOpacity
+                      ref={(el) => {
+                        elementRefs.current[keyId] = el;
+                      }}
                       key={key}
                       style={[
                         styles.keyButton,
@@ -231,7 +364,7 @@ export const PinEntryDialog = ({
                           onCancel();
                         }
                       }}
-                      hasTVPreferredFocus={key === '1'}
+                      hasTVPreferredFocus={focusedKey === keyId}
                       activeOpacity={1}
                       accessibilityRole="button"
                       accessibilityLabel={
@@ -264,6 +397,9 @@ export const PinEntryDialog = ({
 
         <View style={styles.footerActions}>
           <TouchableOpacity
+            ref={(el) => {
+              elementRefs.current['bottom-cancel'] = el;
+            }}
             style={[
               styles.cancelButton,
               focusedKey === 'bottom-cancel' && styles.cancelButtonFocused,

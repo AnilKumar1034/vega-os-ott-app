@@ -1,5 +1,5 @@
-import React, {useRef, useState} from 'react';
-import {Modal, ScrollView, Text, TouchableOpacity, View} from 'react-native';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
+import {BackHandler, Modal, ScrollView, Text, TouchableOpacity, View} from 'react-native';
 import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {strings} from '../../constants/strings';
 import {AudioTrack} from '../../types/audioTracks';
@@ -21,9 +21,19 @@ export const AudioTracksModal: React.FC<AudioTracksModalProps> = ({
   onSelectTrack,
   onClose,
 }) => {
-  const [focusedId, setFocusedId] = useState<string | null>(null);
+  const defaultTrackId = selectedTrackId || tracks[0]?.id || 'close';
+  const [focusedId, setFocusedId] = useState<string | null>(defaultTrackId);
   const focusedIdRef = useRef<string | null>(focusedId);
   focusedIdRef.current = focusedId;
+  const elementRefs = useRef<Record<string, any>>({});
+
+  const focusElement = useCallback((id: string) => {
+    setFocusedId(id);
+    const target = elementRefs.current[id];
+    if (target && typeof target.requestTVFocus === 'function') {
+      target.requestTVFocus();
+    }
+  }, []);
 
   useTVEventHandler((evt) => {
     if (!isOpen) {
@@ -42,6 +52,32 @@ export const AudioTracksModal: React.FC<AudioTracksModalProps> = ({
       return;
     }
 
+    if (type === 'down') {
+      const current = focusedIdRef.current;
+      const currentIndex = tracks.findIndex((t) => t.id === current);
+      if (currentIndex >= 0 && currentIndex < tracks.length - 1) {
+        focusElement(tracks[currentIndex + 1].id);
+      } else if (currentIndex === tracks.length - 1) {
+        focusElement('close');
+      }
+      return;
+    }
+
+    if (type === 'up') {
+      const current = focusedIdRef.current;
+      if (current === 'close') {
+        if (tracks.length > 0) {
+          focusElement(tracks[tracks.length - 1].id);
+        }
+      } else {
+        const currentIndex = tracks.findIndex((t) => t.id === current);
+        if (currentIndex > 0) {
+          focusElement(tracks[currentIndex - 1].id);
+        }
+      }
+      return;
+    }
+
     if (isSelectEvent(type)) {
       const current = focusedIdRef.current;
       if (current === 'close') {
@@ -51,6 +87,33 @@ export const AudioTracksModal: React.FC<AudioTracksModalProps> = ({
       }
     }
   });
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        onClose();
+        return true;
+      },
+    );
+    return () => {
+      subscription.remove();
+    };
+  }, [isOpen, onClose]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const initial = selectedTrackId || tracks[0]?.id || 'close';
+      setFocusedId(initial);
+      const timer = setTimeout(() => {
+        focusElement(initial);
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen, selectedTrackId, tracks, focusElement]);
 
   if (!isOpen) {
     return null;
@@ -93,20 +156,19 @@ export const AudioTracksModal: React.FC<AudioTracksModalProps> = ({
 
               return (
                 <TouchableOpacity
+                  ref={(el) => {
+                    elementRefs.current[option.id] = el;
+                  }}
                   key={option.id}
                   style={[
                     styles.trackButton,
                     isSelected && styles.trackButtonSelected,
                     isFocused && styles.trackButtonFocused,
                   ]}
-                  hasTVPreferredFocus={
-                    (!focusedId && isSelected) || (!focusedId && index === 0)
-                  }
+                  hasTVPreferredFocus={focusedId === option.id}
                   onFocus={() => setFocusedId(option.id)}
-                  onBlur={() => setFocusedId(null)}
-                  onPress={() => {
-                    onSelectTrack(option.id);
-                  }}
+                  onBlur={() => {}}
+                  onPress={() => onSelectTrack(option.id)}
                   activeOpacity={0.85}
                   accessibilityRole="button"
                   accessibilityLabel={strings.accessibility.selectAudioTrack(
@@ -148,13 +210,17 @@ export const AudioTracksModal: React.FC<AudioTracksModalProps> = ({
 
           {/* Close / Done Button */}
           <TouchableOpacity
+            ref={(el) => {
+              elementRefs.current['close'] = el;
+            }}
             style={[
               styles.closeButton,
               focusedId === 'close' && styles.closeButtonFocused,
             ]}
             onFocus={() => setFocusedId('close')}
-            onBlur={() => setFocusedId(null)}
+            onBlur={() => {}}
             onPress={onClose}
+            hasTVPreferredFocus={focusedId === 'close'}
             activeOpacity={0.85}
             accessibilityRole="button"
             accessibilityLabel={strings.accessibility.closeAudioTracksModal}

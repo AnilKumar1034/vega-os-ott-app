@@ -1,6 +1,7 @@
-import React, {useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
+  BackHandler,
   Image,
   ImageBackground,
   Text,
@@ -8,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import {useNavigation} from '@react-navigation/native';
-import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
+import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {Routes} from '../../constants/routes';
 import {strings} from '../../constants/strings';
 import {colors} from '../../theme/colors';
@@ -16,6 +17,7 @@ import {ProfileCard} from '../components/ProfileCard';
 import {PinEntryDialog} from '../../components/molecules/PinEntryDialog';
 import {useProfile} from '../hooks/useProfile';
 import {MAX_PROFILES_PER_ACCOUNT, UserProfile} from '../types/Profile';
+import {isBackEvent, isKeyDown} from '../../utils/inputUtils';
 import {styles} from './ProfileSelectionScreen.styles';
 
 export const ProfileSelectionScreen = () => {
@@ -94,6 +96,54 @@ export const ProfileSelectionScreen = () => {
   };
 
   const canAddMoreProfiles = profiles.length < MAX_PROFILES_PER_ACCOUNT;
+
+  const pendingProfileSwitchRef = useRef(pendingProfileSwitch);
+  pendingProfileSwitchRef.current = pendingProfileSwitch;
+  const showAddPinDialogRef = useRef(showAddPinDialog);
+  showAddPinDialogRef.current = showAddPinDialog;
+
+  useTVEventHandler((evt) => {
+    if (!evt) return;
+    if (!isKeyDown(evt.eventKeyAction)) return;
+    const type = evt.eventType?.toLowerCase();
+    if (isBackEvent(type)) {
+      if (pendingProfileSwitchRef.current) {
+        setPendingProfileSwitch(null);
+        return;
+      }
+      if (showAddPinDialogRef.current) {
+        setShowAddPinDialog(false);
+        return;
+      }
+      if (navigation.canGoBack && navigation.canGoBack()) {
+        navigation.goBack();
+      }
+    }
+  });
+
+  useEffect(() => {
+    const subscription = BackHandler.addEventListener(
+      'hardwareBackPress',
+      () => {
+        if (pendingProfileSwitchRef.current) {
+          setPendingProfileSwitch(null);
+          return true;
+        }
+        if (showAddPinDialogRef.current) {
+          setShowAddPinDialog(false);
+          return true;
+        }
+        if (navigation.canGoBack && navigation.canGoBack()) {
+          navigation.goBack();
+          return true;
+        }
+        return false;
+      },
+    );
+    return () => {
+      subscription.remove();
+    };
+  }, [navigation]);
 
   return (
     <ImageBackground
