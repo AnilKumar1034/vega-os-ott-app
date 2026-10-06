@@ -13,6 +13,7 @@ import {
   getStoredSession,
 } from '../services/authService';
 import {AuthContext} from './authContext';
+import {analyticsService} from '../analytics';
 
 export const AuthProvider = ({children}: {children: ReactNode}) => {
   const [user, setUser] = useState<AuthUser | null>(null);
@@ -52,6 +53,14 @@ export const AuthProvider = ({children}: {children: ReactNode}) => {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (user?.uid) {
+      analyticsService.setUser({userId: user.uid});
+    } else {
+      analyticsService.reset();
+    }
+  }, [user]);
 
   const register = async (params: RegisterParams) => {
     setLoading(true);

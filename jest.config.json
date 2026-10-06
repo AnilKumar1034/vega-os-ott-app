@@ -18,11 +18,13 @@
   "moduleNameMapper": {
     "^~/(.*)$": "<rootDir>/src/$1",
     "^firebase/app$": "<rootDir>/node_modules/firebase/app/dist/index.cjs.js",
+    "^firebase/analytics$": "<rootDir>/node_modules/firebase/analytics/dist/index.cjs.js",
     "^firebase/auth$": "<rootDir>/node_modules/firebase/auth/dist/index.cjs.js",
     "^firebase/firestore$": "<rootDir>/node_modules/firebase/firestore/dist/index.cjs.js",
     "^@firebase/util$": "<rootDir>/node_modules/@firebase/util/dist/index.cjs.js",
     "^@firebase/component$": "<rootDir>/node_modules/@firebase/component/dist/index.cjs.js",
-    "^@firebase/app$": "<rootDir>/node_modules/@firebase/app/dist/index.cjs.js"
+    "^@firebase/app$": "<rootDir>/node_modules/@firebase/app/dist/index.cjs.js",
+    "^@firebase/analytics$": "<rootDir>/node_modules/@firebase/analytics/dist/index.cjs.js"
   },
   "modulePaths": ["<rootDir>/src"],
   "roots": [

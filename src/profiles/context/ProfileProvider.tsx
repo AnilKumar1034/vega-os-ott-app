@@ -11,6 +11,7 @@ import {
   validateProfileName,
 } from '../types/Profile';
 import {ProfileContext} from './profileContext';
+import {analyticsService} from '../../analytics';
 
 export const ACTIVE_PROFILE_STORAGE_KEY = 'logixstream.activeProfileId';
 
@@ -117,6 +118,17 @@ export const ProfileProvider = ({children}: {children: ReactNode}) => {
       isMounted = false;
     };
   }, [authLoading, user, loadProfilesForUser, loadParentalSettingsForUser]);
+
+  useEffect(() => {
+    if (activeProfile) {
+      analyticsService.setProfile({
+        profileId: activeProfile.id,
+        profileType: activeProfile.isKids ? 'kids' : 'adult',
+      });
+    } else {
+      analyticsService.setProfile(null);
+    }
+  }, [activeProfile]);
 
   const setActiveProfile = async (profile: UserProfile | null) => {
     const AsyncStorage = getAsyncStorage();
