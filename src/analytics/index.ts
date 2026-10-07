@@ -12,6 +12,17 @@ export {
   analyticsContextManager,
 } from './analyticsContext';
 
+export {
+  PlaybackSessionManager,
+  playbackSessionManager,
+  generatePlaybackSessionId,
+} from './playbackSessionManager';
+export type {
+  PlaybackSessionState,
+  StartPlaybackSessionOptions,
+  ActivePlaybackSession,
+} from './playbackSessionManager';
+
 export type {
   AnalyticsContext,
   AnalyticsUserContext,
@@ -19,6 +30,13 @@ export type {
   AppOpenEventParams,
   ScreenViewEventParams,
   ProfileSelectedEventParams,
+  PlaybackBaseParams,
+  PlaybackStartedParams,
+  FirstFrameParams,
+  PlaybackPausedParams,
+  PlaybackResumedParams,
+  PlaybackCompletedParams,
+  PlaybackStoppedParams,
   AnalyticsEventParams,
   AnalyticsEventParamsMap,
   AnalyticsServiceOptions,

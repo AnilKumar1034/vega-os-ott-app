@@ -82,6 +82,7 @@ import {
   isAutoplayEnabled,
 } from '../services/episodeService';
 import {NextEpisodeModal} from '../components/molecules/NextEpisodeModal';
+import {playbackSessionManager} from '../analytics';
 
 let KeplerVideoViewComponent: any = View;
 let VideoPlayerClass: any = null;
@@ -1258,6 +1259,23 @@ export const VideoPlayerScreen = () => {
         setVideoError(
           playerErr?.message || strings.errors.videoPlaybackUnavailable,
         );
+        playbackSessionManager
+          .recordStop({
+            position: player?.currentTime || 0,
+            duration: player?.duration || 0,
+            reason: 'error',
+          })
+          .catch(() => {});
+      }
+    };
+
+    const handleFirstFrame = () => {
+      if (!disposed && !playbackSessionManager.hasFirstFrameRendered()) {
+        playbackSessionManager
+          .recordFirstFrame({
+            position: player?.currentTime || 0,
+          })
+          .catch(() => {});
       }
     };
 
@@ -1268,6 +1286,9 @@ export const VideoPlayerScreen = () => {
           Number.isFinite(player.currentTime)
         ) {
           setPlaybackTime(player.currentTime);
+          if (player.currentTime > 0) {
+            handleFirstFrame();
+          }
         }
         if (
           player.duration !== undefined &&
@@ -1364,6 +1385,8 @@ export const VideoPlayerScreen = () => {
       player.addEventListener('loadedmetadata', onLoadedMetadata);
       player.addEventListener('timeupdate', onPlayerTimeUpdate);
       player.addEventListener('captioningchange', onCaptioningChange);
+      player.addEventListener('loadeddata', handleFirstFrame);
+      player.addEventListener('playbackstarted', handleFirstFrame);
     }
 
     if (player?.textTracks?.addEventListener) {
@@ -1376,6 +1399,22 @@ export const VideoPlayerScreen = () => {
           setVideoError(strings.parentalControls.contentRestrictedMessage);
           return;
         }
+
+        // Step 1 & 2: Start new playback session (generates playbackSessionId & emits playback_started)
+        playbackSessionManager
+          .startSession({
+            contentId: movie.id,
+            contentTitle: movie.title,
+            contentType: isLive
+              ? 'live'
+              : route.params?.episode?.id
+              ? 'episode'
+              : 'movie',
+            streamType: route.params?.streamType || (isLive ? 'live' : 'vod'),
+            isLive,
+            startPosition: hasExplicitSeek ?? 0,
+          })
+          .catch(() => {});
 
         await Promise.resolve(player.initialize?.());
         if (disposed) {
@@ -1499,10 +1538,21 @@ export const VideoPlayerScreen = () => {
         player.removeEventListener('loadedmetadata', onLoadedMetadata);
         player.removeEventListener('timeupdate', onPlayerTimeUpdate);
         player.removeEventListener('captioningchange', onCaptioningChange);
+        player.removeEventListener('loadeddata', handleFirstFrame);
+        player.removeEventListener('playbackstarted', handleFirstFrame);
       }
       if (player?.textTracks?.removeEventListener) {
         player.textTracks.removeEventListener('change', onCaptioningChange);
       }
+
+      // Record stopped if session active and not completed
+      playbackSessionManager
+        .recordStop({
+          position: player?.currentTime || 0,
+          duration: player?.duration || 0,
+          reason: 'user_exit',
+        })
+        .catch(() => {});
 
       // Release native media resources synchronously and immediately to prevent
       // Kepler / Vega OS ReclaimMediaResource crash.
@@ -1600,6 +1650,14 @@ export const VideoPlayerScreen = () => {
         countdownTimerRef.current = null;
       }
       setIsNextEpisodeModalOpen(false);
+
+      playbackSessionManager
+        .recordStop({
+          position: player?.currentTime || 0,
+          duration: player?.duration || 0,
+          reason: 'episode_switch',
+        })
+        .catch(() => {});
 
       navigation.replace(Routes.VideoPlayer, {
         movieId: ep.id,
@@ -1734,6 +1792,9 @@ export const VideoPlayerScreen = () => {
 
     const onPause = () => {
       setIsPlaybackPaused(true);
+      playbackSessionManager
+        .recordPause(player?.currentTime || 0)
+        .catch(() => {});
       if (timeSyncTimerRef.current) {
         clearInterval(timeSyncTimerRef.current);
         timeSyncTimerRef.current = null;
@@ -1742,7 +1803,17 @@ export const VideoPlayerScreen = () => {
     };
 
     const onPlaying = () => {
+      if (!playbackSessionManager.hasFirstFrameRendered()) {
+        playbackSessionManager
+          .recordFirstFrame({
+            position: player?.currentTime || 0,
+          })
+          .catch(() => {});
+      }
       setIsPlaybackPaused(false);
+      playbackSessionManager
+        .recordResume(player?.currentTime || 0)
+        .catch(() => {});
       const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
       if (
         !isLive &&
@@ -1789,6 +1860,11 @@ export const VideoPlayerScreen = () => {
 
     const onEnded = () => {
       hasTriggeredEpisodeEndRef.current = true;
+      playbackSessionManager
+        .recordComplete({
+          duration: player?.duration || 0,
+        })
+        .catch(() => {});
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
       }
@@ -1950,12 +2026,19 @@ export const VideoPlayerScreen = () => {
       return;
     }
     await persistProgress();
+    playbackSessionManager
+      .recordStop({
+        position: player?.currentTime || 0,
+        duration: player?.duration || 0,
+        reason: 'back_navigation',
+      })
+      .catch(() => {});
     if (isLive && navigation.canGoBack?.()) {
       navigation.goBack();
       return;
     }
     navigation.navigate(Routes.Home);
-  }, [isLive, navigation, persistProgress, resetHideTimer]);
+  }, [isLive, navigation, persistProgress, player, resetHideTimer]);
 
   const togglePlayback = useCallback(async () => {
     resetHideTimer();

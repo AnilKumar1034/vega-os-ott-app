@@ -289,4 +289,31 @@ describe('VideoPlayerScreen', () => {
       expect(mockNavigate).toHaveBeenCalledWith('Home');
     });
   });
+
+  it('triggers playback session lifecycle telemetry (playback_started and stopped on back)', async () => {
+    const {playbackSessionManager} = require('../src/analytics');
+    const startSessionSpy = jest.spyOn(playbackSessionManager, 'startSession');
+    const recordStopSpy = jest.spyOn(playbackSessionManager, 'recordStop');
+
+    const screen = render(<VideoPlayerScreen />);
+
+    expect(startSessionSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        contentId: 'test-movie',
+        contentTitle: 'Test Feature Movie',
+        contentType: 'movie',
+      }),
+    );
+
+    const backButton = screen.getByTestId('player-back-button');
+    await act(async () => {
+      fireEvent.press(backButton);
+    });
+
+    expect(recordStopSpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reason: 'back_navigation',
+      }),
+    );
+  });
 });

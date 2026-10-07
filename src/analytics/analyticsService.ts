@@ -19,7 +19,13 @@ import {
   AnalyticsProfileContext,
   AnalyticsServiceOptions,
   AnalyticsUserContext,
+  FirstFrameParams,
   IAnalyticsService,
+  PlaybackCompletedParams,
+  PlaybackPausedParams,
+  PlaybackResumedParams,
+  PlaybackStartedParams,
+  PlaybackStoppedParams,
   ProfileSelectedEventParams,
 } from './analyticsTypes';
 
@@ -502,6 +508,142 @@ export class AnalyticsService implements IAnalyticsService {
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackProfileSelected error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks playback started event when content begins.
+   */
+  public async trackPlaybackStarted(
+    params: PlaybackStartedParams,
+  ): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackPlaybackStarted called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.PLAYBACK_STARTED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackPlaybackStarted error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks first frame rendered event.
+   */
+  public async trackFirstFrame(params: FirstFrameParams): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackFirstFrame called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.FIRST_FRAME, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackFirstFrame error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks paused event.
+   */
+  public async trackPlaybackPaused(
+    params: PlaybackPausedParams,
+  ): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackPlaybackPaused called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.PAUSED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackPlaybackPaused error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks resumed event.
+   */
+  public async trackPlaybackResumed(
+    params: PlaybackResumedParams,
+  ): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackPlaybackResumed called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.RESUMED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackPlaybackResumed error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks completed event when video finishes.
+   */
+  public async trackPlaybackCompleted(
+    params: PlaybackCompletedParams,
+  ): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackPlaybackCompleted called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.COMPLETED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackPlaybackCompleted error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks stopped event when playback is stopped / exited before completion.
+   */
+  public async trackPlaybackStopped(
+    params: PlaybackStoppedParams,
+  ): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackPlaybackStopped called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.STOPPED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackPlaybackStopped error:', err);
       }
     }
   }
