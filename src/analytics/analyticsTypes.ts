@@ -44,10 +44,19 @@ export interface PlaybackBaseParams {
   contentId: string;
   contentTitle?: string;
   contentType?: 'movie' | 'episode' | 'live';
+  playbackType?: string;
   streamType?: string;
   isLive?: boolean;
+  profileId?: string;
+  profileType?: 'adult' | 'kids';
   [key: string]: unknown;
 }
+
+export interface PlaybackStartRequestedParams extends PlaybackBaseParams {
+  startPosition?: number;
+}
+
+export interface PlayerReadyParams extends PlaybackBaseParams {}
 
 export interface PlaybackStartedParams extends PlaybackBaseParams {
   startPosition?: number;
@@ -56,7 +65,27 @@ export interface PlaybackStartedParams extends PlaybackBaseParams {
 
 export interface FirstFrameParams extends PlaybackBaseParams {
   timeToFirstFrameMs: number;
+  startup_time_ms?: number;
+  startupTimeMs?: number;
   position?: number;
+}
+
+export interface BufferStartedParams extends PlaybackBaseParams {
+  bufferCount: number;
+  buffer_count?: number;
+}
+
+export interface BufferEndedParams extends PlaybackBaseParams {
+  bufferDurationMs: number;
+  buffer_duration_ms?: number;
+  bufferCount?: number;
+  buffer_count?: number;
+}
+
+export interface PlaybackBufferMetrics {
+  bufferCount: number;
+  totalBufferDurationMs: number;
+  currentBufferStartTimestamp?: number;
 }
 
 export interface PlaybackPausedParams extends PlaybackBaseParams {
@@ -85,16 +114,81 @@ export interface PlaybackStoppedParams extends PlaybackBaseParams {
     | 'error';
 }
 
+export interface SeekStartedParams extends PlaybackBaseParams {
+  seekStartPosition: number;
+  seek_start_position?: number;
+  seekTargetPosition: number;
+  seek_target_position?: number;
+}
+
+export interface SeekCompletedParams extends PlaybackBaseParams {
+  seekStartPosition: number;
+  seek_start_position?: number;
+  seekTargetPosition: number;
+  seek_target_position?: number;
+  seekDurationMs: number;
+  seek_duration_ms?: number;
+}
+
+export interface AudioTrackChangedParams extends PlaybackBaseParams {
+  fromAudioTrackId?: string;
+  toAudioTrackId: string;
+  fromLanguage?: string;
+  toLanguage: string;
+  fromFormat?: string;
+  toFormat?: string;
+}
+
+export interface SubtitleTrackChangedParams extends PlaybackBaseParams {
+  fromSubtitleTrackId?: string;
+  toSubtitleTrackId: string;
+  fromLanguage?: string;
+  toLanguage?: string;
+  isOff: boolean;
+}
+
+export interface QualitySelectedParams extends PlaybackBaseParams {
+  qualityId: string;
+  qualityMode: 'auto' | 'manual';
+  targetResolution?: string;
+  targetBitrate?: string;
+}
+
+export interface BitrateChangedParams extends PlaybackBaseParams {
+  fromBitrate?: number | string;
+  toBitrate: number | string;
+  bitrateMbps?: string;
+}
+
+export interface ResolutionChangedParams extends PlaybackBaseParams {
+  fromWidth?: number;
+  fromHeight?: number;
+  toWidth: number;
+  toHeight: number;
+  resolutionBadge?: string;
+}
+
 export interface AnalyticsEventParamsMap {
   app_open: AppOpenEventParams;
   screen_view: ScreenViewEventParams;
   profile_selected: ProfileSelectedEventParams;
+  playback_start_requested: PlaybackStartRequestedParams;
+  player_ready: PlayerReadyParams;
   playback_started: PlaybackStartedParams;
   first_frame: FirstFrameParams;
+  buffer_started: BufferStartedParams;
+  buffer_ended: BufferEndedParams;
   paused: PlaybackPausedParams;
   resumed: PlaybackResumedParams;
   completed: PlaybackCompletedParams;
   stopped: PlaybackStoppedParams;
+  seek_started: SeekStartedParams;
+  seek_completed: SeekCompletedParams;
+  audio_track_changed: AudioTrackChangedParams;
+  subtitle_track_changed: SubtitleTrackChangedParams;
+  quality_selected: QualitySelectedParams;
+  bitrate_changed: BitrateChangedParams;
+  resolution_changed: ResolutionChangedParams;
 }
 
 export type AnalyticsEventParams<T extends AnalyticsEventName = AnalyticsEventName> =
@@ -128,11 +222,24 @@ export interface IAnalyticsService {
   ): Promise<void>;
   trackAppOpen(params?: AppOpenEventParams): Promise<void>;
   trackProfileSelected(params: ProfileSelectedEventParams): Promise<void>;
+  trackPlaybackStartRequested(
+    params: PlaybackStartRequestedParams,
+  ): Promise<void>;
+  trackPlayerReady(params: PlayerReadyParams): Promise<void>;
   trackPlaybackStarted(params: PlaybackStartedParams): Promise<void>;
   trackFirstFrame(params: FirstFrameParams): Promise<void>;
+  trackBufferStarted(params: BufferStartedParams): Promise<void>;
+  trackBufferEnded(params: BufferEndedParams): Promise<void>;
   trackPlaybackPaused(params: PlaybackPausedParams): Promise<void>;
   trackPlaybackResumed(params: PlaybackResumedParams): Promise<void>;
   trackPlaybackCompleted(params: PlaybackCompletedParams): Promise<void>;
   trackPlaybackStopped(params: PlaybackStoppedParams): Promise<void>;
+  trackSeekStarted(params: SeekStartedParams): Promise<void>;
+  trackSeekCompleted(params: SeekCompletedParams): Promise<void>;
+  trackAudioTrackChanged(params: AudioTrackChangedParams): Promise<void>;
+  trackSubtitleTrackChanged(params: SubtitleTrackChangedParams): Promise<void>;
+  trackQualitySelected(params: QualitySelectedParams): Promise<void>;
+  trackBitrateChanged(params: BitrateChangedParams): Promise<void>;
+  trackResolutionChanged(params: ResolutionChangedParams): Promise<void>;
   reset(): void;
 }

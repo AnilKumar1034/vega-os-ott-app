@@ -284,6 +284,8 @@ export const VideoPlayerScreen = () => {
   const [backButtonNode, setBackButtonNode] = useState<any>(null);
   const [isBackFocused, setIsBackFocused] = useState(false);
   const [isPlaybackPaused, setIsPlaybackPaused] = useState(false);
+  const isPlaybackPausedRef = useRef(false);
+  isPlaybackPausedRef.current = isPlaybackPaused;
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
   const [isPlayerInitialized, setIsPlayerInitialized] = useState(false);
@@ -606,6 +608,19 @@ export const VideoPlayerScreen = () => {
 
   const handleSelectSubtitleTrack = useCallback(
     async (trackId: string) => {
+      const currentSubId = selectedSubtitleTrackId;
+      const currentTrack = availableSubtitleTracks.find((t) => t.id === currentSubId);
+      const targetTrack = availableSubtitleTracks.find((t) => t.id === trackId);
+      playbackSessionManager
+        .recordSubtitleTrackChanged({
+          fromSubtitleTrackId: currentSubId,
+          fromLanguage: currentTrack?.language,
+          toSubtitleTrackId: trackId,
+          toLanguage: targetTrack?.language,
+          isOff: trackId === SUBTITLE_OFF_ID,
+        })
+        .catch(() => {});
+
       setSelectedSubtitleTrackId(trackId);
       const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
       await saveSubtitlePreference(targetProfileId, trackId);
@@ -658,7 +673,13 @@ export const VideoPlayerScreen = () => {
       setIsSubtitlesModalOpen(false);
       resetHideTimer();
     },
-    [activeProfile?.id, availableSubtitleTracks, player, resetHideTimer],
+    [
+      activeProfile?.id,
+      availableSubtitleTracks,
+      player,
+      resetHideTimer,
+      selectedSubtitleTrackId,
+    ],
   );
 
   const handleSelectAudioTrack = useCallback(
@@ -673,6 +694,19 @@ export const VideoPlayerScreen = () => {
       if (!targetTrack) {
         return;
       }
+
+      const currentAudioId = selectedAudioTrackId;
+      const currentTrack = availableAudioTracks.find((t) => t.id === currentAudioId);
+      playbackSessionManager
+        .recordAudioTrackChanged({
+          fromAudioTrackId: currentAudioId,
+          fromLanguage: currentTrack?.language,
+          fromFormat: currentTrack?.channels || currentTrack?.audioCodec,
+          toAudioTrackId: trackId,
+          toLanguage: targetTrack.language,
+          toFormat: targetTrack.channels || targetTrack.audioCodec,
+        })
+        .catch(() => {});
 
       // 1. Sync with native W3C media element audioTracks if matching track exists
       if (player?.audioTracks && player.audioTracks.length > 0) {
@@ -759,7 +793,13 @@ export const VideoPlayerScreen = () => {
       setIsAudioTracksModalOpen(false);
       resetHideTimer();
     },
-    [activeProfile?.id, availableAudioTracks, player, resetHideTimer],
+    [
+      activeProfile?.id,
+      availableAudioTracks,
+      player,
+      resetHideTimer,
+      selectedAudioTrackId,
+    ],
   );
 
   const handleSelectQuality = useCallback(
@@ -776,6 +816,16 @@ export const VideoPlayerScreen = () => {
       if (!targetQuality) {
         return;
       }
+
+      playbackSessionManager
+        .recordQualitySelected({
+          qualityId,
+          qualityMode: qualityId === AUTO_QUALITY_ID ? 'auto' : 'manual',
+          targetResolution:
+            targetQuality.height != null ? `${targetQuality.height}p` : undefined,
+          targetBitrate: targetQuality.bitrate,
+        })
+        .catch(() => {});
 
       // 1. Shaka Player ABR & Variant selection
       if (shakaPlayerRef.current?.player) {
@@ -1064,6 +1114,21 @@ export const VideoPlayerScreen = () => {
                 bitrate: mbps,
                 badge: `${active.height}p`,
               });
+              if (active.bandwidth) {
+                playbackSessionManager
+                  .recordBitrateChanged({
+                    toBitrate: active.bandwidth,
+                    bitrateMbps: mbps,
+                  })
+                  .catch(() => {});
+              }
+              playbackSessionManager
+                .recordResolutionChanged({
+                  toWidth: active.width,
+                  toHeight: active.height,
+                  resolutionBadge: `${active.height}p`,
+                })
+                .catch(() => {});
               console.log(
                 `[QualityInit] Initial active stream rendition: ${active.width}x${active.height} (${mbps})`,
               );
@@ -1084,6 +1149,21 @@ export const VideoPlayerScreen = () => {
                 bitrate: mbps,
                 badge: `${newTrack.height}p`,
               });
+              if (newTrack.bandwidth) {
+                playbackSessionManager
+                  .recordBitrateChanged({
+                    toBitrate: newTrack.bandwidth,
+                    bitrateMbps: mbps,
+                  })
+                  .catch(() => {});
+              }
+              playbackSessionManager
+                .recordResolutionChanged({
+                  toWidth: newTrack.width,
+                  toHeight: newTrack.height,
+                  resolutionBadge: `${newTrack.height}p`,
+                })
+                .catch(() => {});
               console.log(
                 `[QualityVerified] Active decoder stream switched to: ${newTrack.width}x${newTrack.height} (${mbps}, ${newTrack.codecs || newTrack.videoCodec})`,
               );
@@ -1302,6 +1382,7 @@ export const VideoPlayerScreen = () => {
 
     const onLoadedMetadata = () => {
       metadataReadyRef.current = true;
+      playbackSessionManager.recordPlayerReady().catch(() => {});
       if (
         player?.duration !== undefined &&
         Number.isFinite(player.duration) &&
@@ -1329,6 +1410,16 @@ export const VideoPlayerScreen = () => {
         }
         pendingSeekRef.current = null;
         shouldApplySeekRef.current = false;
+      }
+    };
+
+    const onCanPlay = () => {
+      playbackSessionManager.recordPlayerReady().catch(() => {});
+    };
+
+    const onWaiting = () => {
+      if (!disposed && !isPlaybackPausedRef.current) {
+        playbackSessionManager.recordBufferStarted().catch(() => {});
       }
     };
 
@@ -1383,6 +1474,8 @@ export const VideoPlayerScreen = () => {
       player.addEventListener('loadstart', onLoadStart);
       player.addEventListener('error', onError);
       player.addEventListener('loadedmetadata', onLoadedMetadata);
+      player.addEventListener('canplay', onCanPlay);
+      player.addEventListener('waiting', onWaiting);
       player.addEventListener('timeupdate', onPlayerTimeUpdate);
       player.addEventListener('captioningchange', onCaptioningChange);
       player.addEventListener('loadeddata', handleFirstFrame);
@@ -1400,7 +1493,7 @@ export const VideoPlayerScreen = () => {
           return;
         }
 
-        // Step 1 & 2: Start new playback session (generates playbackSessionId & emits playback_started)
+        // Step 1: Start new playback session (generates playbackSessionId & emits playback_start_requested and playback_started)
         playbackSessionManager
           .startSession({
             contentId: movie.id,
@@ -1410,9 +1503,16 @@ export const VideoPlayerScreen = () => {
               : route.params?.episode?.id
               ? 'episode'
               : 'movie',
+            playbackType: isLive
+              ? 'live'
+              : route.params?.episode?.id
+              ? 'episode'
+              : 'movie',
             streamType: route.params?.streamType || (isLive ? 'live' : 'vod'),
             isLive,
             startPosition: hasExplicitSeek ?? 0,
+            profileId: playbackProfileIdRef.current || activeProfile?.id,
+            profileType: activeProfile?.isKids ? 'kids' : 'adult',
           })
           .catch(() => {});
 
@@ -1536,6 +1636,8 @@ export const VideoPlayerScreen = () => {
         player.removeEventListener('loadstart', onLoadStart);
         player.removeEventListener('error', onError);
         player.removeEventListener('loadedmetadata', onLoadedMetadata);
+        player.removeEventListener('canplay', onCanPlay);
+        player.removeEventListener('waiting', onWaiting);
         player.removeEventListener('timeupdate', onPlayerTimeUpdate);
         player.removeEventListener('captioningchange', onCaptioningChange);
         player.removeEventListener('loadeddata', handleFirstFrame);
@@ -1769,11 +1871,16 @@ export const VideoPlayerScreen = () => {
         return;
       }
       try {
+        const currentPos = player.currentTime || 0;
         const duration = Number(player.duration);
         const clampedSeek =
           Number.isFinite(duration) && duration > 0
             ? Math.min(targetSeconds, Math.max(0, duration - 1))
             : targetSeconds;
+
+        playbackSessionManager
+          .recordSeekStarted(currentPos, clampedSeek)
+          .catch(() => {});
 
         player.currentTime = clampedSeek;
         setPlaybackTime(clampedSeek);
@@ -1802,6 +1909,12 @@ export const VideoPlayerScreen = () => {
       void persistProgress();
     };
 
+    const onSeeked = () => {
+      playbackSessionManager
+        .recordSeekCompleted(player?.currentTime)
+        .catch(() => {});
+    };
+
     const onPlaying = () => {
       if (!playbackSessionManager.hasFirstFrameRendered()) {
         playbackSessionManager
@@ -1810,7 +1923,13 @@ export const VideoPlayerScreen = () => {
           })
           .catch(() => {});
       }
+      if (playbackSessionManager.isSeeking()) {
+        playbackSessionManager
+          .recordSeekCompleted(player?.currentTime)
+          .catch(() => {});
+      }
       setIsPlaybackPaused(false);
+      playbackSessionManager.recordBufferEnded().catch(() => {});
       playbackSessionManager
         .recordResume(player?.currentTime || 0)
         .catch(() => {});
@@ -1860,11 +1979,13 @@ export const VideoPlayerScreen = () => {
 
     const onEnded = () => {
       hasTriggeredEpisodeEndRef.current = true;
-      playbackSessionManager
-        .recordComplete({
-          duration: player?.duration || 0,
-        })
-        .catch(() => {});
+      if (!isLive) {
+        playbackSessionManager
+          .recordComplete({
+            duration: player?.duration || 0,
+          })
+          .catch(() => {});
+      }
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
       }
@@ -1889,6 +2010,7 @@ export const VideoPlayerScreen = () => {
       player.addEventListener('pause', onPause);
       player.addEventListener('playing', onPlaying);
       player.addEventListener('ended', onEnded);
+      player.addEventListener('seeked', onSeeked);
     }
 
     return () => {
@@ -1906,6 +2028,7 @@ export const VideoPlayerScreen = () => {
         player.removeEventListener('pause', onPause);
         player.removeEventListener('playing', onPlaying);
         player.removeEventListener('ended', onEnded);
+        player.removeEventListener('seeked', onSeeked);
       }
 
       void persistProgress();
@@ -1974,7 +2097,6 @@ export const VideoPlayerScreen = () => {
 
   const showControlsRef = useRef(showControls);
   showControlsRef.current = showControls;
-  const isPlaybackPausedRef = useRef(isPlaybackPaused);
   isPlaybackPausedRef.current = isPlaybackPaused;
   const playbackTimeRef = useRef(playbackTime);
   playbackTimeRef.current = playbackTime;

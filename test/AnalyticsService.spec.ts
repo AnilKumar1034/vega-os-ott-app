@@ -424,4 +424,307 @@ describe('AnalyticsService (Day 1 Analytics Foundation)', () => {
       expect(mockFetch).toHaveBeenCalledTimes(1);
     });
   });
+
+  describe('10. Playback Startup & Buffering methods (Day 3 & Day 2)', () => {
+    beforeEach(async () => {
+      await analytics.initialize();
+    });
+
+    it('tracks trackPlaybackStartRequested correctly', async () => {
+      await analytics.trackPlaybackStartRequested({
+        playbackSessionId: 'sess_123',
+        contentId: 'movie_456',
+        playbackType: 'vod',
+        isLive: false,
+        startPosition: 15,
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.PLAYBACK_START_REQUESTED,
+        expect.objectContaining({
+          playbackSessionId: 'sess_123',
+          contentId: 'movie_456',
+          playbackType: 'vod',
+          isLive: false,
+          startPosition: 15,
+        }),
+      );
+    });
+
+    it('ignores trackPlaybackStartRequested when required params are missing', async () => {
+      await analytics.trackPlaybackStartRequested({} as any);
+      expect(mockLogEvent).not.toHaveBeenCalled();
+    });
+
+    it('tracks trackPlayerReady correctly', async () => {
+      await analytics.trackPlayerReady({
+        playbackSessionId: 'sess_123',
+        contentId: 'movie_456',
+        playbackType: 'vod',
+        isLive: false,
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.PLAYER_READY,
+        expect.objectContaining({
+          playbackSessionId: 'sess_123',
+          contentId: 'movie_456',
+          playbackType: 'vod',
+          isLive: false,
+        }),
+      );
+    });
+
+    it('ignores trackPlayerReady when required params are missing', async () => {
+      await analytics.trackPlayerReady({contentId: 'movie_456'} as any);
+      expect(mockLogEvent).not.toHaveBeenCalled();
+    });
+
+    it('tracks trackBufferStarted correctly', async () => {
+      await analytics.trackBufferStarted({
+        playbackSessionId: 'sess_123',
+        contentId: 'movie_456',
+        playbackType: 'vod',
+        isLive: false,
+        bufferCount: 1,
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.BUFFER_STARTED,
+        expect.objectContaining({
+          playbackSessionId: 'sess_123',
+          contentId: 'movie_456',
+          playbackType: 'vod',
+          isLive: false,
+          bufferCount: 1,
+        }),
+      );
+    });
+
+    it('ignores trackBufferStarted when required params are missing', async () => {
+      await analytics.trackBufferStarted({playbackSessionId: 'sess_123'} as any);
+      expect(mockLogEvent).not.toHaveBeenCalled();
+    });
+
+    it('tracks trackBufferEnded correctly', async () => {
+      await analytics.trackBufferEnded({
+        playbackSessionId: 'sess_123',
+        contentId: 'movie_456',
+        bufferDurationMs: 1450,
+        buffer_duration_ms: 1450,
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.BUFFER_ENDED,
+        expect.objectContaining({
+          playbackSessionId: 'sess_123',
+          contentId: 'movie_456',
+          bufferDurationMs: 1450,
+          buffer_duration_ms: 1450,
+        }),
+      );
+    });
+
+    it('ignores trackBufferEnded when required params are missing', async () => {
+      await analytics.trackBufferEnded({bufferDurationMs: 500} as any);
+      expect(mockLogEvent).not.toHaveBeenCalled();
+    });
+
+    it('tracks trackFirstFrame correctly with startup_time_ms', async () => {
+      await analytics.trackFirstFrame({
+        playbackSessionId: 'sess_123',
+        contentId: 'movie_456',
+        playbackType: 'vod',
+        isLive: false,
+        timeToFirstFrameMs: 820,
+        startup_time_ms: 820,
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.FIRST_FRAME,
+        expect.objectContaining({
+          playbackSessionId: 'sess_123',
+          contentId: 'movie_456',
+          timeToFirstFrameMs: 820,
+          startup_time_ms: 820,
+        }),
+      );
+    });
+  });
+
+  describe('11. Seek, Track Change & Video Quality/ABR methods (Day 4)', () => {
+    beforeEach(async () => {
+      await analytics.initialize();
+    });
+
+    it('tracks trackSeekStarted and ignores when required params missing', async () => {
+      await analytics.trackSeekStarted({} as any);
+      expect(mockLogEvent).not.toHaveBeenCalled();
+
+      await analytics.trackSeekStarted({
+        playbackSessionId: 'sess_123',
+        contentId: 'movie_456',
+        seekStartPosition: 10,
+        seek_start_position: 10,
+        seekTargetPosition: 50,
+        seek_target_position: 50,
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.SEEK_STARTED,
+        expect.objectContaining({
+          playbackSessionId: 'sess_123',
+          contentId: 'movie_456',
+          seekStartPosition: 10,
+          seekTargetPosition: 50,
+        }),
+      );
+    });
+
+    it('tracks trackSeekCompleted and ignores when required params missing', async () => {
+      await analytics.trackSeekCompleted({} as any);
+      expect(mockLogEvent).not.toHaveBeenCalled();
+
+      await analytics.trackSeekCompleted({
+        playbackSessionId: 'sess_123',
+        contentId: 'movie_456',
+        seekStartPosition: 10,
+        seekTargetPosition: 50,
+        seekDurationMs: 400,
+        seek_duration_ms: 400,
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.SEEK_COMPLETED,
+        expect.objectContaining({
+          playbackSessionId: 'sess_123',
+          contentId: 'movie_456',
+          seekDurationMs: 400,
+        }),
+      );
+    });
+
+    it('tracks trackAudioTrackChanged and ignores when required params missing', async () => {
+      await analytics.trackAudioTrackChanged({} as any);
+      expect(mockLogEvent).not.toHaveBeenCalled();
+
+      await analytics.trackAudioTrackChanged({
+        playbackSessionId: 'sess_123',
+        contentId: 'movie_456',
+        fromAudioTrackId: 'audio-en',
+        toAudioTrackId: 'audio-es',
+        toLanguage: 'es',
+        toFormat: '5.1',
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.AUDIO_TRACK_CHANGED,
+        expect.objectContaining({
+          playbackSessionId: 'sess_123',
+          contentId: 'movie_456',
+          toAudioTrackId: 'audio-es',
+          toLanguage: 'es',
+        }),
+      );
+    });
+
+    it('tracks trackSubtitleTrackChanged and ignores when required params missing', async () => {
+      await analytics.trackSubtitleTrackChanged({} as any);
+      expect(mockLogEvent).not.toHaveBeenCalled();
+
+      await analytics.trackSubtitleTrackChanged({
+        playbackSessionId: 'sess_123',
+        contentId: 'movie_456',
+        toSubtitleTrackId: 'sub-fr',
+        toLanguage: 'fr',
+        isOff: false,
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.SUBTITLE_TRACK_CHANGED,
+        expect.objectContaining({
+          playbackSessionId: 'sess_123',
+          contentId: 'movie_456',
+          toSubtitleTrackId: 'sub-fr',
+        }),
+      );
+    });
+
+    it('tracks trackQualitySelected and ignores when required params missing', async () => {
+      await analytics.trackQualitySelected({} as any);
+      expect(mockLogEvent).not.toHaveBeenCalled();
+
+      await analytics.trackQualitySelected({
+        playbackSessionId: 'sess_123',
+        contentId: 'movie_456',
+        qualityId: '1080p',
+        qualityMode: 'manual',
+        targetResolution: '1080p',
+        targetBitrate: '5.0 Mbps',
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.QUALITY_SELECTED,
+        expect.objectContaining({
+          playbackSessionId: 'sess_123',
+          qualityId: '1080p',
+          qualityMode: 'manual',
+        }),
+      );
+    });
+
+    it('tracks trackBitrateChanged and ignores when required params missing', async () => {
+      await analytics.trackBitrateChanged({} as any);
+      expect(mockLogEvent).not.toHaveBeenCalled();
+
+      await analytics.trackBitrateChanged({
+        playbackSessionId: 'sess_123',
+        contentId: 'movie_456',
+        toBitrate: 3500000,
+        bitrateMbps: '3.5 Mbps',
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.BITRATE_CHANGED,
+        expect.objectContaining({
+          playbackSessionId: 'sess_123',
+          toBitrate: 3500000,
+        }),
+      );
+    });
+
+    it('tracks trackResolutionChanged and ignores when required params missing', async () => {
+      await analytics.trackResolutionChanged({} as any);
+      expect(mockLogEvent).not.toHaveBeenCalled();
+
+      await analytics.trackResolutionChanged({
+        playbackSessionId: 'sess_123',
+        contentId: 'movie_456',
+        toWidth: 1920,
+        toHeight: 1080,
+        resolutionBadge: '1080p',
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.RESOLUTION_CHANGED,
+        expect.objectContaining({
+          playbackSessionId: 'sess_123',
+          toWidth: 1920,
+          toHeight: 1080,
+        }),
+      );
+    });
+  });
 });

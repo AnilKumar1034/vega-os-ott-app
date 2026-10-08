@@ -366,7 +366,7 @@ const EPGComponent = forwardRef<KeplerEPGRef, KeplerEPGProps>((props, ref) => {
       currentInfoRef.current = {
         channel,
         program,
-        seg: undefined,
+        seg: channelSegments[rIdx]?.[cIdx] as any,
       };
 
       if (program) {

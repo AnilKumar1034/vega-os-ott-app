@@ -19,14 +19,25 @@ import {
   AnalyticsProfileContext,
   AnalyticsServiceOptions,
   AnalyticsUserContext,
+  AudioTrackChangedParams,
+  BitrateChangedParams,
+  BufferEndedParams,
+  BufferStartedParams,
   FirstFrameParams,
   IAnalyticsService,
   PlaybackCompletedParams,
   PlaybackPausedParams,
   PlaybackResumedParams,
+  PlaybackStartRequestedParams,
   PlaybackStartedParams,
   PlaybackStoppedParams,
+  PlayerReadyParams,
   ProfileSelectedEventParams,
+  QualitySelectedParams,
+  ResolutionChangedParams,
+  SeekCompletedParams,
+  SeekStartedParams,
+  SubtitleTrackChangedParams,
 } from './analyticsTypes';
 
 const getAsyncStorage = () => {
@@ -354,7 +365,11 @@ export class AnalyticsService implements IAnalyticsService {
         body: JSON.stringify(body),
       });
 
-      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      const isTestEnv =
+        typeof (globalThis as any).process !== 'undefined' &&
+        (globalThis as any).process?.env?.NODE_ENV === 'test';
+
+      if (typeof __DEV__ !== 'undefined' && __DEV__ && !isTestEnv) {
         if (response.ok || response.status === 204) {
           console.log(
             `[Analytics] Measurement Protocol event "${eventName}" dispatched successfully.`,
@@ -385,7 +400,10 @@ export class AnalyticsService implements IAnalyticsService {
   ): Promise<void> {
     try {
       if (!this.initialized) {
-        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        const isTestEnv =
+          typeof (globalThis as any).process !== 'undefined' &&
+          (globalThis as any).process?.env?.NODE_ENV === 'test';
+        if (typeof __DEV__ !== 'undefined' && __DEV__ && !isTestEnv) {
           console.warn(
             `[Analytics] track() called before initialize() for event: "${eventName}". Processing safely.`,
           );
@@ -513,6 +531,50 @@ export class AnalyticsService implements IAnalyticsService {
   }
 
   /**
+   * Tracks playback start requested event when app initiates playback.
+   */
+  public async trackPlaybackStartRequested(
+    params: PlaybackStartRequestedParams,
+  ): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackPlaybackStartRequested called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.PLAYBACK_START_REQUESTED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackPlaybackStartRequested error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks player ready event when media is loaded / ready to begin playback.
+   */
+  public async trackPlayerReady(params: PlayerReadyParams): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackPlayerReady called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.PLAYER_READY, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackPlayerReady error:', err);
+      }
+    }
+  }
+
+  /**
    * Tracks playback started event when content begins.
    */
   public async trackPlaybackStarted(
@@ -552,6 +614,48 @@ export class AnalyticsService implements IAnalyticsService {
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackFirstFrame error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks buffer started event when video enters buffering during playback.
+   */
+  public async trackBufferStarted(params: BufferStartedParams): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackBufferStarted called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.BUFFER_STARTED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackBufferStarted error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks buffer ended event when video resumes after buffering.
+   */
+  public async trackBufferEnded(params: BufferEndedParams): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackBufferEnded called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.BUFFER_ENDED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackBufferEnded error:', err);
       }
     }
   }
@@ -644,6 +748,163 @@ export class AnalyticsService implements IAnalyticsService {
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackPlaybackStopped error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks seek started event.
+   */
+  public async trackSeekStarted(params: SeekStartedParams): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackSeekStarted called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.SEEK_STARTED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSeekStarted error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks seek completed event.
+   */
+  public async trackSeekCompleted(params: SeekCompletedParams): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackSeekCompleted called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.SEEK_COMPLETED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSeekCompleted error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks audio track change event.
+   */
+  public async trackAudioTrackChanged(
+    params: AudioTrackChangedParams,
+  ): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId || !params.toAudioTrackId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackAudioTrackChanged called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.AUDIO_TRACK_CHANGED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackAudioTrackChanged error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks subtitle track change event.
+   */
+  public async trackSubtitleTrackChanged(
+    params: SubtitleTrackChangedParams,
+  ): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId || !params.toSubtitleTrackId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackSubtitleTrackChanged called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.SUBTITLE_TRACK_CHANGED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSubtitleTrackChanged error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks quality selection (Auto vs manual).
+   */
+  public async trackQualitySelected(
+    params: QualitySelectedParams,
+  ): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId || !params.qualityId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackQualitySelected called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.QUALITY_SELECTED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackQualitySelected error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks bitrate change during playback (ABR / rendition switch).
+   */
+  public async trackBitrateChanged(
+    params: BitrateChangedParams,
+  ): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId || params.toBitrate === undefined) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackBitrateChanged called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.BITRATE_CHANGED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackBitrateChanged error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks resolution change during playback (e.g. 720p -> 1080p).
+   */
+  public async trackResolutionChanged(
+    params: ResolutionChangedParams,
+  ): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId || !params.toHeight) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackResolutionChanged called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.RESOLUTION_CHANGED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackResolutionChanged error:', err);
       }
     }
   }

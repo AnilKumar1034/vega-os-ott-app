@@ -247,8 +247,8 @@ if (typeof jest !== 'undefined') {
   if (typeof globalThis !== 'undefined') {
     globalThis.fetch = jest.fn().mockImplementation(() =>
       Promise.resolve({
-        ok: false,
-        status: 404,
+        ok: true,
+        status: 204,
         json: async () => ({}),
         text: async () => '',
       }),
