@@ -147,6 +147,27 @@ export const styles = StyleSheet.create({
     fontSize: fontSizes.castLabel,
     marginTop: spacing.md,
   },
+  detailsTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  detailsBadgeLive: {
+    marginLeft: spacing.md,
+  },
+  detailsBadgeUpcoming: {
+    marginLeft: spacing.md,
+  },
+  detailsUpcoming: {
+    color: colors.focusedTint,
+    fontSize: fontSizes.button,
+    fontWeight: fontWeights.bold,
+  },
+  detailsNextEpisode: {
+    color: colors.focusedTint,
+    fontSize: fontSizes.bodySmall,
+    fontWeight: fontWeights.medium,
+    marginTop: spacing.xs,
+  },
   detailsLive: {
     color: colors.success,
     fontSize: fontSizes.button,

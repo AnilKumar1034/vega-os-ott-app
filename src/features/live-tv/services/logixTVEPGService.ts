@@ -1,5 +1,6 @@
 import {VegaEPGChannel, VegaEPGProgram} from '../data/epgMockData';
 import {EPGProgram} from '../models/EPGProgram';
+import {getCurrentEPGSlotTimeMs} from '../utils/epgTimeUtils';
 
 const LOGIXSTREAM_CHANNELS_URL =
   'https://jiotv.data.cdn.jio.com/apis/v3.0/getMobileChannelList/get/?os=android&devicetype=phone&usertype=tvYR7NSNn7rymo3F';
@@ -34,6 +35,7 @@ interface LogixTVProgramme {
   episodeThumbnail?: string;
   startEpoch: number;
   endEpoch: number;
+  episode_num?: number;
 }
 
 export interface RealEPGData {
@@ -166,10 +168,14 @@ const toVegaProgram = (
     return null;
   }
 
+  const episodeTitle = programme.episode_num
+    ? `${programme.showname || 'Programme'} - Ep ${programme.episode_num}`
+    : programme.showname || 'Programme';
+
   const sourceProgram: EPGProgram = {
     id: `LogixTV-${channelId}-${programme.startEpoch}-${index}`,
     channelId,
-    title: programme.showname || 'Programme',
+    title: episodeTitle,
     description: programme.description || programme.episode_desc,
     category: programme.showGenre?.[0] || programme.showCategory,
     image: programme.episodePoster
@@ -179,6 +185,7 @@ const toVegaProgram = (
       : undefined,
     startTime: new Date(programme.startEpoch).toISOString(),
     endTime: new Date(programme.endEpoch).toISOString(),
+    episodeNumber: programme.episode_num,
   };
 
   return {
@@ -211,12 +218,12 @@ export const fetchLogixTVEPGPage = async ({
   if (!selectedChannels.length && offset === 0 && !requiresStreamUrl) {
     throw new Error('LogixTV returned no channels');
   }
+  const currentSlotTime = getCurrentEPGSlotTimeMs();
   if (!selectedChannels.length) {
-    const now = Date.now();
     return {
       channels: [],
-      startTimeMs: now,
-      endTimeMs: now,
+      startTimeMs: currentSlotTime,
+      endTimeMs: currentSlotTime,
       hasMore: false,
     };
   }
@@ -227,6 +234,7 @@ export const fetchLogixTVEPGPage = async ({
     .map(({channel, response}) => {
       const id = `LogixTV-${channel.channel_id}`;
       const programs = (response.epg || [])
+        .filter((programme) => programme.endEpoch > currentSlotTime)
         .map((programme, index) => toVegaProgram(programme, id, index))
         .filter((programme): programme is VegaEPGProgram => Boolean(programme));
       if (!programs.length) {
@@ -260,12 +268,10 @@ export const fetchLogixTVEPGPage = async ({
   const programs = channels.flatMap((channel) => channel.programs);
   return {
     channels,
-    startTimeMs: programs.length
-      ? Math.min(...programs.map((programme) => programme.startTime))
-      : Date.now(),
+    startTimeMs: currentSlotTime,
     endTimeMs: programs.length
       ? Math.max(...programs.map((programme) => programme.endTime))
-      : Date.now(),
+      : currentSlotTime + 6 * 60 * 60000,
     hasMore: offset + limit < availableChannels.length,
   };
 };

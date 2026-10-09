@@ -53,6 +53,13 @@ export const isProgramFuture = (program: EPGProgram, now = new Date()) => {
   return start !== null && Number.isFinite(nowTime) && start > nowTime;
 };
 
+export const isProgramPast = (program: EPGProgram, now = new Date()) => {
+  const end = getTimestamp(program.endTime);
+  const nowTime = now.getTime();
+
+  return end !== null && Number.isFinite(nowTime) && end <= nowTime;
+};
+
 export const formatEPGTime = (value: string) => {
   const timestamp = getTimestamp(value);
   if (timestamp === null) {

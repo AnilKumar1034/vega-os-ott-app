@@ -295,18 +295,22 @@ export const liveChannels: LiveChannel[] = [
 
 const toFreeLiveProgram = (channel: LiveChannel, index: number): EPGProgram => {
   const slotStart = getCurrentEPGSlotTimeMs();
-  const startTime = slotStart + (index - 1) * 30 * 60000;
+  const startTime = slotStart + index * 30 * 60000;
   const endTime = startTime + 30 * 60000;
 
   return {
     id: `${channel.id}-live-${index}`,
     channelId: channel.id,
-    title: index === 1 ? `${channel.name} Live` : 'Live Broadcast',
+    title:
+      index === 0
+        ? `${channel.name} Live`
+        : `${channel.name} - Episode ${index + 1}`,
     description: `${channel.category} • ${channel.language}`,
     category: channel.category,
     image: getFreeLiveChannelLogo(channel),
     startTime: new Date(startTime).toISOString(),
     endTime: new Date(endTime).toISOString(),
+    episodeNumber: index + 1,
   };
 };
 
@@ -326,7 +330,7 @@ export const getFreeLiveEPGData = (category?: string) => {
       (!category || channel.category === category),
   );
   const programs = playableChannels.flatMap((channel) =>
-    [0, 1, 2].map((index) => toFreeLiveProgram(channel, index)),
+    [0, 1, 2, 3, 4].map((index) => toFreeLiveProgram(channel, index)),
   );
   const channels: VegaEPGChannel[] = playableChannels.map((channel) => ({
     id: channel.id,
@@ -352,6 +356,6 @@ export const getFreeLiveEPGData = (category?: string) => {
       })) as VegaEPGProgram[],
   }));
 
-  const startTimeMs = getCurrentEPGSlotTimeMs() - 30 * 60000;
-  return {channels, startTimeMs, endTimeMs: startTimeMs + 90 * 60000};
+  const startTimeMs = getCurrentEPGSlotTimeMs();
+  return {channels, startTimeMs, endTimeMs: startTimeMs + 150 * 60000};
 };

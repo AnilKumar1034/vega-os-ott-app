@@ -39,4 +39,27 @@ describe('LiveTVScreen', () => {
     registerGeneratedViewConfig('KeplerEPGTest', { uiViewClassName: 'KeplerEPGTest', validAttributes: {} });
     expect(() => ReactNativeViewConfigRegistry.get('KeplerEPGTest')).not.toThrow();
   });
+
+  it('generates free live EPG data starting from current episode with future episodes', () => {
+    const {getFreeLiveEPGData} = require('../src/features/live-tv/data/freeLiveChannels');
+    const {getCurrentEPGSlotTimeMs} = require('../src/features/live-tv/utils/epgTimeUtils');
+    const epgData = getFreeLiveEPGData();
+    const currentSlot = getCurrentEPGSlotTimeMs();
+
+    expect(epgData.startTimeMs).toBe(currentSlot);
+    expect(epgData.channels.length).toBeGreaterThan(0);
+
+    const firstChannel = epgData.channels[0];
+    expect(firstChannel.programs.length).toBeGreaterThan(1);
+
+    // First program is the current live episode
+    expect(firstChannel.programs[0].startTime).toBe(currentSlot);
+
+    // Subsequent programs are future episodes
+    for (let i = 1; i < firstChannel.programs.length; i++) {
+      expect(firstChannel.programs[i].startTime).toBeGreaterThanOrEqual(
+        firstChannel.programs[i - 1].endTime,
+      );
+    }
+  });
 });

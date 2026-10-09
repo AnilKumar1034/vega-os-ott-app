@@ -44,6 +44,9 @@ export const strings = {
     loadingChannels: 'Loading live channels…',
     futureProgrammeTitle: 'Programme not available',
     futureProgrammeMessage: 'This programme has not started yet.',
+    pastProgrammeTitle: 'Programme ended',
+    pastProgrammeMessage:
+      'This programme has already ended and is no longer available.',
     playbackUnavailableTitle: 'Live stream unavailable',
     playbackUnavailableMessage:
       'This channel does not provide an authorized playback URL.',
@@ -64,6 +67,8 @@ export const strings = {
     categoryRegional: 'Regional',
     categoryDocumentary: 'Documentary',
     isLive: '● LIVE',
+    upcoming: '● UPCOMING',
+    upNext: 'Up Next',
   },
 
   // Side Menu Options

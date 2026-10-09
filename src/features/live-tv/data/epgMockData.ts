@@ -36,7 +36,7 @@ export const channels: Channel[] = [
   },
 ];
 
-const scheduleStart = new Date(getCurrentEPGSlotTimeMs() - 120 * 60000);
+const scheduleStart = new Date(getCurrentEPGSlotTimeMs());
 
 export const EPG_START_TIME = scheduleStart.toISOString();
 export const EPG_TIMELINE_SLOT_COUNT = 12;

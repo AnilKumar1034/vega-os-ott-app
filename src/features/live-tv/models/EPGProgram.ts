@@ -8,4 +8,5 @@ export interface EPGProgram {
   category?: string;
   image?: string;
   logo?: string;
+  episodeNumber?: number;
 }

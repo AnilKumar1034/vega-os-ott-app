@@ -40,6 +40,7 @@ import {
   getCurrentEPGSlotTimeMs,
   isProgramFuture,
   isProgramLive,
+  isProgramPast,
 } from '../utils/epgTimeUtils';
 import {styles} from './LiveTVScreen.styles';
 
@@ -90,7 +91,7 @@ export const LiveTVScreen = () => {
   const [isCategoryMenuVisible, setIsCategoryMenuVisible] = useState(false);
   const [menuFocusVersion, setMenuFocusVersion] = useState(0);
   const [programmeAlert, setProgrammeAlert] = useState<
-    'future' | 'playbackUnavailable' | null
+    'future' | 'past' | 'playbackUnavailable' | null
   >(null);
   const [now, setNow] = useState(() => new Date());
   const [isEPGReady, setIsEPGReady] = useState(false);
@@ -114,11 +115,18 @@ export const LiveTVScreen = () => {
       epgPrograms[0] ||
       null,
   );
+  const [focusedNextProgramTitle, setFocusedNextProgramTitle] = useState<
+    string | null
+  >(vegaEPGChannelData[0]?.programs[1]?.title || null);
 
-  const handleProgramFocus = useCallback((program: EPGProgram) => {
-    setIsMenuExpanded(false);
-    setFocusedProgram(program);
-  }, []);
+  const handleProgramFocus = useCallback(
+    (program: EPGProgram, nextTitle?: string) => {
+      setIsMenuExpanded(false);
+      setFocusedProgram(program);
+      setFocusedNextProgramTitle(nextTitle || null);
+    },
+    [],
+  );
 
   const handleProgramPress = useCallback(
     (
@@ -132,6 +140,12 @@ export const LiveTVScreen = () => {
       if (isProgramFuture(program)) {
         epgRef.current?.focusOnEPG(false);
         setProgrammeAlert('future');
+        return;
+      }
+
+      if (isProgramPast(program)) {
+        epgRef.current?.focusOnEPG(false);
+        setProgrammeAlert('past');
         return;
       }
 
@@ -272,10 +286,14 @@ export const LiveTVScreen = () => {
   const alertTitle =
     programmeAlert === 'future'
       ? strings.liveTV.futureProgrammeTitle
+      : programmeAlert === 'past'
+      ? strings.liveTV.pastProgrammeTitle
       : strings.liveTV.playbackUnavailableTitle;
   const alertMessage =
     programmeAlert === 'future'
       ? strings.liveTV.futureProgrammeMessage
+      : programmeAlert === 'past'
+      ? strings.liveTV.pastProgrammeMessage
       : strings.liveTV.playbackUnavailableMessage;
 
   const loadNextChannelPage = useCallback(async () => {
@@ -297,7 +315,7 @@ export const LiveTVScreen = () => {
       });
       if (page.channels.length) {
         epgRef.current?.updateData(page.channels, {
-          startTimeMs: page.startTimeMs,
+          startTimeMs: gridStartTimeRef.current,
           endTimeMs: page.endTimeMs,
         });
       }
@@ -335,10 +353,13 @@ export const LiveTVScreen = () => {
           : selectedCategory,
       );
       const firstFreeProgramme =
-        freeLiveEPGData.channels[0]?.programs[1]?.extras.sourceProgram || null;
+        freeLiveEPGData.channels[0]?.programs[0]?.extras?.sourceProgram || null;
+      const nextFreeProgramme =
+        freeLiveEPGData.channels[0]?.programs[1]?.title || null;
 
       hasMoreChannelsRef.current = false;
       setFocusedProgram(firstFreeProgramme);
+      setFocusedNextProgramTitle(nextFreeProgramme);
       setHasNoFreeLiveChannels(!freeLiveEPGData.channels.length);
       if (freeLiveEPGData.channels.length) {
         epgRef.current?.resetData(freeLiveEPGData.channels, {
@@ -381,6 +402,14 @@ export const LiveTVScreen = () => {
         // The native Vega EPG does not accept an empty data set. Keep its
         // current data mounted and cover it with the empty state instead.
         if (!hasNoMatchingChannels) {
+          const firstProgramme =
+            realEPGData.channels[0]?.programs[0]?.extras?.sourceProgram || null;
+          const nextProgramme =
+            realEPGData.channels[0]?.programs[1]?.title || null;
+          if (firstProgramme) {
+            setFocusedProgram(firstProgramme);
+            setFocusedNextProgramTitle(nextProgramme);
+          }
           epgRef.current?.resetData(realEPGData.channels, {
             startTimeMs: realEPGData.startTimeMs,
             endTimeMs: realEPGData.endTimeMs,
@@ -398,8 +427,16 @@ export const LiveTVScreen = () => {
           'Unable to load LogixTV EPG data. Using local sample data.',
           error,
         );
+        const firstMockProg =
+          epgPrograms.find((program) => isProgramLive(program, now)) ||
+          epgPrograms[0] ||
+          null;
+        setFocusedProgram(firstMockProg);
+        setFocusedNextProgramTitle(
+          vegaEPGChannelData[0]?.programs[1]?.title || null,
+        );
         epgRef.current?.resetData(vegaEPGChannelData, {
-          startTimeMs: new Date(EPG_START_TIME).getTime(),
+          startTimeMs: currentGridStartTime,
           endTimeMs: EPG_END_TIME,
         });
         epgRef.current?.updateGridStartTime(
@@ -479,7 +516,11 @@ export const LiveTVScreen = () => {
             epgRef.current?.focusOnEPG(true);
           }}
         />
-        <ProgramDetails program={focusedProgram} now={now} />
+        <ProgramDetails
+          program={focusedProgram}
+          now={now}
+          nextProgramTitle={focusedNextProgramTitle}
+        />
         <Animated.View style={[styles.guide, {opacity: epgOpacity}]}>
           <EPG
             ref={epgRef}
@@ -488,7 +529,7 @@ export const LiveTVScreen = () => {
               const program =
                 event?.payload?.program?.extras?.sourceProgram;
               if (program) {
-                handleProgramFocus(program);
+                handleProgramFocus(program, event?.payload?.nextProgramTitle);
               }
             }}
             onTilePress={(event) => {
@@ -686,9 +727,11 @@ export const LiveTVScreen = () => {
 const ProgramDetails = ({
   program,
   now,
+  nextProgramTitle,
 }: {
   program: EPGProgram | null;
   now: Date;
+  nextProgramTitle?: string | null;
 }) => {
   if (!program) {
     return (
@@ -699,6 +742,7 @@ const ProgramDetails = ({
   }
 
   const isLive = isProgramLive(program, now);
+  const isFuture = isProgramFuture(program, now);
   return (
     <View style={styles.details}>
       {program.image && (
@@ -710,12 +754,23 @@ const ProgramDetails = ({
         />
       )}
       <View style={styles.detailsText}>
-        <Text style={styles.detailsTitle} numberOfLines={1}>
-          {program.title}{' '}
+        <View style={styles.detailsTitleRow}>
+          <Text style={styles.detailsTitle} numberOfLines={1}>
+            {program.title}
+          </Text>
           {isLive && (
-            <Text style={styles.detailsLive}>{strings.liveTV.isLive}</Text>
+            <View style={styles.detailsBadgeLive}>
+              <Text style={styles.detailsLive}>{strings.liveTV.isLive}</Text>
+            </View>
           )}
-        </Text>
+          {isFuture && (
+            <View style={styles.detailsBadgeUpcoming}>
+              <Text style={styles.detailsUpcoming}>
+                {strings.liveTV.upcoming}
+              </Text>
+            </View>
+          )}
+        </View>
         <Text style={styles.detailsTime}>
           {formatEPGTime(program.startTime)} - {formatEPGTime(program.endTime)}
         </Text>
@@ -724,8 +779,12 @@ const ProgramDetails = ({
             program.category ||
             strings.liveTV.unavailableProgramme}
         </Text>
+        {isLive && nextProgramTitle ? (
+          <Text style={styles.detailsNextEpisode} numberOfLines={1}>
+            {strings.liveTV.upNext}: {nextProgramTitle}
+          </Text>
+        ) : null}
       </View>
-      {/* {isLive && <Text style={styles.detailsLive}>● LIVE</Text>} */}
     </View>
   );
 };
