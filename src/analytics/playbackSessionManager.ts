@@ -7,10 +7,12 @@ import {
   FirstFrameParams,
   PlaybackBufferMetrics,
   PlaybackCompletedParams,
+  PlaybackErrorParams,
   PlaybackPausedParams,
   PlaybackResumedParams,
   PlaybackStartRequestedParams,
   PlaybackStartedParams,
+  PlaybackStopReason,
   PlaybackStoppedParams,
   PlayerReadyParams,
   QualitySelectedParams,
@@ -19,6 +21,10 @@ import {
   SeekStartedParams,
   SubtitleTrackChangedParams,
 } from './analyticsTypes';
+import {
+  normalizePlaybackError,
+  PlaybackErrorCategory,
+} from './errorNormalization';
 
 /**
  * Generates a unique, URL-safe playback session ID.
@@ -38,7 +44,8 @@ export type PlaybackSessionState =
   | 'buffering'
   | 'paused'
   | 'completed'
-  | 'stopped';
+  | 'stopped'
+  | 'error';
 
 export interface StartPlaybackSessionOptions {
   contentId: string;
@@ -75,6 +82,8 @@ export interface ActivePlaybackSession {
   hasPlayerReady: boolean;
   hasPlaybackStarted: boolean;
   hasFirstFrame: boolean;
+  hasPlaybackError: boolean;
+  lastError?: PlaybackErrorParams;
   state: PlaybackSessionState;
   pauseStartTime?: number;
   totalPlayTimeMs: number;
@@ -158,7 +167,7 @@ export class PlaybackSessionManager {
   }
 
   /**
-   * Returns whether a session is currently running and has not reached completed/stopped.
+   * Returns whether a session is currently running and has not reached completed/stopped/error.
    */
   public isSessionActive(): boolean {
     if (!this.currentSession) {
@@ -166,8 +175,16 @@ export class PlaybackSessionManager {
     }
     return (
       this.currentSession.state !== 'completed' &&
-      this.currentSession.state !== 'stopped'
+      this.currentSession.state !== 'stopped' &&
+      this.currentSession.state !== 'error'
     );
+  }
+
+  /**
+   * Returns whether playback_started has been emitted for the current session.
+   */
+  public hasPlaybackStarted(): boolean {
+    return Boolean(this.currentSession?.hasPlaybackStarted);
   }
 
   /**
@@ -232,6 +249,7 @@ export class PlaybackSessionManager {
     // If an existing session is still active, terminate it gracefully first
     if (this.isSessionActive() && this.currentSession) {
       await this.recordStop({
+        stopReason: 'content_changed',
         reason: 'episode_switch',
       });
     }
@@ -260,6 +278,7 @@ export class PlaybackSessionManager {
       hasPlayerReady: false,
       hasPlaybackStarted: false,
       hasFirstFrame: false,
+      hasPlaybackError: false,
       state: 'start_requested',
       totalPlayTimeMs: 0,
       bufferMetrics: {
@@ -406,7 +425,8 @@ export class PlaybackSessionManager {
     }
     if (
       this.currentSession.state === 'completed' ||
-      this.currentSession.state === 'stopped'
+      this.currentSession.state === 'stopped' ||
+      this.currentSession.state === 'error'
     ) {
       return;
     }
@@ -421,25 +441,37 @@ export class PlaybackSessionManager {
       this.currentSession.state = 'started';
     }
 
+    const startPos =
+      typeof params?.startPosition === 'number'
+        ? params.startPosition
+        : this.currentSession.startPosition;
+    const dur =
+      typeof params?.duration === 'number'
+        ? params.duration
+        : this.currentSession.duration;
+
     const startedParams: PlaybackStartedParams = {
       playbackSessionId: this.currentSession.playbackSessionId,
+      playback_session_id: this.currentSession.playbackSessionId,
       contentId: this.currentSession.contentId,
+      content_id: this.currentSession.contentId,
       contentTitle: this.currentSession.contentTitle,
       contentType: this.currentSession.contentType,
+      content_type: this.currentSession.contentType,
       playbackType:
+        this.currentSession.playbackType || this.currentSession.contentType,
+      playback_type:
         this.currentSession.playbackType || this.currentSession.contentType,
       streamType: this.currentSession.streamType,
       isLive: this.currentSession.isLive,
+      is_live: this.currentSession.isLive,
       profileId: this.currentSession.profileId,
+      profile_id: this.currentSession.profileId,
       profileType: this.currentSession.profileType,
-      startPosition:
-        typeof params?.startPosition === 'number'
-          ? params.startPosition
-          : this.currentSession.startPosition,
-      duration:
-        typeof params?.duration === 'number'
-          ? params.duration
-          : this.currentSession.duration,
+      profile_type: this.currentSession.profileType,
+      startPosition: startPos,
+      start_position: startPos,
+      duration: dur,
     };
 
     try {
@@ -467,9 +499,18 @@ export class PlaybackSessionManager {
     }
     if (
       this.currentSession.state === 'completed' ||
-      this.currentSession.state === 'stopped'
+      this.currentSession.state === 'stopped' ||
+      this.currentSession.state === 'error'
     ) {
       return;
+    }
+
+    // Ensure playback_started precedes first_frame
+    if (!this.currentSession.hasPlaybackStarted) {
+      await this.recordPlaybackStarted({
+        startPosition: params?.position ?? this.currentSession.startPosition,
+        duration: this.currentSession.duration,
+      });
     }
 
     const now = Date.now();
@@ -490,24 +531,35 @@ export class PlaybackSessionManager {
       this.currentSession.lastPlayStartTime = now;
     }
 
+    const pos =
+      typeof params?.position === 'number'
+        ? params.position
+        : this.currentSession.startPosition;
+
     const firstFrameParams: FirstFrameParams = {
       playbackSessionId: this.currentSession.playbackSessionId,
+      playback_session_id: this.currentSession.playbackSessionId,
       contentId: this.currentSession.contentId,
+      content_id: this.currentSession.contentId,
       contentTitle: this.currentSession.contentTitle,
       contentType: this.currentSession.contentType,
+      content_type: this.currentSession.contentType,
       playbackType:
+        this.currentSession.playbackType || this.currentSession.contentType,
+      playback_type:
         this.currentSession.playbackType || this.currentSession.contentType,
       streamType: this.currentSession.streamType,
       isLive: this.currentSession.isLive,
+      is_live: this.currentSession.isLive,
       profileId: this.currentSession.profileId,
+      profile_id: this.currentSession.profileId,
       profileType: this.currentSession.profileType,
+      profile_type: this.currentSession.profileType,
       timeToFirstFrameMs: startupTimeMs,
+      time_to_first_frame_ms: startupTimeMs,
       startup_time_ms: startupTimeMs,
       startupTimeMs,
-      position:
-        typeof params?.position === 'number'
-          ? params.position
-          : this.currentSession.startPosition,
+      position: pos,
     };
 
     try {
@@ -646,8 +698,9 @@ export class PlaybackSessionManager {
   }
 
   /**
-   * Step 4a: Pause -> paused event.
+   * Step 4a: Pause -> playback_paused event.
    * Emitted only when transitioning from active playing to paused.
+   * Buffering and player initialization must not generate playback_paused.
    */
   public async recordPause(position: number): Promise<void> {
     if (!this.currentSession) {
@@ -655,25 +708,15 @@ export class PlaybackSessionManager {
     }
     if (
       this.currentSession.state === 'completed' ||
-      this.currentSession.state === 'stopped'
+      this.currentSession.state === 'stopped' ||
+      this.currentSession.state === 'error'
     ) {
       return;
     }
-    // If buffering when user pauses, cleanly terminate buffer timing
-    if (this.currentSession.isCurrentlyBuffering) {
-      const now = Date.now();
-      const startTimestamp =
-        this.currentSession.bufferMetrics.currentBufferStartTimestamp || now;
-      this.currentSession.bufferMetrics.totalBufferDurationMs += Math.max(
-        0,
-        now - startTimestamp,
-      );
-      this.currentSession.bufferMetrics.currentBufferStartTimestamp = undefined;
-      this.currentSession.isCurrentlyBuffering = false;
-    }
 
-    // Prevent duplicate pause events
-    if (this.currentSession.state === 'paused') {
+    // Do not track buffering or player initialization as pause.
+    // Must strictly be transitioning from PLAYING to PAUSED.
+    if (this.currentSession.state !== 'playing') {
       return;
     }
 
@@ -688,18 +731,31 @@ export class PlaybackSessionManager {
     this.currentSession.state = 'paused';
     this.currentSession.pauseStartTime = now;
 
+    const numericPosition =
+      typeof position === 'number' && Number.isFinite(position)
+        ? Math.max(0, position)
+        : 0;
+
     const pausedParams: PlaybackPausedParams = {
       playbackSessionId: this.currentSession.playbackSessionId,
+      playback_session_id: this.currentSession.playbackSessionId,
       contentId: this.currentSession.contentId,
+      content_id: this.currentSession.contentId,
       contentTitle: this.currentSession.contentTitle,
       contentType: this.currentSession.contentType,
+      content_type: this.currentSession.contentType,
       playbackType:
+        this.currentSession.playbackType || this.currentSession.contentType,
+      playback_type:
         this.currentSession.playbackType || this.currentSession.contentType,
       streamType: this.currentSession.streamType,
       isLive: this.currentSession.isLive,
+      is_live: this.currentSession.isLive,
       profileId: this.currentSession.profileId,
+      profile_id: this.currentSession.profileId,
       profileType: this.currentSession.profileType,
-      position: Number.isFinite(position) ? position : 0,
+      profile_type: this.currentSession.profileType,
+      position: numericPosition,
     };
 
     try {
@@ -712,8 +768,9 @@ export class PlaybackSessionManager {
   }
 
   /**
-   * Step 4b: Continue -> resumed event.
-   * Emitted only when resuming after a preceding pause.
+   * Step 4b: Continue -> playback_resumed event.
+   * Emitted only when resuming after a preceding pause (PAUSED -> PLAYING).
+   * Initial playback and buffer_ended must not generate playback_resumed.
    */
   public async recordResume(position: number): Promise<void> {
     if (!this.currentSession) {
@@ -721,7 +778,8 @@ export class PlaybackSessionManager {
     }
     if (
       this.currentSession.state === 'completed' ||
-      this.currentSession.state === 'stopped'
+      this.currentSession.state === 'stopped' ||
+      this.currentSession.state === 'error'
     ) {
       return;
     }
@@ -739,19 +797,33 @@ export class PlaybackSessionManager {
     this.currentSession.pauseStartTime = undefined;
     this.currentSession.lastPlayStartTime = now;
 
+    const numericPosition =
+      typeof position === 'number' && Number.isFinite(position)
+        ? Math.max(0, position)
+        : 0;
+
     const resumedParams: PlaybackResumedParams = {
       playbackSessionId: this.currentSession.playbackSessionId,
+      playback_session_id: this.currentSession.playbackSessionId,
       contentId: this.currentSession.contentId,
+      content_id: this.currentSession.contentId,
       contentTitle: this.currentSession.contentTitle,
       contentType: this.currentSession.contentType,
+      content_type: this.currentSession.contentType,
       playbackType:
+        this.currentSession.playbackType || this.currentSession.contentType,
+      playback_type:
         this.currentSession.playbackType || this.currentSession.contentType,
       streamType: this.currentSession.streamType,
       isLive: this.currentSession.isLive,
+      is_live: this.currentSession.isLive,
       profileId: this.currentSession.profileId,
+      profile_id: this.currentSession.profileId,
       profileType: this.currentSession.profileType,
-      position: Number.isFinite(position) ? position : 0,
+      profile_type: this.currentSession.profileType,
+      position: numericPosition,
       pauseDurationMs,
+      pause_duration_ms: pauseDurationMs,
     };
 
     try {
@@ -766,7 +838,7 @@ export class PlaybackSessionManager {
   /**
    * Step 5a: completed event.
    * Emitted when playback naturally reaches the end. Mutually exclusive with stopped.
-   * Normal Live TV sessions do NOT emit playback_completed.
+   * Normal Live TV sessions do NOT emit completed.
    */
   public async recordComplete(params?: {
     duration?: number;
@@ -776,11 +848,12 @@ export class PlaybackSessionManager {
     }
     if (
       this.currentSession.state === 'completed' ||
-      this.currentSession.state === 'stopped'
+      this.currentSession.state === 'stopped' ||
+      this.currentSession.state === 'error'
     ) {
       return;
     }
-    // Section 18: Do NOT generate playback_completed for a normal live channel session.
+    // Live TV sessions do NOT emit completed
     if (this.currentSession.isLive) {
       return;
     }
@@ -811,17 +884,26 @@ export class PlaybackSessionManager {
 
     const completedParams: PlaybackCompletedParams = {
       playbackSessionId: this.currentSession.playbackSessionId,
+      playback_session_id: this.currentSession.playbackSessionId,
       contentId: this.currentSession.contentId,
+      content_id: this.currentSession.contentId,
       contentTitle: this.currentSession.contentTitle,
       contentType: this.currentSession.contentType,
+      content_type: this.currentSession.contentType,
       playbackType:
+        this.currentSession.playbackType || this.currentSession.contentType,
+      playback_type:
         this.currentSession.playbackType || this.currentSession.contentType,
       streamType: this.currentSession.streamType,
       isLive: this.currentSession.isLive,
+      is_live: this.currentSession.isLive,
       profileId: this.currentSession.profileId,
+      profile_id: this.currentSession.profileId,
       profileType: this.currentSession.profileType,
+      profile_type: this.currentSession.profileType,
       duration: finalDuration,
       totalPlayTimeMs: this.currentSession.totalPlayTimeMs,
+      total_play_time_ms: this.currentSession.totalPlayTimeMs,
     };
 
     this.currentSession.state = 'completed';
@@ -843,13 +925,15 @@ export class PlaybackSessionManager {
     position?: number;
     duration?: number;
     reason?: PlaybackStoppedParams['reason'];
+    stopReason?: PlaybackStopReason;
   }): Promise<void> {
     if (!this.currentSession) {
       return;
     }
     if (
       this.currentSession.state === 'completed' ||
-      this.currentSession.state === 'stopped'
+      this.currentSession.state === 'stopped' ||
+      this.currentSession.state === 'error'
     ) {
       return;
     }
@@ -878,24 +962,64 @@ export class PlaybackSessionManager {
         ? params.duration
         : this.currentSession.duration;
 
+    const rawReason = params?.stopReason || params?.reason;
+    let controlledStopReason: PlaybackStopReason = 'user_exit';
+
+    switch (rawReason) {
+      case 'user_exit':
+        controlledStopReason = 'user_exit';
+        break;
+      case 'navigation':
+      case 'back_navigation':
+        controlledStopReason = 'navigation';
+        break;
+      case 'content_changed':
+      case 'episode_switch':
+        controlledStopReason = 'content_changed';
+        break;
+      case 'player_destroyed':
+      case 'app_backgrounded':
+        controlledStopReason = 'player_destroyed';
+        break;
+      case 'unknown':
+        controlledStopReason = 'unknown';
+        break;
+      default:
+        controlledStopReason = 'user_exit';
+        break;
+    }
+
+    const numericPos =
+      typeof params?.position === 'number' && Number.isFinite(params.position)
+        ? Math.max(0, params.position)
+        : 0;
+
     const stoppedParams: PlaybackStoppedParams = {
       playbackSessionId: this.currentSession.playbackSessionId,
+      playback_session_id: this.currentSession.playbackSessionId,
       contentId: this.currentSession.contentId,
+      content_id: this.currentSession.contentId,
       contentTitle: this.currentSession.contentTitle,
       contentType: this.currentSession.contentType,
+      content_type: this.currentSession.contentType,
       playbackType:
+        this.currentSession.playbackType || this.currentSession.contentType,
+      playback_type:
         this.currentSession.playbackType || this.currentSession.contentType,
       streamType: this.currentSession.streamType,
       isLive: this.currentSession.isLive,
+      is_live: this.currentSession.isLive,
       profileId: this.currentSession.profileId,
+      profile_id: this.currentSession.profileId,
       profileType: this.currentSession.profileType,
-      position:
-        typeof params?.position === 'number' && Number.isFinite(params.position)
-          ? params.position
-          : 0,
+      profile_type: this.currentSession.profileType,
+      position: numericPos,
       duration: finalDuration,
       totalPlayTimeMs: this.currentSession.totalPlayTimeMs,
-      reason: params?.reason || 'user_exit',
+      total_play_time_ms: this.currentSession.totalPlayTimeMs,
+      reason: params?.reason || controlledStopReason,
+      stopReason: controlledStopReason,
+      stop_reason: controlledStopReason,
     };
 
     this.currentSession.state = 'stopped';
@@ -907,6 +1031,106 @@ export class PlaybackSessionManager {
       }
     }
     this.currentSession = null;
+  }
+
+  /**
+   * Playback error event.
+   * Normalizes player errors into controlled categories and sanitizes sensitive messages.
+   * Fatal errors terminate the playback session.
+   */
+  public async recordPlaybackError(
+    error: unknown,
+    options?: {
+      isFatal?: boolean;
+      position?: number;
+    },
+  ): Promise<void> {
+    if (!this.currentSession) {
+      return;
+    }
+    if (
+      this.currentSession.state === 'completed' ||
+      this.currentSession.state === 'stopped' ||
+      this.currentSession.state === 'error'
+    ) {
+      return;
+    }
+
+    const normalized = normalizePlaybackError(
+      error,
+      options?.isFatal ?? true,
+    );
+
+    const isFatal =
+      options?.isFatal !== undefined
+        ? options.isFatal
+        : normalized.isFatal ?? true;
+
+    // Deduplicate exact error in same session
+    if (
+      this.currentSession.hasPlaybackError &&
+      this.currentSession.lastError?.errorCode === normalized.code &&
+      this.currentSession.lastError?.errorCategory === normalized.category
+    ) {
+      return;
+    }
+
+    const numericPos =
+      typeof options?.position === 'number' && Number.isFinite(options.position)
+        ? Math.max(0, options.position)
+        : 0;
+
+    const errorParams: PlaybackErrorParams = {
+      playbackSessionId: this.currentSession.playbackSessionId,
+      playback_session_id: this.currentSession.playbackSessionId,
+      contentId: this.currentSession.contentId,
+      content_id: this.currentSession.contentId,
+      contentTitle: this.currentSession.contentTitle,
+      contentType: this.currentSession.contentType,
+      content_type: this.currentSession.contentType,
+      playbackType:
+        this.currentSession.playbackType || this.currentSession.contentType,
+      playback_type:
+        this.currentSession.playbackType || this.currentSession.contentType,
+      streamType: this.currentSession.streamType,
+      isLive: this.currentSession.isLive,
+      is_live: this.currentSession.isLive,
+      profileId: this.currentSession.profileId,
+      profile_id: this.currentSession.profileId,
+      profileType: this.currentSession.profileType,
+      profile_type: this.currentSession.profileType,
+      errorCategory: normalized.category,
+      error_category: normalized.category,
+      errorCode: normalized.code,
+      error_code: normalized.code,
+      errorMessage: normalized.message,
+      error_message: normalized.message,
+      isFatal,
+      is_fatal: isFatal,
+      position: numericPos,
+    };
+
+    this.currentSession.hasPlaybackError = true;
+    this.currentSession.lastError = errorParams;
+
+    if (isFatal) {
+      this.currentSession.state = 'error';
+    }
+
+    try {
+      await this.analytics.trackPlaybackError(errorParams);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn(
+          '[PlaybackSessionManager] trackPlaybackError failed:',
+          err,
+        );
+      }
+    }
+
+    if (isFatal) {
+      this.currentSession = null;
+    }
   }
 
   /**

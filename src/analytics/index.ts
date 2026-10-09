@@ -23,6 +23,15 @@ export type {
   ActivePlaybackSession,
 } from './playbackSessionManager';
 
+export {
+  normalizePlaybackError,
+  sanitizeErrorMessage,
+} from './errorNormalization';
+export type {
+  PlaybackErrorCategory,
+  NormalizedPlaybackError,
+} from './errorNormalization';
+
 export type {
   AnalyticsContext,
   AnalyticsUserContext,
@@ -42,6 +51,8 @@ export type {
   PlaybackResumedParams,
   PlaybackCompletedParams,
   PlaybackStoppedParams,
+  PlaybackStopReason,
+  PlaybackErrorParams,
   SeekStartedParams,
   SeekCompletedParams,
   AudioTrackChangedParams,

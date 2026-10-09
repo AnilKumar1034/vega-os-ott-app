@@ -26,6 +26,7 @@ import {
   FirstFrameParams,
   IAnalyticsService,
   PlaybackCompletedParams,
+  PlaybackErrorParams,
   PlaybackPausedParams,
   PlaybackResumedParams,
   PlaybackStartRequestedParams,
@@ -675,7 +676,7 @@ export class AnalyticsService implements IAnalyticsService {
         }
         return;
       }
-      await this.track(AnalyticsEvent.PAUSED, params);
+      await this.track(AnalyticsEvent.PLAYBACK_PAUSED, params);
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackPlaybackPaused error:', err);
@@ -698,7 +699,7 @@ export class AnalyticsService implements IAnalyticsService {
         }
         return;
       }
-      await this.track(AnalyticsEvent.RESUMED, params);
+      await this.track(AnalyticsEvent.PLAYBACK_RESUMED, params);
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackPlaybackResumed error:', err);
@@ -744,10 +745,33 @@ export class AnalyticsService implements IAnalyticsService {
         }
         return;
       }
-      await this.track(AnalyticsEvent.STOPPED, params);
+      await this.track(AnalyticsEvent.PLAYBACK_STOPPED, params);
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackPlaybackStopped error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks normalized playback error event when an error occurs during playback.
+   */
+  public async trackPlaybackError(
+    params: PlaybackErrorParams,
+  ): Promise<void> {
+    try {
+      if (!params || !params.playbackSessionId || !params.contentId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackPlaybackError called with missing required params.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.PLAYBACK_ERROR, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackPlaybackError error:', err);
       }
     }
   }

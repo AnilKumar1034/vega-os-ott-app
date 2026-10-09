@@ -987,6 +987,9 @@ export const VideoPlayerScreen = () => {
     Promise.resolve(player?.play?.()).catch((error) => {
       console.log('Adaptive playback start error:', error);
       setVideoError(error?.message || strings.errors.videoPlaybackUnavailable);
+      playbackSessionManager
+        .recordPlaybackError(error, { isFatal: true })
+        .catch(() => {});
     });
   }, [player]);
 
@@ -1170,6 +1173,19 @@ export const VideoPlayerScreen = () => {
             }
           };
 
+          const onShakaError = (event: any) => {
+            const err = event?.detail || event;
+            console.log('Shaka player error event:', err);
+            setVideoError(err?.message || strings.errors.videoPlaybackUnavailable);
+            playbackSessionManager
+              .recordPlaybackError(err, {
+                position: player?.currentTime || 0,
+                isFatal: true,
+              })
+              .catch(() => {});
+          };
+
+          rawPlayer.addEventListener?.('error', onShakaError);
           rawPlayer.addEventListener?.('variantchanged', onVariantTrackChange);
           rawPlayer.addEventListener?.('adaptation', onVariantTrackChange);
         }
@@ -1335,27 +1351,45 @@ export const VideoPlayerScreen = () => {
     const onError = (evt: any) => {
       if (!disposed) {
         console.log('Player error event:', evt);
-        const playerErr = player.error;
+        const playerErr = player?.error || evt;
         setVideoError(
-          playerErr?.message || strings.errors.videoPlaybackUnavailable,
+          player?.error?.message ||
+            (typeof evt?.message === 'string'
+              ? evt.message
+              : strings.errors.videoPlaybackUnavailable),
         );
         playbackSessionManager
-          .recordStop({
+          .recordPlaybackError(playerErr, {
             position: player?.currentTime || 0,
+            isFatal: true,
+          })
+          .catch(() => {});
+      }
+    };
+
+    const handlePlaybackStarted = () => {
+      if (!disposed && !playbackSessionManager.hasPlaybackStarted()) {
+        playbackSessionManager
+          .recordPlaybackStarted({
+            startPosition: player?.currentTime || 0,
             duration: player?.duration || 0,
-            reason: 'error',
           })
           .catch(() => {});
       }
     };
 
     const handleFirstFrame = () => {
-      if (!disposed && !playbackSessionManager.hasFirstFrameRendered()) {
-        playbackSessionManager
-          .recordFirstFrame({
-            position: player?.currentTime || 0,
-          })
-          .catch(() => {});
+      if (!disposed) {
+        if (!playbackSessionManager.hasPlaybackStarted()) {
+          handlePlaybackStarted();
+        }
+        if (!playbackSessionManager.hasFirstFrameRendered()) {
+          playbackSessionManager
+            .recordFirstFrame({
+              position: player?.currentTime || 0,
+            })
+            .catch(() => {});
+        }
       }
     };
 
@@ -1479,7 +1513,8 @@ export const VideoPlayerScreen = () => {
       player.addEventListener('timeupdate', onPlayerTimeUpdate);
       player.addEventListener('captioningchange', onCaptioningChange);
       player.addEventListener('loadeddata', handleFirstFrame);
-      player.addEventListener('playbackstarted', handleFirstFrame);
+      player.addEventListener('playbackstarted', handlePlaybackStarted);
+      player.addEventListener('play', handlePlaybackStarted);
     }
 
     if (player?.textTracks?.addEventListener) {
@@ -1493,7 +1528,7 @@ export const VideoPlayerScreen = () => {
           return;
         }
 
-        // Step 1: Start new playback session (generates playbackSessionId & emits playback_start_requested and playback_started)
+        // Step 1: Start new playback session (generates playbackSessionId & emits playback_start_requested)
         playbackSessionManager
           .startSession({
             contentId: movie.id,
@@ -1513,6 +1548,7 @@ export const VideoPlayerScreen = () => {
             startPosition: hasExplicitSeek ?? 0,
             profileId: playbackProfileIdRef.current || activeProfile?.id,
             profileType: activeProfile?.isKids ? 'kids' : 'adult',
+            deferPlaybackStarted: true,
           })
           .catch(() => {});
 
@@ -1575,6 +1611,9 @@ export const VideoPlayerScreen = () => {
             startDrmPlayback().catch((error) => {
               if (!disposed) {
                 console.log('Adaptive playback initialization error:', error);
+                playbackSessionManager
+                  .recordPlaybackError(error, { isFatal: true })
+                  .catch(() => {});
               }
             });
           }
@@ -1607,6 +1646,9 @@ export const VideoPlayerScreen = () => {
               setVideoError(
                 error?.message || strings.errors.videoPlaybackUnavailable,
               );
+              playbackSessionManager
+                .recordPlaybackError(error, { isFatal: true })
+                .catch(() => {});
             }
           });
         }, 1000);
@@ -1616,6 +1658,9 @@ export const VideoPlayerScreen = () => {
           setVideoError(
             err?.message || strings.errors.videoPlaybackUnavailable,
           );
+          playbackSessionManager
+            .recordPlaybackError(err, { isFatal: true })
+            .catch(() => {});
         }
       }
     };
@@ -1641,7 +1686,8 @@ export const VideoPlayerScreen = () => {
         player.removeEventListener('timeupdate', onPlayerTimeUpdate);
         player.removeEventListener('captioningchange', onCaptioningChange);
         player.removeEventListener('loadeddata', handleFirstFrame);
-        player.removeEventListener('playbackstarted', handleFirstFrame);
+        player.removeEventListener('playbackstarted', handlePlaybackStarted);
+        player.removeEventListener('play', handlePlaybackStarted);
       }
       if (player?.textTracks?.removeEventListener) {
         player.textTracks.removeEventListener('change', onCaptioningChange);
@@ -1653,6 +1699,7 @@ export const VideoPlayerScreen = () => {
           position: player?.currentTime || 0,
           duration: player?.duration || 0,
           reason: 'user_exit',
+          stopReason: 'user_exit',
         })
         .catch(() => {});
 
@@ -1758,6 +1805,7 @@ export const VideoPlayerScreen = () => {
           position: player?.currentTime || 0,
           duration: player?.duration || 0,
           reason: 'episode_switch',
+          stopReason: 'content_changed',
         })
         .catch(() => {});
 
@@ -1893,7 +1941,7 @@ export const VideoPlayerScreen = () => {
   );
 
   useEffect(() => {
-    if (isLive || !player) {
+    if (!player) {
       return;
     }
 
@@ -1906,7 +1954,9 @@ export const VideoPlayerScreen = () => {
         clearInterval(timeSyncTimerRef.current);
         timeSyncTimerRef.current = null;
       }
-      void persistProgress();
+      if (!isLive) {
+        void persistProgress();
+      }
     };
 
     const onSeeked = () => {
@@ -1916,6 +1966,13 @@ export const VideoPlayerScreen = () => {
     };
 
     const onPlaying = () => {
+      if (!playbackSessionManager.hasPlaybackStarted()) {
+        playbackSessionManager
+          .recordPlaybackStarted({
+            startPosition: player?.currentTime || 0,
+          })
+          .catch(() => {});
+      }
       if (!playbackSessionManager.hasFirstFrameRendered()) {
         playbackSessionManager
           .recordFirstFrame({
@@ -1949,9 +2006,11 @@ export const VideoPlayerScreen = () => {
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
       }
-      progressTimerRef.current = setInterval(() => {
-        void persistProgress();
-      }, 8000);
+      if (!isLive) {
+        progressTimerRef.current = setInterval(() => {
+          void persistProgress();
+        }, 8000);
+      }
 
       if (timeSyncTimerRef.current) {
         clearInterval(timeSyncTimerRef.current);
@@ -1978,14 +2037,15 @@ export const VideoPlayerScreen = () => {
     };
 
     const onEnded = () => {
-      hasTriggeredEpisodeEndRef.current = true;
-      if (!isLive) {
-        playbackSessionManager
-          .recordComplete({
-            duration: player?.duration || 0,
-          })
-          .catch(() => {});
+      if (isLive) {
+        return;
       }
+      hasTriggeredEpisodeEndRef.current = true;
+      playbackSessionManager
+        .recordComplete({
+          duration: player?.duration || 0,
+        })
+        .catch(() => {});
       if (progressTimerRef.current) {
         clearInterval(progressTimerRef.current);
       }
@@ -2031,7 +2091,9 @@ export const VideoPlayerScreen = () => {
         player.removeEventListener('seeked', onSeeked);
       }
 
-      void persistProgress();
+      if (!isLive) {
+        void persistProgress();
+      }
     };
   }, [activeProfile?.id, isLive, movie, movieId, persistProgress, player]);
 
@@ -2153,6 +2215,7 @@ export const VideoPlayerScreen = () => {
         position: player?.currentTime || 0,
         duration: player?.duration || 0,
         reason: 'back_navigation',
+        stopReason: 'navigation',
       })
       .catch(() => {});
     if (isLive && navigation.canGoBack?.()) {

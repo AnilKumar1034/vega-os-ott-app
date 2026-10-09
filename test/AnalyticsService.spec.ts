@@ -726,5 +726,65 @@ describe('AnalyticsService (Day 1 Analytics Foundation)', () => {
         }),
       );
     });
+
+    describe('12. Playback Lifecycle Completion & Error Analytics (Day 5)', () => {
+      it('tracks trackPlaybackError and ignores when required params missing', async () => {
+        await analytics.trackPlaybackError({} as any);
+        expect(mockLogEvent).not.toHaveBeenCalled();
+
+        await analytics.trackPlaybackError({
+          playbackSessionId: 'sess_123',
+          contentId: 'movie_456',
+          errorCategory: 'DRM',
+          errorCode: '6001',
+          errorMessage: 'DRM license failed',
+          isFatal: true,
+        });
+
+        expect(mockLogEvent).toHaveBeenCalledWith(
+          mockFirebaseInstance,
+          AnalyticsEvent.PLAYBACK_ERROR,
+          expect.objectContaining({
+            playbackSessionId: 'sess_123',
+            contentId: 'movie_456',
+            errorCategory: 'DRM',
+            errorCode: '6001',
+            errorMessage: 'DRM license failed',
+          }),
+        );
+      });
+
+      it('tracks trackPlaybackPaused and trackPlaybackResumed correctly', async () => {
+        await analytics.trackPlaybackPaused({
+          playbackSessionId: 'sess_123',
+          contentId: 'movie_456',
+          position: 150,
+        });
+
+        expect(mockLogEvent).toHaveBeenCalledWith(
+          mockFirebaseInstance,
+          AnalyticsEvent.PLAYBACK_PAUSED,
+          expect.objectContaining({
+            playbackSessionId: 'sess_123',
+            position: 150,
+          }),
+        );
+
+        await analytics.trackPlaybackResumed({
+          playbackSessionId: 'sess_123',
+          contentId: 'movie_456',
+          position: 150,
+        });
+
+        expect(mockLogEvent).toHaveBeenCalledWith(
+          mockFirebaseInstance,
+          AnalyticsEvent.PLAYBACK_RESUMED,
+          expect.objectContaining({
+            playbackSessionId: 'sess_123',
+            position: 150,
+          }),
+        );
+      });
+    });
   });
 });

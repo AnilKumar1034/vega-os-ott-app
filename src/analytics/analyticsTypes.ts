@@ -88,6 +88,15 @@ export interface PlaybackBufferMetrics {
   currentBufferStartTimestamp?: number;
 }
 
+import {PlaybackErrorCategory} from './errorNormalization';
+
+export type PlaybackStopReason =
+  | 'user_exit'
+  | 'navigation'
+  | 'content_changed'
+  | 'player_destroyed'
+  | 'unknown';
+
 export interface PlaybackPausedParams extends PlaybackBaseParams {
   position: number;
 }
@@ -95,23 +104,41 @@ export interface PlaybackPausedParams extends PlaybackBaseParams {
 export interface PlaybackResumedParams extends PlaybackBaseParams {
   position: number;
   pauseDurationMs?: number;
+  pause_duration_ms?: number;
 }
 
 export interface PlaybackCompletedParams extends PlaybackBaseParams {
   duration: number;
   totalPlayTimeMs?: number;
+  total_play_time_ms?: number;
 }
 
 export interface PlaybackStoppedParams extends PlaybackBaseParams {
   position: number;
   duration?: number;
   totalPlayTimeMs?: number;
+  total_play_time_ms?: number;
+  stopReason?: PlaybackStopReason;
+  stop_reason?: string;
   reason?:
     | 'user_exit'
     | 'back_navigation'
     | 'episode_switch'
     | 'app_backgrounded'
-    | 'error';
+    | 'error'
+    | PlaybackStopReason;
+}
+
+export interface PlaybackErrorParams extends PlaybackBaseParams {
+  errorCategory: PlaybackErrorCategory;
+  error_category?: string;
+  errorCode: string;
+  error_code?: string;
+  errorMessage: string;
+  error_message?: string;
+  isFatal?: boolean;
+  is_fatal?: boolean;
+  position?: number;
 }
 
 export interface SeekStartedParams extends PlaybackBaseParams {
@@ -178,10 +205,14 @@ export interface AnalyticsEventParamsMap {
   first_frame: FirstFrameParams;
   buffer_started: BufferStartedParams;
   buffer_ended: BufferEndedParams;
+  playback_paused: PlaybackPausedParams;
   paused: PlaybackPausedParams;
+  playback_resumed: PlaybackResumedParams;
   resumed: PlaybackResumedParams;
   completed: PlaybackCompletedParams;
+  playback_stopped: PlaybackStoppedParams;
   stopped: PlaybackStoppedParams;
+  playback_error: PlaybackErrorParams;
   seek_started: SeekStartedParams;
   seek_completed: SeekCompletedParams;
   audio_track_changed: AudioTrackChangedParams;
@@ -234,6 +265,7 @@ export interface IAnalyticsService {
   trackPlaybackResumed(params: PlaybackResumedParams): Promise<void>;
   trackPlaybackCompleted(params: PlaybackCompletedParams): Promise<void>;
   trackPlaybackStopped(params: PlaybackStoppedParams): Promise<void>;
+  trackPlaybackError(params: PlaybackErrorParams): Promise<void>;
   trackSeekStarted(params: SeekStartedParams): Promise<void>;
   trackSeekCompleted(params: SeekCompletedParams): Promise<void>;
   trackAudioTrackChanged(params: AudioTrackChangedParams): Promise<void>;
