@@ -1,4 +1,4 @@
-export {AnalyticsEvent} from './analyticsEvents';
+export {AnalyticsEvent, AnalyticsEvents} from './analyticsEvents';
 export type {AnalyticsEventName} from './analyticsEvents';
 
 export {
@@ -60,6 +60,11 @@ export type {
   QualitySelectedParams,
   BitrateChangedParams,
   ResolutionChangedParams,
+  LiveChannelSelectedParams,
+  LiveChannelChangedParams,
+  EPGProgramSelectedParams,
+  GoLiveParams,
+  LivePlaybackStartedParams,
   AnalyticsEventParams,
   AnalyticsEventParamsMap,
   AnalyticsServiceOptions,

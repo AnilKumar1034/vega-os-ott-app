@@ -41,12 +41,19 @@ export interface ProfileSelectedEventParams {
 
 export interface PlaybackBaseParams {
   playbackSessionId: string;
+  playback_session_id?: string;
   contentId: string;
+  content_id?: string;
   contentTitle?: string;
   contentType?: 'movie' | 'episode' | 'live';
   playbackType?: string;
   streamType?: string;
   isLive?: boolean;
+  is_live?: boolean;
+  channelId?: string;
+  channel_id?: string;
+  channelName?: string;
+  channel_name?: string;
   profileId?: string;
   profileType?: 'adult' | 'kids';
   [key: string]: unknown;
@@ -195,6 +202,62 @@ export interface ResolutionChangedParams extends PlaybackBaseParams {
   resolutionBadge?: string;
 }
 
+export interface LiveChannelSelectedParams {
+  channel_id: string;
+  channelId?: string;
+  channel_name?: string;
+  channelName?: string;
+  playback_session_id?: string;
+  playbackSessionId?: string;
+  selection_source?: 'channel_list' | 'epg' | 'unknown' | string;
+  selectionSource?: 'channel_list' | 'epg' | 'unknown' | string;
+  [key: string]: unknown;
+}
+
+export interface LiveChannelChangedParams {
+  previous_channel_id: string;
+  previousChannelId?: string;
+  channel_id: string;
+  channelId?: string;
+  playback_session_id?: string;
+  playbackSessionId?: string;
+  change_source?: 'channel_list' | 'epg' | 'unknown' | string;
+  changeSource?: 'channel_list' | 'epg' | 'unknown' | string;
+  [key: string]: unknown;
+}
+
+export interface EPGProgramSelectedParams {
+  program_id?: string;
+  programId?: string;
+  channel_id: string;
+  channelId?: string;
+  program_start_time?: string | number;
+  programStartTime?: string | number;
+  program_end_time?: string | number;
+  programEndTime?: string | number;
+  selection_source?: 'epg' | string;
+  selectionSource?: 'epg' | string;
+  [key: string]: unknown;
+}
+
+export interface GoLiveParams {
+  channel_id: string;
+  channelId?: string;
+  playback_session_id?: string;
+  playbackSessionId?: string;
+  [key: string]: unknown;
+}
+
+export interface LivePlaybackStartedParams {
+  channel_id: string;
+  channelId?: string;
+  playback_session_id: string;
+  playbackSessionId?: string;
+  time_to_first_frame_ms?: number;
+  timeToFirstFrameMs?: number;
+  [key: string]: unknown;
+}
+
 export interface AnalyticsEventParamsMap {
   app_open: AppOpenEventParams;
   screen_view: ScreenViewEventParams;
@@ -220,6 +283,11 @@ export interface AnalyticsEventParamsMap {
   quality_selected: QualitySelectedParams;
   bitrate_changed: BitrateChangedParams;
   resolution_changed: ResolutionChangedParams;
+  live_channel_selected: LiveChannelSelectedParams;
+  live_channel_changed: LiveChannelChangedParams;
+  epg_program_selected: EPGProgramSelectedParams;
+  go_live: GoLiveParams;
+  live_playback_started: LivePlaybackStartedParams;
 }
 
 export type AnalyticsEventParams<T extends AnalyticsEventName = AnalyticsEventName> =
@@ -273,5 +341,10 @@ export interface IAnalyticsService {
   trackQualitySelected(params: QualitySelectedParams): Promise<void>;
   trackBitrateChanged(params: BitrateChangedParams): Promise<void>;
   trackResolutionChanged(params: ResolutionChangedParams): Promise<void>;
+  trackLiveChannelSelected(params: LiveChannelSelectedParams): Promise<void>;
+  trackLiveChannelChanged(params: LiveChannelChangedParams): Promise<void>;
+  trackEpgProgramSelected(params: EPGProgramSelectedParams): Promise<void>;
+  trackGoLive(params: GoLiveParams): Promise<void>;
+  trackLivePlaybackStarted(params: LivePlaybackStartedParams): Promise<void>;
   reset(): void;
 }

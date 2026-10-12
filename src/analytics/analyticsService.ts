@@ -24,7 +24,11 @@ import {
   BufferEndedParams,
   BufferStartedParams,
   FirstFrameParams,
+  GoLiveParams,
   IAnalyticsService,
+  LiveChannelChangedParams,
+  LiveChannelSelectedParams,
+  LivePlaybackStartedParams,
   PlaybackCompletedParams,
   PlaybackErrorParams,
   PlaybackPausedParams,
@@ -39,6 +43,7 @@ import {
   SeekCompletedParams,
   SeekStartedParams,
   SubtitleTrackChangedParams,
+  EPGProgramSelectedParams,
 } from './analyticsTypes';
 
 const getAsyncStorage = () => {
@@ -67,6 +72,11 @@ export class AnalyticsService implements IAnalyticsService {
   private measurementProtocolSecret: string = '';
   private warnedMissingSecret = false;
   private readonly contextManager: AnalyticsContextManager;
+  private lastChannelSelectedTime = 0;
+  private lastSelectedChannelId: string | null = null;
+  private lastChannelChange: {from: string; to: string; timestamp: number} | null = null;
+  private lastEpgProgramKey: string | null = null;
+  private lastEpgProgramTime = 0;
 
   constructor(contextManager: AnalyticsContextManager = analyticsContextManager) {
     this.contextManager = contextManager;
@@ -222,6 +232,11 @@ export class AnalyticsService implements IAnalyticsService {
   public reset(): void {
     try {
       this.contextManager.reset();
+      this.lastChannelSelectedTime = 0;
+      this.lastSelectedChannelId = null;
+      this.lastChannelChange = null;
+      this.lastEpgProgramKey = null;
+      this.lastEpgProgramTime = 0;
       if (this.firebaseSupported && this.firebaseAnalytics) {
         setUserId(this.firebaseAnalytics, null);
         setUserProperties(this.firebaseAnalytics, {
@@ -934,6 +949,248 @@ export class AnalyticsService implements IAnalyticsService {
   }
 
   /**
+   * Tracks explicit live channel selection by the user.
+   * Guarded against D-pad focus movement and rapid debounce.
+   */
+  public async trackLiveChannelSelected(
+    params: LiveChannelSelectedParams,
+  ): Promise<void> {
+    try {
+      const channelId = params?.channel_id || params?.channelId;
+      if (!channelId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackLiveChannelSelected called with missing channel_id.',
+          );
+        }
+        return;
+      }
+
+      const now = Date.now();
+      if (
+        this.lastChannelSelectedTime &&
+        this.lastSelectedChannelId === channelId &&
+        now - this.lastChannelSelectedTime < 500
+      ) {
+        return; // debounce rapid double selection
+      }
+      this.lastChannelSelectedTime = now;
+      this.lastSelectedChannelId = channelId;
+
+      const payload: LiveChannelSelectedParams = {
+        channel_id: channelId,
+        channelId,
+        channel_name: params.channel_name || params.channelName,
+        channelName: params.channel_name || params.channelName,
+        playback_session_id:
+          params.playback_session_id || params.playbackSessionId,
+        playbackSessionId:
+          params.playback_session_id || params.playbackSessionId,
+        selection_source:
+          params.selection_source || params.selectionSource || 'unknown',
+        selectionSource:
+          params.selection_source || params.selectionSource || 'unknown',
+      };
+
+      await this.track(AnalyticsEvent.LIVE_CHANNEL_SELECTED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackLiveChannelSelected error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks successful transition from one live channel to another.
+   * Emitted only when the channel actually changes.
+   * Guarded against repeated selection of current channel and duplicate callbacks.
+   */
+  public async trackLiveChannelChanged(
+    params: LiveChannelChangedParams,
+  ): Promise<void> {
+    try {
+      const channelId = params?.channel_id || params?.channelId;
+      const previousChannelId =
+        params?.previous_channel_id || params?.previousChannelId;
+
+      if (!channelId || !previousChannelId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackLiveChannelChanged called with missing channel_id or previous_channel_id.',
+          );
+        }
+        return;
+      }
+
+      // Do NOT emit if selected channel did not change
+      if (channelId === previousChannelId) {
+        return;
+      }
+
+      // Deduplicate duplicate callbacks for same channel transition
+      if (
+        this.lastChannelChange?.from === previousChannelId &&
+        this.lastChannelChange?.to === channelId &&
+        Date.now() - this.lastChannelChange.timestamp < 1000
+      ) {
+        return;
+      }
+      this.lastChannelChange = {
+        from: previousChannelId,
+        to: channelId,
+        timestamp: Date.now(),
+      };
+
+      const payload: LiveChannelChangedParams = {
+        previous_channel_id: previousChannelId,
+        previousChannelId,
+        channel_id: channelId,
+        channelId,
+        playback_session_id:
+          params.playback_session_id || params.playbackSessionId,
+        playbackSessionId:
+          params.playback_session_id || params.playbackSessionId,
+        change_source:
+          params.change_source || params.changeSource || 'unknown',
+        changeSource:
+          params.change_source || params.changeSource || 'unknown',
+      };
+
+      await this.track(AnalyticsEvent.LIVE_CHANNEL_CHANGED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackLiveChannelChanged error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks explicit EPG program selection.
+   * Does NOT fire on D-pad focus alone.
+   * Deduplicates rapid selection / screen render callbacks.
+   */
+  public async trackEpgProgramSelected(
+    params: EPGProgramSelectedParams,
+  ): Promise<void> {
+    try {
+      const programId = params?.program_id || params?.programId;
+      const channelId = params?.channel_id || params?.channelId || '';
+
+      if (!channelId && !programId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackEpgProgramSelected called with missing channel_id and program_id.',
+          );
+        }
+        return;
+      }
+
+      const key = `${channelId}_${programId || ''}`;
+      const now = Date.now();
+      if (
+        this.lastEpgProgramKey === key &&
+        now - this.lastEpgProgramTime < 500
+      ) {
+        return; // debounce rapid click/render
+      }
+      this.lastEpgProgramKey = key;
+      this.lastEpgProgramTime = now;
+
+      const payload: EPGProgramSelectedParams = {
+        program_id: programId,
+        programId,
+        channel_id: channelId,
+        channelId,
+        program_start_time:
+          params.program_start_time ?? params.programStartTime,
+        programStartTime:
+          params.program_start_time ?? params.programStartTime,
+        program_end_time: params.program_end_time ?? params.programEndTime,
+        programEndTime: params.program_end_time ?? params.programEndTime,
+        selection_source: 'epg',
+        selectionSource: 'epg',
+      };
+
+      await this.track(AnalyticsEvent.EPG_PROGRAM_SELECTED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackEpgProgramSelected error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks explicit user action to Go Live.
+   * Only emitted when user explicitly invokes Go Live; never on startup or automatic playback.
+   */
+  public async trackGoLive(params: GoLiveParams): Promise<void> {
+    try {
+      const channelId = params?.channel_id || params?.channelId;
+      if (!channelId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn('[Analytics] trackGoLive called with missing channel_id.');
+        }
+        return;
+      }
+
+      const payload: GoLiveParams = {
+        channel_id: channelId,
+        channelId,
+        playback_session_id:
+          params.playback_session_id || params.playbackSessionId,
+        playbackSessionId:
+          params.playback_session_id || params.playbackSessionId,
+      };
+
+      await this.track(AnalyticsEvent.GO_LIVE, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackGoLive error:', err);
+      }
+    }
+  }
+
+  /**
+   * Track live playback start.
+   * If existing playback_started event is already emitted, this avoids duplication.
+   */
+  public async trackLivePlaybackStarted(
+    params: LivePlaybackStartedParams,
+  ): Promise<void> {
+    try {
+      const channelId = params?.channel_id || params?.channelId;
+      const sessionId =
+        params?.playback_session_id || params?.playbackSessionId;
+
+      if (!channelId || !sessionId) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackLivePlaybackStarted called with missing required params.',
+          );
+        }
+        return;
+      }
+
+      const payload: LivePlaybackStartedParams = {
+        channel_id: channelId,
+        channelId,
+        playback_session_id: sessionId,
+        playbackSessionId: sessionId,
+        time_to_first_frame_ms:
+          params.time_to_first_frame_ms ?? params.timeToFirstFrameMs,
+        timeToFirstFrameMs:
+          params.time_to_first_frame_ms ?? params.timeToFirstFrameMs,
+      };
+
+      await this.track(AnalyticsEvent.LIVE_PLAYBACK_STARTED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackLivePlaybackStarted error:', err);
+      }
+    }
+  }
+
+  /**
    * Internal test helper to reset singleton state between unit tests.
    */
   public __resetForTesting(): void {
@@ -946,6 +1203,11 @@ export class AnalyticsService implements IAnalyticsService {
     this.appInstanceId = null;
     this.measurementProtocolSecret = '';
     this.warnedMissingSecret = false;
+    this.lastChannelSelectedTime = 0;
+    this.lastSelectedChannelId = null;
+    this.lastChannelChange = null;
+    this.lastEpgProgramKey = null;
+    this.lastEpgProgramTime = 0;
     this.contextManager.reset();
   }
 }

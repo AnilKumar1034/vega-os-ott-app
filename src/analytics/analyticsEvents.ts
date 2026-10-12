@@ -28,9 +28,16 @@ export const AnalyticsEvent = {
   QUALITY_SELECTED: 'quality_selected',
   BITRATE_CHANGED: 'bitrate_changed',
   RESOLUTION_CHANGED: 'resolution_changed',
+  LIVE_CHANNEL_SELECTED: 'live_channel_selected',
+  LIVE_CHANNEL_CHANGED: 'live_channel_changed',
+  EPG_PROGRAM_SELECTED: 'epg_program_selected',
+  GO_LIVE: 'go_live',
+  LIVE_PLAYBACK_STARTED: 'live_playback_started',
 } as const;
 
 export type AnalyticsEventName =
   (typeof AnalyticsEvent)[keyof typeof AnalyticsEvent];
+
+export const AnalyticsEvents = AnalyticsEvent;
 
 

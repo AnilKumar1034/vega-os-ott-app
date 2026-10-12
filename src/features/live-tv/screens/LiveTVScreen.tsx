@@ -19,6 +19,7 @@ import {
 import {EPG, type EPGActions} from '../components/EPG';
 import {CommonHeader} from '../../../components/molecules/CommonHeader';
 import {SideMenu} from '../../../components/molecules/SideMenu';
+import {analyticsService} from '../../../analytics';
 import {Routes} from '../../../constants/routes';
 import {strings} from '../../../constants/strings';
 import {colors} from '../../../theme/colors';
@@ -135,6 +136,8 @@ export const LiveTVScreen = () => {
       streamType?: 'hls' | 'dash',
       isVideoOnly?: boolean,
       drm?: LiveChannelDrmConfig,
+      channelId?: string,
+      channelName?: string,
     ) => {
       handleProgramFocus(program);
       if (isProgramFuture(program)) {
@@ -155,12 +158,33 @@ export const LiveTVScreen = () => {
         return;
       }
 
+      const effectiveChannelId =
+        channelId || program.channelId || `live-${program.id}`;
+
+      try {
+        analyticsService.trackLiveChannelSelected({
+          channel_id: effectiveChannelId,
+          channelId: effectiveChannelId,
+          channel_name: channelName,
+          channelName: channelName,
+          selection_source: 'epg',
+          selectionSource: 'epg',
+        });
+      } catch (err) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn('[LiveTVScreen] trackLiveChannelSelected failed:', err);
+        }
+      }
+
       navigation.navigate(Routes.VideoPlayer, {
         videoUrl: streamUrl,
         isLive: true,
         streamType,
         isVideoOnly,
         drm,
+        channelId: effectiveChannelId,
+        channelName,
+        selectionSource: 'epg',
         movie: {
           id: `live-${program.id}`,
           title: program.title,
@@ -534,6 +558,7 @@ export const LiveTVScreen = () => {
             }}
             onTilePress={(event) => {
               const progPayload = event?.payload?.program;
+              const channelPayload = event?.payload?.channel;
               const program =
                 progPayload?.extras?.sourceProgram ||
                 (progPayload
@@ -544,16 +569,46 @@ export const LiveTVScreen = () => {
                       startTime: new Date(progPayload.startTime).toISOString(),
                       endTime: new Date(progPayload.endTime).toISOString(),
                       category: '',
-                      channelId: event?.payload?.channel?.id || '',
+                      channelId: channelPayload?.id || '',
                     }
                   : null);
               if (program) {
+                const effectiveChannelId =
+                  channelPayload?.id || program.channelId || '';
+                const effectiveChannelName =
+                  channelPayload?.displayName ||
+                  (channelPayload as any)?.name;
+
+                try {
+                  analyticsService.trackEpgProgramSelected({
+                    program_id: program.id,
+                    programId: program.id,
+                    channel_id: effectiveChannelId,
+                    channelId: effectiveChannelId,
+                    program_start_time: program.startTime,
+                    programStartTime: program.startTime,
+                    program_end_time: program.endTime,
+                    programEndTime: program.endTime,
+                    selection_source: 'epg',
+                    selectionSource: 'epg',
+                  });
+                } catch (err) {
+                  if (typeof __DEV__ !== 'undefined' && __DEV__) {
+                    console.warn(
+                      '[LiveTVScreen] trackEpgProgramSelected failed:',
+                      err,
+                    );
+                  }
+                }
+
                 handleProgramPress(
                   program,
                   progPayload?.extras?.streamUrl,
                   progPayload?.extras?.streamType,
                   progPayload?.extras?.isVideoOnly,
                   progPayload?.extras?.drm,
+                  effectiveChannelId,
+                  effectiveChannelName,
                 );
               }
             }}

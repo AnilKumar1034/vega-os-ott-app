@@ -1545,6 +1545,14 @@ export const VideoPlayerScreen = () => {
               : 'movie',
             streamType: route.params?.streamType || (isLive ? 'live' : 'vod'),
             isLive,
+            channelId: isLive
+              ? (route.params?.channelId ||
+                 (movie.id.startsWith('live-') ? movie.id.replace('live-', '') : movie.id))
+              : undefined,
+            channelName: isLive ? (route.params?.channelName || movie.title) : undefined,
+            previousChannelId: route.params?.previousChannelId,
+            selectionSource: route.params?.selectionSource || (isLive ? 'epg' : undefined),
+            changeSource: route.params?.changeSource || (isLive ? 'epg' : undefined),
             startPosition: hasExplicitSeek ?? 0,
             profileId: playbackProfileIdRef.current || activeProfile?.id,
             profileType: activeProfile?.isKids ? 'kids' : 'adult',

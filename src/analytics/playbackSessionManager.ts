@@ -4,7 +4,12 @@ import {
   BitrateChangedParams,
   BufferEndedParams,
   BufferStartedParams,
+  EPGProgramSelectedParams,
   FirstFrameParams,
+  GoLiveParams,
+  LiveChannelChangedParams,
+  LiveChannelSelectedParams,
+  LivePlaybackStartedParams,
   PlaybackBufferMetrics,
   PlaybackCompletedParams,
   PlaybackErrorParams,
@@ -54,6 +59,11 @@ export interface StartPlaybackSessionOptions {
   playbackType?: string;
   streamType?: string;
   isLive?: boolean;
+  channelId?: string;
+  channelName?: string;
+  previousChannelId?: string;
+  selectionSource?: 'channel_list' | 'epg' | 'unknown' | string;
+  changeSource?: 'channel_list' | 'epg' | 'unknown' | string;
   startPosition?: number;
   duration?: number;
   profileId?: string;
@@ -69,6 +79,12 @@ export interface ActivePlaybackSession {
   playbackType?: string;
   streamType?: string;
   isLive?: boolean;
+  channelId?: string;
+  channelName?: string;
+  previousChannelId?: string;
+  selectionSource?: 'channel_list' | 'epg' | 'unknown' | string;
+  changeSource?: 'channel_list' | 'epg' | 'unknown' | string;
+  hasChannelChangedEmitted?: boolean;
   profileId?: string;
   profileType?: 'adult' | 'kids';
   startPosition: number;
@@ -139,6 +155,8 @@ export interface ActivePlaybackSession {
 export class PlaybackSessionManager {
   private static instance: PlaybackSessionManager;
   private currentSession: ActivePlaybackSession | null = null;
+  private lastActiveChannelId: string | null = null;
+  private lastActiveChannelName: string | null = null;
   private readonly analytics: AnalyticsService;
 
   constructor(analytics: AnalyticsService = analyticsService) {
@@ -150,6 +168,22 @@ export class PlaybackSessionManager {
       PlaybackSessionManager.instance = new PlaybackSessionManager();
     }
     return PlaybackSessionManager.instance;
+  }
+
+  public getLastActiveChannelId(): string | null {
+    return this.lastActiveChannelId;
+  }
+
+  public setLastActiveChannelId(channelId: string | null): void {
+    this.lastActiveChannelId = channelId;
+  }
+
+  public getPreviousChannelId(): string | null {
+    return this.currentSession?.previousChannelId ?? null;
+  }
+
+  public getCurrentChannelId(): string | null {
+    return this.currentSession?.channelId ?? null;
   }
 
   /**
@@ -256,9 +290,22 @@ export class PlaybackSessionManager {
 
     const playbackSessionId = generatePlaybackSessionId();
     const now = Date.now();
+    const isLive = Boolean(options.isLive || options.contentType === 'live');
     const contentType =
-      options.contentType || (options.isLive ? 'live' : 'movie');
+      options.contentType || (isLive ? 'live' : 'movie');
     const playbackType = options.playbackType || contentType;
+    const channelId = options.channelId;
+    let previousChannelId = options.previousChannelId;
+
+    if (isLive && channelId) {
+      if (
+        !previousChannelId &&
+        this.lastActiveChannelId &&
+        this.lastActiveChannelId !== channelId
+      ) {
+        previousChannelId = this.lastActiveChannelId;
+      }
+    }
 
     const session: ActivePlaybackSession = {
       playbackSessionId,
@@ -267,7 +314,13 @@ export class PlaybackSessionManager {
       contentType,
       playbackType,
       streamType: options.streamType,
-      isLive: Boolean(options.isLive),
+      isLive,
+      channelId,
+      channelName: options.channelName,
+      previousChannelId,
+      selectionSource: options.selectionSource,
+      changeSource: options.changeSource || (options.selectionSource ?? 'epg'),
+      hasChannelChangedEmitted: false,
       profileId: options.profileId,
       profileType: options.profileType,
       startPosition: options.startPosition || 0,
@@ -346,6 +399,14 @@ export class PlaybackSessionManager {
       profileId: this.currentSession.profileId,
       profileType: this.currentSession.profileType,
       startPosition,
+      ...(this.currentSession.channelId
+        ? {
+            channelId: this.currentSession.channelId,
+            channel_id: this.currentSession.channelId,
+            channelName: this.currentSession.channelName,
+            channel_name: this.currentSession.channelName,
+          }
+        : {}),
     };
 
     try {
@@ -397,6 +458,14 @@ export class PlaybackSessionManager {
       isLive: this.currentSession.isLive,
       profileId: this.currentSession.profileId,
       profileType: this.currentSession.profileType,
+      ...(this.currentSession.channelId
+        ? {
+            channelId: this.currentSession.channelId,
+            channel_id: this.currentSession.channelId,
+            channelName: this.currentSession.channelName,
+            channel_name: this.currentSession.channelName,
+          }
+        : {}),
     };
 
     try {
@@ -472,6 +541,14 @@ export class PlaybackSessionManager {
       startPosition: startPos,
       start_position: startPos,
       duration: dur,
+      ...(this.currentSession.channelId
+        ? {
+            channelId: this.currentSession.channelId,
+            channel_id: this.currentSession.channelId,
+            channelName: this.currentSession.channelName,
+            channel_name: this.currentSession.channelName,
+          }
+        : {}),
     };
 
     try {
@@ -480,6 +557,32 @@ export class PlaybackSessionManager {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[PlaybackSessionManager] trackPlaybackStarted failed:', err);
       }
+    }
+
+    // Confirm channel change on successful live playback start
+    if (
+      this.currentSession.isLive &&
+      this.currentSession.channelId &&
+      this.currentSession.previousChannelId &&
+      this.currentSession.previousChannelId !== this.currentSession.channelId &&
+      !this.currentSession.hasChannelChangedEmitted
+    ) {
+      this.currentSession.hasChannelChangedEmitted = true;
+      await this.recordLiveChannelChanged({
+        previous_channel_id: this.currentSession.previousChannelId,
+        previousChannelId: this.currentSession.previousChannelId,
+        channel_id: this.currentSession.channelId,
+        channelId: this.currentSession.channelId,
+        playback_session_id: this.currentSession.playbackSessionId,
+        playbackSessionId: this.currentSession.playbackSessionId,
+        change_source: this.currentSession.changeSource || 'epg',
+        changeSource: this.currentSession.changeSource || 'epg',
+      });
+    }
+
+    if (this.currentSession.isLive && this.currentSession.channelId) {
+      this.lastActiveChannelId = this.currentSession.channelId;
+      this.lastActiveChannelName = this.currentSession.channelName || null;
     }
   }
 
@@ -560,6 +663,14 @@ export class PlaybackSessionManager {
       startup_time_ms: startupTimeMs,
       startupTimeMs,
       position: pos,
+      ...(this.currentSession.channelId
+        ? {
+            channelId: this.currentSession.channelId,
+            channel_id: this.currentSession.channelId,
+            channelName: this.currentSession.channelName,
+            channel_name: this.currentSession.channelName,
+          }
+        : {}),
     };
 
     try {
@@ -1020,6 +1131,14 @@ export class PlaybackSessionManager {
       reason: params?.reason || controlledStopReason,
       stopReason: controlledStopReason,
       stop_reason: controlledStopReason,
+      ...(this.currentSession.channelId
+        ? {
+            channelId: this.currentSession.channelId,
+            channel_id: this.currentSession.channelId,
+            channelName: this.currentSession.channelName,
+            channel_name: this.currentSession.channelName,
+          }
+        : {}),
     };
 
     this.currentSession.state = 'stopped';
@@ -1108,6 +1227,14 @@ export class PlaybackSessionManager {
       isFatal,
       is_fatal: isFatal,
       position: numericPos,
+      ...(this.currentSession.channelId
+        ? {
+            channelId: this.currentSession.channelId,
+            channel_id: this.currentSession.channelId,
+            channelName: this.currentSession.channelName,
+            channel_name: this.currentSession.channelName,
+          }
+        : {}),
     };
 
     this.currentSession.hasPlaybackError = true;
@@ -1181,6 +1308,14 @@ export class PlaybackSessionManager {
       seek_start_position: startPos,
       seekTargetPosition: targetPos,
       seek_target_position: targetPos,
+      ...(this.currentSession.channelId
+        ? {
+            channelId: this.currentSession.channelId,
+            channel_id: this.currentSession.channelId,
+            channelName: this.currentSession.channelName,
+            channel_name: this.currentSession.channelName,
+          }
+        : {}),
     };
 
     try {
@@ -1235,6 +1370,14 @@ export class PlaybackSessionManager {
       seek_target_position: targetPos,
       seekDurationMs,
       seek_duration_ms: seekDurationMs,
+      ...(this.currentSession.channelId
+        ? {
+            channelId: this.currentSession.channelId,
+            channel_id: this.currentSession.channelId,
+            channelName: this.currentSession.channelName,
+            channel_name: this.currentSession.channelName,
+          }
+        : {}),
     };
 
     try {
@@ -1609,10 +1752,93 @@ export class PlaybackSessionManager {
   }
 
   /**
+   * Day 6 Event: live_channel_selected
+   * Tracks user explicit intent to select a live channel.
+   */
+  public async recordLiveChannelSelected(
+    params: LiveChannelSelectedParams,
+  ): Promise<void> {
+    try {
+      await this.analytics.trackLiveChannelSelected(params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] trackLiveChannelSelected failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Day 6 Event: live_channel_changed
+   * Tracks confirmed successful transition from previous to new live channel.
+   */
+  public async recordLiveChannelChanged(
+    params: LiveChannelChangedParams,
+  ): Promise<void> {
+    try {
+      await this.analytics.trackLiveChannelChanged(params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] trackLiveChannelChanged failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Day 6 Event: epg_program_selected
+   * Tracks user explicit selection of an EPG program.
+   */
+  public async recordEpgProgramSelected(
+    params: EPGProgramSelectedParams,
+  ): Promise<void> {
+    try {
+      await this.analytics.trackEpgProgramSelected(params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] trackEpgProgramSelected failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Day 6 Event: go_live
+   * Tracks user explicit selection of Go Live action during live playback.
+   */
+  public async recordGoLive(params?: Partial<GoLiveParams>): Promise<void> {
+    const channelId =
+      params?.channel_id ||
+      params?.channelId ||
+      this.currentSession?.channelId ||
+      '';
+    const playbackSessionId =
+      params?.playback_session_id ||
+      params?.playbackSessionId ||
+      this.currentSession?.playbackSessionId;
+    try {
+      await this.analytics.trackGoLive({
+        channel_id: channelId,
+        channelId,
+        ...(playbackSessionId
+          ? {
+              playback_session_id: playbackSessionId,
+              playbackSessionId,
+            }
+          : {}),
+        ...params,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] trackGoLive failed:', err);
+      }
+    }
+  }
+
+  /**
    * Internal test helper to reset session state.
    */
   public __resetForTesting(): void {
     this.currentSession = null;
+    this.lastActiveChannelId = null;
+    this.lastActiveChannelName = null;
   }
 }
 
