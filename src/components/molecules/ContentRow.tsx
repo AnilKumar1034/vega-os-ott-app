@@ -40,6 +40,7 @@ export const ContentRow = React.forwardRef<any, ContentRowProps>(
               onContentFocus={onContentFocus}
               shouldPreferFocus={shouldPreferFocus}
               onMenuEscapeLeft={onMenuEscapeLeft}
+              rowId={row.id}
             />
           )}
           showsHorizontalScrollIndicator={false}

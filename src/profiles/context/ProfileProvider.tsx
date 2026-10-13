@@ -146,12 +146,39 @@ export const ProfileProvider = ({children}: {children: ReactNode}) => {
     }
   };
 
-  const switchProfile = async (profileId: string) => {
+  const switchProfile = async (
+    profileId: string,
+    options?: {source?: string},
+  ) => {
     const matched = profiles.find((p) => p.id === profileId);
     if (!matched) {
       throw new Error(`Profile ${profileId} not found.`);
     }
+    const previousProfile = activeProfile;
     await setActiveProfile(matched);
+
+    const isGenuineSwitch =
+      previousProfile !== null && previousProfile.id !== matched.id;
+
+    if (isGenuineSwitch) {
+      await analyticsService
+        .trackProfileSwitched({
+          previous_profile_type: previousProfile.isKids ? 'kids' : 'adult',
+          new_profile_type: matched.isKids ? 'kids' : 'adult',
+          switch_source: options?.source || 'profile_picker',
+        })
+        .catch(() => {});
+    }
+
+    await analyticsService
+      .trackProfileSelected({
+        profileId: matched.id,
+        profileType: matched.isKids ? 'kids' : 'adult',
+        profile_type: matched.isKids ? 'kids' : 'adult',
+        is_kids_profile: Boolean(matched.isKids),
+        selection_source: options?.source || 'profile_picker',
+      })
+      .catch(() => {});
   };
 
   const refreshProfiles = async (): Promise<UserProfile[]> => {
@@ -221,6 +248,15 @@ export const ProfileProvider = ({children}: {children: ReactNode}) => {
       const updatedProfiles = [...profiles, created];
       setProfiles(updatedProfiles);
       await setActiveProfile(created);
+
+      await analyticsService
+        .trackProfileCreated({
+          profile_type: created.isKids ? 'kids' : 'adult',
+          is_kids_profile: Boolean(created.isKids),
+          creation_source: 'create_profile',
+        })
+        .catch(() => {});
+
       return created;
     } catch (err: any) {
       console.log('Error creating profile:', err);
@@ -286,13 +322,24 @@ export const ProfileProvider = ({children}: {children: ReactNode}) => {
     setIsLoadingProfiles(true);
     setError(null);
     try {
+      const target = profiles.find((p) => p.id === profileId);
+      const wasActive = activeProfile?.id === profileId;
+
       await profileRepository.deleteProfile(user.uid, profileId);
       const updatedProfiles = profiles.filter((p) => p.id !== profileId);
       setProfiles(updatedProfiles);
 
       if (activeProfile?.id === profileId) {
         await setActiveProfile(null);
+        analyticsService.setProfile(null);
       }
+
+      await analyticsService
+        .trackProfileDeleted({
+          deleted_profile_type: target?.isKids ? 'kids' : 'adult',
+          was_active_profile: wasActive,
+        })
+        .catch(() => {});
     } catch (err: any) {
       console.log('Error deleting profile:', err);
       setError(err?.message || 'FAILED_TO_DELETE_PROFILE');

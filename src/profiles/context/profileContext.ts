@@ -16,7 +16,10 @@ export interface ProfileContextType {
   isLoadingParentalSettings: boolean;
   setParentAuthorized: (authorized: boolean) => void;
   setActiveProfile: (profile: UserProfile | null) => Promise<void>;
-  switchProfile: (profileId: string) => Promise<void>;
+  switchProfile: (
+    profileId: string,
+    options?: {source?: string},
+  ) => Promise<void>;
   refreshProfiles: () => Promise<UserProfile[]>;
   refreshParentalSettings: () => Promise<ParentalControlsSettings | null>;
   verifyParentPin: (pin: string) => Promise<boolean>;

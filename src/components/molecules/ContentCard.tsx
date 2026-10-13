@@ -10,6 +10,7 @@ import {useNavigation} from '@react-navigation/native';
 import {useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {Routes} from '../../constants/routes';
 import {isSelectEvent, isKeyDown} from '../../utils/inputUtils';
+import {analyticsService} from '../../analytics';
 import {styles} from './ContentCard.styles';
 
 export type CardLayoutType = 'horizontal' | 'portrait' | 'grid';
@@ -33,6 +34,10 @@ export interface ContentCardProps {
   onPress?: () => void;
   hasTVPreferredFocus?: boolean;
   onMenuEscapeLeft?: () => void;
+  rowId?: string;
+  isContinueWatching?: boolean;
+  savedPositionSeconds?: number;
+  contentType?: string;
 }
 
 const useSafeNavigation = () => {
@@ -67,16 +72,47 @@ export const ContentCard = ({
   onPress,
   hasTVPreferredFocus,
   onMenuEscapeLeft,
+  rowId,
+  isContinueWatching,
+  savedPositionSeconds,
+  contentType,
 }: ContentCardProps) => {
   const navigation = useSafeNavigation();
   const [isFocused, setIsFocused] = useState(false);
   const isFocusedRef = useRef(isFocused);
   isFocusedRef.current = isFocused;
 
+  const trackSelectionIfContinueWatching = () => {
+    if (isContinueWatching || rowId === 'continue-watching') {
+      const contentId = id || title.toLowerCase().replace(/\s+/g, '-');
+      const resolvedContentType =
+        contentType || (meta?.includes('Series') ? 'episode' : 'movie');
+      const params: any = {
+        content_id: contentId,
+        contentId,
+        content_type: resolvedContentType,
+        contentType: resolvedContentType,
+        selection_source: 'continue_watching',
+        selectionSource: 'continue_watching',
+      };
+      if (
+        savedPositionSeconds !== undefined &&
+        Number.isFinite(savedPositionSeconds) &&
+        savedPositionSeconds > 0
+      ) {
+        params.saved_position_seconds = Math.floor(savedPositionSeconds);
+        params.savedPositionSeconds = Math.floor(savedPositionSeconds);
+      }
+      analyticsService.trackContinueWatchingSelected(params).catch(() => {});
+    }
+  };
+
   const handlePress = () => {
+    trackSelectionIfContinueWatching();
     if (onPress) {
       onPress();
     } else {
+      const isCW = isContinueWatching || rowId === 'continue-watching';
       navigation.navigate(Routes.MovieDetail, {
         movie: {
           id: id || title.toLowerCase().replace(/\s+/g, '-'),
@@ -90,7 +126,11 @@ export const ContentCard = ({
           cast,
           director,
           videoUrl,
+          savedPositionSeconds,
+          contentType,
         },
+        selectionSource: isCW ? 'continue_watching' : undefined,
+        source: isCW ? 'continue_watching' : undefined,
       });
     }
   };
@@ -107,7 +147,9 @@ export const ContentCard = ({
         onMenuEscapeLeft();
       }
     } else if (type === 'play' || type === 'playpause') {
+      trackSelectionIfContinueWatching();
       if (videoUrl) {
+        const isCW = isContinueWatching || rowId === 'continue-watching';
         navigation.navigate(Routes.VideoPlayer, {
           movie: {
             id: id || title.toLowerCase().replace(/\s+/g, '-'),
@@ -121,8 +163,12 @@ export const ContentCard = ({
             cast,
             director,
             videoUrl,
+            savedPositionSeconds,
+            contentType,
           },
           videoUrl,
+          selectionSource: isCW ? 'continue_watching' : undefined,
+          source: isCW ? 'continue_watching' : undefined,
         });
       } else {
         handlePress();

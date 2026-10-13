@@ -156,6 +156,9 @@ export const HomeScreen = () => {
     return continueWatchRecords
       .map((record) => {
         const fullItem = findContentById(record.contentId);
+        const isEpisode = Boolean(
+          fullItem?.seriesId || fullItem?.meta?.includes('Series'),
+        );
         return {
           id: record.contentId,
           maturityRating: fullItem?.maturityRating,
@@ -165,6 +168,8 @@ export const HomeScreen = () => {
             : require('../assets/background.png'),
           progress: record.progress,
           videoUrl: record.videoUrl,
+          savedPositionSeconds: record.currentTime,
+          contentType: (isEpisode ? 'episode' : 'movie') as 'episode' | 'movie',
         };
       })
       .filter((item) => canProfileAccessContent(activeProfile, item));

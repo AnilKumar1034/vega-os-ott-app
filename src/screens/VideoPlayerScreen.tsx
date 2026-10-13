@@ -221,6 +221,22 @@ export const VideoPlayerScreen = () => {
   const hasResolvedMovie =
     Boolean(route.params?.movie) || Boolean(deeplinkMovie);
 
+  const resolvedResumeSource = useMemo<
+    'continue_watching' | 'details' | 'deeplink' | undefined
+  >(() => {
+    if (hasExplicitSeek !== null || route.params?.seek !== undefined) {
+      return 'deeplink';
+    }
+    const rawSource = route.params?.selectionSource || route.params?.source;
+    if (rawSource === 'continue_watching') {
+      return 'continue_watching';
+    }
+    if (rawSource === 'details' || Boolean(route.params?.movie)) {
+      return 'details';
+    }
+    return undefined;
+  }, [hasExplicitSeek, route.params]);
+
   useEffect(() => {
     if (!route.params?.movieId || hasResolvedMovie) {
       return;
@@ -291,6 +307,7 @@ export const VideoPlayerScreen = () => {
   const [isPlayerInitialized, setIsPlayerInitialized] = useState(false);
   const [resumeTime, setResumeTime] = useState<number>(0);
   const lastSavedTimeRef = useRef<number>(0);
+  const lastReportedProgressPosRef = useRef<number>(-1);
   const progressTimerRef = useRef<any>(null);
   const timeSyncTimerRef = useRef<any>(null);
   const pendingSeekRef = useRef<number | null>(null);
@@ -1438,6 +1455,14 @@ export const VideoPlayerScreen = () => {
 
           if (Number.isFinite(seekTime) && seekTime > 0) {
             player.currentTime = seekTime;
+            if (!isLive) {
+              playbackSessionManager
+                .recordResumePlayback({
+                  resumePositionSeconds: seekTime,
+                  resumeSource: resolvedResumeSource,
+                })
+                .catch(() => {});
+            }
           }
         } catch (error) {
           console.log('Resume seek error:', error);
@@ -1755,6 +1780,14 @@ export const VideoPlayerScreen = () => {
             : resumeTime;
         if (Number.isFinite(seekTime) && seekTime > 0) {
           player.currentTime = seekTime;
+          if (!isLive) {
+            playbackSessionManager
+              .recordResumePlayback({
+                resumePositionSeconds: seekTime,
+                resumeSource: resolvedResumeSource,
+              })
+              .catch(() => {});
+          }
         }
       } catch (error) {
         console.log('Resume seek error:', error);
@@ -1762,7 +1795,7 @@ export const VideoPlayerScreen = () => {
       pendingSeekRef.current = null;
       shouldApplySeekRef.current = false;
     }
-  }, [isLive, player, resumeTime]);
+  }, [isLive, player, resolvedResumeSource, resumeTime]);
 
   const persistProgress = useCallback(
     async (force = false) => {
@@ -1789,6 +1822,23 @@ export const VideoPlayerScreen = () => {
           currentTime,
           duration,
         );
+
+        const roundedPos = Math.floor(currentTime);
+        const lastReported = lastReportedProgressPosRef.current;
+        const shouldReport =
+          lastReported < 0 ||
+          (roundedPos > 0 &&
+            roundedPos !== lastReported &&
+            Math.abs(roundedPos - lastReported) >= 15);
+
+        if (shouldReport) {
+          lastReportedProgressPosRef.current = roundedPos;
+          playbackSessionManager
+            .recordPlaybackProgressSaved({
+              positionSeconds: roundedPos,
+            })
+            .catch(() => {});
+        }
       } catch (error: any) {
         console.log('Save continue watch error:', error);
       }

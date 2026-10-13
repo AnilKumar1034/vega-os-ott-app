@@ -38,12 +38,19 @@ import {
   PlaybackStoppedParams,
   PlayerReadyParams,
   ProfileSelectedEventParams,
+  ProfileCreatedEventParams,
+  ProfileSwitchedEventParams,
+  ProfileDeletedEventParams,
+  ProfileEditCompletedEventParams,
   QualitySelectedParams,
   ResolutionChangedParams,
   SeekCompletedParams,
   SeekStartedParams,
   SubtitleTrackChangedParams,
   EPGProgramSelectedParams,
+  ContinueWatchingSelectedParams,
+  ResumePlaybackParams,
+  PlaybackProgressSavedParams,
 } from './analyticsTypes';
 
 const getAsyncStorage = () => {
@@ -523,7 +530,7 @@ export class AnalyticsService implements IAnalyticsService {
     params: ProfileSelectedEventParams,
   ): Promise<void> {
     try {
-      if (!params || !params.profileId) {
+      if (!params) {
         if (typeof __DEV__ !== 'undefined' && __DEV__) {
           console.warn(
             '[Analytics] trackProfileSelected called with invalid params.',
@@ -531,17 +538,180 @@ export class AnalyticsService implements IAnalyticsService {
         }
         return;
       }
-      this.setProfile({
-        profileId: params.profileId,
-        profileType: params.profileType,
-      });
+      const pId = params.profileId || params.profile_id;
+      const pType = params.profile_type || params.profileType || 'adult';
+      const isKids =
+        typeof params.is_kids_profile === 'boolean'
+          ? params.is_kids_profile
+          : typeof params.isKidsProfile === 'boolean'
+          ? params.isKidsProfile
+          : pType === 'kids';
+      const source =
+        (params.selection_source as string) ||
+        (params.selectionSource as string) ||
+        'profile_picker';
+
+      if (pId) {
+        this.setProfile({
+          profileId: pId,
+          profileType: pType,
+        });
+      }
+
       await this.track(AnalyticsEvent.PROFILE_SELECTED, {
-        profileId: params.profileId,
-        profileType: params.profileType,
+        profile_type: pType,
+        profileType: pType,
+        is_kids_profile: isKids,
+        selection_source: source,
+        ...(pId ? {profileId: pId, profile_id: pId} : {}),
       });
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackProfileSelected error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks profile creation event when a profile is successfully created.
+   */
+  public async trackProfileCreated(
+    params: ProfileCreatedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackProfileCreated called with missing params.',
+          );
+        }
+        return;
+      }
+      const pType = params.profile_type || params.profileType || 'adult';
+      const isKids =
+        typeof params.is_kids_profile === 'boolean'
+          ? params.is_kids_profile
+          : typeof params.isKidsProfile === 'boolean'
+          ? params.isKidsProfile
+          : pType === 'kids';
+      const source =
+        (params.creation_source as string) ||
+        (params.creationSource as string) ||
+        'create_profile';
+
+      await this.track(AnalyticsEvent.PROFILE_CREATED, {
+        profile_type: pType,
+        is_kids_profile: isKids,
+        creation_source: source,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackProfileCreated error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks profile switched event when active profile changes to a different profile.
+   */
+  public async trackProfileSwitched(
+    params: ProfileSwitchedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackProfileSwitched called with missing params.',
+          );
+        }
+        return;
+      }
+      const prevType =
+        params.previous_profile_type || params.previousProfileType || 'adult';
+      const newType =
+        params.new_profile_type || params.newProfileType || 'adult';
+      const source =
+        (params.switch_source as string) ||
+        (params.switchSource as string) ||
+        'profile_picker';
+
+      await this.track(AnalyticsEvent.PROFILE_SWITCHED, {
+        previous_profile_type: prevType,
+        new_profile_type: newType,
+        switch_source: source,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackProfileSwitched error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks profile deleted event when a profile is successfully removed.
+   */
+  public async trackProfileDeleted(
+    params: ProfileDeletedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackProfileDeleted called with missing params.',
+          );
+        }
+        return;
+      }
+      const deletedType =
+        params.deleted_profile_type || params.deletedProfileType || 'adult';
+      const wasActive =
+        typeof params.was_active_profile === 'boolean'
+          ? params.was_active_profile
+          : typeof params.wasActiveProfile === 'boolean'
+          ? params.wasActiveProfile
+          : false;
+
+      await this.track(AnalyticsEvent.PROFILE_DELETED, {
+        deleted_profile_type: deletedType,
+        was_active_profile: wasActive,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackProfileDeleted error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks profile edit completed event when a profile update succeeds.
+   */
+  public async trackProfileEditCompleted(
+    params: ProfileEditCompletedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackProfileEditCompleted called with missing params.',
+          );
+        }
+        return;
+      }
+      const pType = params.profile_type || params.profileType || 'adult';
+      const isKids =
+        typeof params.is_kids_profile === 'boolean'
+          ? params.is_kids_profile
+          : typeof params.isKidsProfile === 'boolean'
+          ? params.isKidsProfile
+          : pType === 'kids';
+
+      await this.track(AnalyticsEvent.PROFILE_EDIT_COMPLETED, {
+        profile_type: pType,
+        is_kids_profile: isKids,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackProfileEditCompleted error:', err);
       }
     }
   }
@@ -1186,6 +1356,99 @@ export class AnalyticsService implements IAnalyticsService {
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackLivePlaybackStarted error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks continue watching selected event when an item is selected from the Continue Watching section.
+   */
+  public async trackContinueWatchingSelected(
+    params: ContinueWatchingSelectedParams,
+  ): Promise<void> {
+    try {
+      if (!params || (!params.contentId && !params.content_id)) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackContinueWatchingSelected called with missing content_id.',
+          );
+        }
+        return;
+      }
+      const contentId = params.content_id || params.contentId || '';
+      const payload: ContinueWatchingSelectedParams = {
+        ...params,
+        content_id: contentId,
+        contentId,
+        selection_source: 'continue_watching',
+        selectionSource: 'continue_watching',
+      };
+      await this.track(AnalyticsEvent.CONTINUE_WATCHING_SELECTED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackContinueWatchingSelected error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks resume playback event when playback genuinely resumes from an existing saved position.
+   */
+  public async trackResumePlayback(
+    params: ResumePlaybackParams,
+  ): Promise<void> {
+    try {
+      if (!params || (!params.contentId && !params.content_id)) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackResumePlayback called with missing required content_id.',
+          );
+        }
+        return;
+      }
+      const resumePos =
+        typeof params.resume_position_seconds === 'number'
+          ? params.resume_position_seconds
+          : params.resumePositionSeconds;
+      if (
+        typeof resumePos !== 'number' ||
+        resumePos <= 0 ||
+        !Number.isFinite(resumePos)
+      ) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackResumePlayback called with invalid resume_position_seconds <= 0.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.RESUME_PLAYBACK, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackResumePlayback error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks playback progress saved event when progress is confirmed saved to persistence layer.
+   */
+  public async trackPlaybackProgressSaved(
+    params: PlaybackProgressSavedParams,
+  ): Promise<void> {
+    try {
+      if (!params || (!params.contentId && !params.content_id)) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn(
+            '[Analytics] trackPlaybackProgressSaved called with missing required content_id.',
+          );
+        }
+        return;
+      }
+      await this.track(AnalyticsEvent.PLAYBACK_PROGRESS_SAVED, params);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackPlaybackProgressSaved error:', err);
       }
     }
   }

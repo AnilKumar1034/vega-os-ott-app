@@ -6,6 +6,10 @@ export const AnalyticsEvent = {
   APP_OPEN: 'app_open',
   SCREEN_VIEW: 'screen_view',
   PROFILE_SELECTED: 'profile_selected',
+  PROFILE_CREATED: 'profile_created',
+  PROFILE_SWITCHED: 'profile_switched',
+  PROFILE_DELETED: 'profile_deleted',
+  PROFILE_EDIT_COMPLETED: 'profile_edit_completed',
   PLAYBACK_START_REQUESTED: 'playback_start_requested',
   PLAYER_READY: 'player_ready',
   PLAYBACK_STARTED: 'playback_started',
@@ -33,6 +37,10 @@ export const AnalyticsEvent = {
   EPG_PROGRAM_SELECTED: 'epg_program_selected',
   GO_LIVE: 'go_live',
   LIVE_PLAYBACK_STARTED: 'live_playback_started',
+  CONTINUE_WATCHING_SELECTED: 'continue_watching_selected',
+  RESUME_PLAYBACK: 'resume_playback',
+  PLAYBACK_PROGRESS_SAVED: 'playback_progress_saved',
+  CONTENT_COMPLETED: 'completed',
 } as const;
 
 export type AnalyticsEventName =

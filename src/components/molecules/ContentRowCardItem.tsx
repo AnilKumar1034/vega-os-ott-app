@@ -9,6 +9,7 @@ interface ContentRowCardItemProps {
   onContentFocus: () => void;
   shouldPreferFocus?: boolean;
   onMenuEscapeLeft?: () => void;
+  rowId?: string;
 }
 
 export const ContentRowCardItem = ({
@@ -18,11 +19,16 @@ export const ContentRowCardItem = ({
   onContentFocus,
   shouldPreferFocus,
   onMenuEscapeLeft,
+  rowId,
 }: ContentRowCardItemProps) => {
   return (
     <ContentCard
       {...item}
       layout={layout}
+      rowId={rowId}
+      isContinueWatching={rowId === 'continue-watching'}
+      savedPositionSeconds={item.savedPositionSeconds}
+      contentType={item.contentType}
       testID={`content-card-${item.id}`}
       onFocus={onContentFocus}
       hasTVPreferredFocus={shouldPreferFocus && index === 0}

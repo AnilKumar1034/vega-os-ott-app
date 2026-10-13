@@ -71,6 +71,15 @@ describe('PlaybackSessionManager (Playback Telemetry Lifecycle)', () => {
       trackResolutionChanged: jest.fn().mockImplementation((params) =>
         mockTrack(AnalyticsEvent.RESOLUTION_CHANGED, params),
       ),
+      trackContinueWatchingSelected: jest.fn().mockImplementation((params) =>
+        mockTrack(AnalyticsEvent.CONTINUE_WATCHING_SELECTED, params),
+      ),
+      trackResumePlayback: jest.fn().mockImplementation((params) =>
+        mockTrack(AnalyticsEvent.RESUME_PLAYBACK, params),
+      ),
+      trackPlaybackProgressSaved: jest.fn().mockImplementation((params) =>
+        mockTrack(AnalyticsEvent.PLAYBACK_PROGRESS_SAVED, params),
+      ),
     } as unknown as AnalyticsService;
 
     manager = new PlaybackSessionManager(mockAnalytics);
@@ -1760,6 +1769,151 @@ describe('PlaybackSessionManager (Playback Telemetry Lifecycle)', () => {
         await expect(
           safeManager.recordPlaybackError(new Error('Player broke'), { isFatal: true }),
         ).resolves.not.toThrow();
+      });
+    });
+
+    describe('Day 7: Continue Watching & Playback Progress Milestones in PlaybackSessionManager', () => {
+      it('records resume_playback when resuming from a positive saved position', async () => {
+        await manager.startSession({
+          contentId: 'kalki-2898',
+          contentType: 'movie',
+          profileId: 'profile-anil',
+          profileType: 'adult',
+        });
+
+        await manager.recordResumePlayback({
+          resumePositionSeconds: 450,
+          resumeSource: 'continue_watching',
+        });
+
+        expect(mockAnalytics.trackResumePlayback).toHaveBeenCalledTimes(1);
+        expect(mockAnalytics.trackResumePlayback).toHaveBeenCalledWith(
+          expect.objectContaining({
+            contentId: 'kalki-2898',
+            content_id: 'kalki-2898',
+            resumePositionSeconds: 450,
+            resume_position_seconds: 450,
+            resumeSource: 'continue_watching',
+            resume_source: 'continue_watching',
+            profileId: 'profile-anil',
+            profile_id: 'profile-anil',
+          }),
+        );
+      });
+
+      it('does NOT emit resume_playback if resumePositionSeconds <= 0', async () => {
+        await manager.startSession({
+          contentId: 'kalki-2898',
+          contentType: 'movie',
+        });
+
+        await manager.recordResumePlayback({
+          resumePositionSeconds: 0,
+        });
+
+        expect(mockAnalytics.trackResumePlayback).not.toHaveBeenCalled();
+      });
+
+      it('does NOT emit resume_playback twice for duplicate callbacks in the same session', async () => {
+        await manager.startSession({
+          contentId: 'kalki-2898',
+          contentType: 'movie',
+        });
+
+        await manager.recordResumePlayback({
+          resumePositionSeconds: 300,
+          resumeSource: 'continue_watching',
+        });
+        await manager.recordResumePlayback({
+          resumePositionSeconds: 300,
+          resumeSource: 'continue_watching',
+        });
+
+        expect(mockAnalytics.trackResumePlayback).toHaveBeenCalledTimes(1);
+      });
+
+      it('does NOT emit resume_playback for Live TV sessions', async () => {
+        await manager.startSession({
+          contentId: 'live-stream',
+          contentType: 'live',
+          isLive: true,
+        });
+
+        await manager.recordResumePlayback({
+          resumePositionSeconds: 300,
+        });
+
+        expect(mockAnalytics.trackResumePlayback).not.toHaveBeenCalled();
+      });
+
+      it('records playback_progress_saved after persistence succeeds', async () => {
+        const sessionId = await manager.startSession({
+          contentId: 'kalki-2898',
+          contentType: 'movie',
+          profileId: 'profile-anil',
+          profileType: 'adult',
+        });
+
+        await manager.recordPlaybackProgressSaved({
+          positionSeconds: 120,
+        });
+
+        expect(mockAnalytics.trackPlaybackProgressSaved).toHaveBeenCalledTimes(1);
+        expect(mockAnalytics.trackPlaybackProgressSaved).toHaveBeenCalledWith(
+          expect.objectContaining({
+            playbackSessionId: sessionId,
+            playback_session_id: sessionId,
+            contentId: 'kalki-2898',
+            content_id: 'kalki-2898',
+            positionSeconds: 120,
+            position_seconds: 120,
+            profileId: 'profile-anil',
+            profile_id: 'profile-anil',
+          }),
+        );
+        expect(manager.getLastReportedProgressSeconds()).toBe(120);
+      });
+
+      it('preserves existing playbackSessionId across progress saves, pauses, and seeks', async () => {
+        const initialSessionId = await manager.startSession({
+          contentId: 'kalki-2898',
+          contentType: 'movie',
+        });
+
+        await manager.recordPause(100);
+        await manager.recordResume(100);
+        await manager.recordSeekStarted(100, 200);
+        await manager.recordSeekCompleted(200);
+        await manager.recordPlaybackProgressSaved({ positionSeconds: 200 });
+
+        expect(manager.getCurrentSession()?.playbackSessionId).toBe(initialSessionId);
+      });
+
+      it('next episode start terminates old session and creates distinct new session without duplicate completion', async () => {
+        const ep1SessionId = await manager.startSession({
+          contentId: 'episode-1',
+          contentType: 'episode',
+        });
+
+        // Natural end of ep 1
+        await manager.recordComplete({ duration: 1800 });
+        expect(mockAnalytics.trackPlaybackCompleted).toHaveBeenCalledTimes(1);
+        expect(mockAnalytics.trackPlaybackCompleted).toHaveBeenCalledWith(
+          expect.objectContaining({
+            contentId: 'episode-1',
+            playbackSessionId: ep1SessionId,
+          }),
+        );
+
+        // Ep 2 starts
+        const ep2SessionId = await manager.startSession({
+          contentId: 'episode-2',
+          contentType: 'episode',
+        });
+
+        expect(ep2SessionId).not.toBe(ep1SessionId);
+        // Completed should NOT have fired again
+        expect(mockAnalytics.trackPlaybackCompleted).toHaveBeenCalledTimes(1);
       });
     });
   });

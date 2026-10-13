@@ -25,6 +25,8 @@ import {
   SeekCompletedParams,
   SeekStartedParams,
   SubtitleTrackChangedParams,
+  ResumePlaybackParams,
+  PlaybackProgressSavedParams,
 } from './analyticsTypes';
 import {
   normalizePlaybackError,
@@ -124,6 +126,9 @@ export interface ActivePlaybackSession {
   currentBitrate?: number | string;
   currentWidth?: number;
   currentHeight?: number;
+  // Resume & Progress milestones (Day 7)
+  hasResumePlaybackEmitted?: boolean;
+  lastReportedProgressSeconds?: number;
 }
 
 /**
@@ -274,6 +279,20 @@ export class PlaybackSessionManager {
   }
 
   /**
+   * Returns whether resume_playback has already been emitted for this session.
+   */
+  public hasResumePlaybackEmitted(): boolean {
+    return Boolean(this.currentSession?.hasResumePlaybackEmitted);
+  }
+
+  /**
+   * Returns the last confirmed progress checkpoint in seconds reported to analytics.
+   */
+  public getLastReportedProgressSeconds(): number | undefined {
+    return this.currentSession?.lastReportedProgressSeconds;
+  }
+
+  /**
    * Step 1: New Content -> Create playbackSessionId -> playback_start_requested -> playback_started.
    * If a previous session was active without completion, automatically stops it.
    */
@@ -321,8 +340,9 @@ export class PlaybackSessionManager {
       selectionSource: options.selectionSource,
       changeSource: options.changeSource || (options.selectionSource ?? 'epg'),
       hasChannelChangedEmitted: false,
-      profileId: options.profileId,
-      profileType: options.profileType,
+      profileId: options.profileId || this.analytics.getContext?.()?.profileId,
+      profileType:
+        options.profileType || this.analytics.getContext?.()?.profileType,
       startPosition: options.startPosition || 0,
       duration: options.duration || 0,
       sessionStartTime: now,
@@ -942,6 +962,144 @@ export class PlaybackSessionManager {
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[PlaybackSessionManager] trackPlaybackResumed failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Step 4c: resume_playback event.
+   * Emitted when playback genuinely resumes from an existing saved position.
+   * Emitted at most once per playback session. Starting from 0 or unavailable position must not emit.
+   */
+  public async recordResumePlayback(params: {
+    resumePositionSeconds: number;
+    resumeSource?: 'continue_watching' | 'details' | 'deeplink' | string;
+  }): Promise<void> {
+    if (!this.currentSession) {
+      return;
+    }
+    if (this.currentSession.isLive) {
+      return;
+    }
+    if (
+      this.currentSession.state === 'completed' ||
+      this.currentSession.state === 'stopped' ||
+      this.currentSession.state === 'error'
+    ) {
+      return;
+    }
+    if (this.currentSession.hasResumePlaybackEmitted) {
+      return;
+    }
+    const numericPosition =
+      typeof params?.resumePositionSeconds === 'number' &&
+      Number.isFinite(params.resumePositionSeconds)
+        ? Math.floor(params.resumePositionSeconds)
+        : 0;
+
+    if (numericPosition <= 0) {
+      return;
+    }
+
+    this.currentSession.hasResumePlaybackEmitted = true;
+
+    const resumeParams: ResumePlaybackParams = {
+      playbackSessionId: this.currentSession.playbackSessionId,
+      playback_session_id: this.currentSession.playbackSessionId,
+      contentId: this.currentSession.contentId,
+      content_id: this.currentSession.contentId,
+      contentTitle: this.currentSession.contentTitle,
+      contentType: this.currentSession.contentType,
+      content_type: this.currentSession.contentType,
+      playbackType:
+        this.currentSession.playbackType || this.currentSession.contentType,
+      playback_type:
+        this.currentSession.playbackType || this.currentSession.contentType,
+      streamType: this.currentSession.streamType,
+      isLive: this.currentSession.isLive,
+      is_live: this.currentSession.isLive,
+      profileId: this.currentSession.profileId,
+      profile_id: this.currentSession.profileId,
+      profileType: this.currentSession.profileType,
+      profile_type: this.currentSession.profileType,
+      resume_position_seconds: numericPosition,
+      resumePositionSeconds: numericPosition,
+      ...(params.resumeSource
+        ? {
+            resume_source: params.resumeSource,
+            resumeSource: params.resumeSource,
+          }
+        : {}),
+    };
+
+    try {
+      await this.analytics.trackResumePlayback(resumeParams);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] trackResumePlayback failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Step 4d: playback_progress_saved event.
+   * Emitted only after a progress persistence operation succeeds in Firestore.
+   */
+  public async recordPlaybackProgressSaved(params: {
+    positionSeconds: number;
+  }): Promise<void> {
+    if (!this.currentSession) {
+      return;
+    }
+    if (this.currentSession.isLive) {
+      return;
+    }
+    if (
+      this.currentSession.state === 'completed' ||
+      this.currentSession.state === 'stopped' ||
+      this.currentSession.state === 'error'
+    ) {
+      return;
+    }
+    const numericPosition =
+      typeof params?.positionSeconds === 'number' &&
+      Number.isFinite(params.positionSeconds)
+        ? Math.floor(params.positionSeconds)
+        : 0;
+
+    this.currentSession.lastReportedProgressSeconds = numericPosition;
+
+    const progressParams: PlaybackProgressSavedParams = {
+      playbackSessionId: this.currentSession.playbackSessionId,
+      playback_session_id: this.currentSession.playbackSessionId,
+      contentId: this.currentSession.contentId,
+      content_id: this.currentSession.contentId,
+      contentTitle: this.currentSession.contentTitle,
+      contentType: this.currentSession.contentType,
+      content_type: this.currentSession.contentType,
+      playbackType:
+        this.currentSession.playbackType || this.currentSession.contentType,
+      playback_type:
+        this.currentSession.playbackType || this.currentSession.contentType,
+      streamType: this.currentSession.streamType,
+      isLive: this.currentSession.isLive,
+      is_live: this.currentSession.isLive,
+      profileId: this.currentSession.profileId,
+      profile_id: this.currentSession.profileId,
+      profileType: this.currentSession.profileType,
+      profile_type: this.currentSession.profileType,
+      position_seconds: numericPosition,
+      positionSeconds: numericPosition,
+    };
+
+    try {
+      await this.analytics.trackPlaybackProgressSaved(progressParams);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn(
+          '[PlaybackSessionManager] trackPlaybackProgressSaved failed:',
+          err,
+        );
       }
     }
   }

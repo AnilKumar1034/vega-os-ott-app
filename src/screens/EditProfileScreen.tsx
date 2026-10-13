@@ -18,6 +18,7 @@ import {useAuth} from '../context/authContext';
 import {DeleteProfileDialog} from '../profiles/components/DeleteProfileDialog';
 import {PinEntryDialog} from '../components/molecules/PinEntryDialog';
 import {useProfile} from '../profiles/hooks/useProfile';
+import {analyticsService} from '../analytics';
 import {
   PROFILE_NAME_MAX_LENGTH,
   validateProfileName,
@@ -220,6 +221,13 @@ export const EditProfileScreen = () => {
         notificationsEnabled,
         autoplayEnabled,
       });
+
+      await analyticsService
+        .trackProfileEditCompleted({
+          profile_type: isKids ? 'kids' : 'adult',
+          is_kids_profile: Boolean(isKids),
+        })
+        .catch(() => {});
 
       leaveEditor();
     } catch (err: any) {

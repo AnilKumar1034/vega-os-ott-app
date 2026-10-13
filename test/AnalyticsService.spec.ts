@@ -249,6 +249,79 @@ describe('AnalyticsService (Day 1 Analytics Foundation)', () => {
         }),
       );
     });
+
+    it('trackProfileCreated() logs profile_created event without personal data', async () => {
+      await analytics.trackProfileCreated({
+        profile_type: 'kids',
+        is_kids_profile: true,
+        creation_source: 'create_profile',
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.PROFILE_CREATED,
+        expect.objectContaining({
+          profile_type: 'kids',
+          is_kids_profile: true,
+          creation_source: 'create_profile',
+        }),
+      );
+      // Ensure no PII was leaked
+      const callArgs = mockLogEvent.mock.calls[mockLogEvent.mock.calls.length - 1][2];
+      expect(callArgs.email).toBeUndefined();
+      expect(callArgs.name).toBeUndefined();
+      expect(callArgs.profilename).toBeUndefined();
+    });
+
+    it('trackProfileSwitched() logs profile_switched event with previous and new types', async () => {
+      await analytics.trackProfileSwitched({
+        previous_profile_type: 'adult',
+        new_profile_type: 'kids',
+        switch_source: 'profile_picker',
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.PROFILE_SWITCHED,
+        expect.objectContaining({
+          previous_profile_type: 'adult',
+          new_profile_type: 'kids',
+          switch_source: 'profile_picker',
+        }),
+      );
+    });
+
+    it('trackProfileDeleted() logs profile_deleted event with was_active_profile', async () => {
+      await analytics.trackProfileDeleted({
+        deleted_profile_type: 'adult',
+        was_active_profile: true,
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.PROFILE_DELETED,
+        expect.objectContaining({
+          deleted_profile_type: 'adult',
+          was_active_profile: true,
+        }),
+      );
+    });
+
+    it('trackProfileEditCompleted() logs profile_edit_completed event', async () => {
+      await analytics.trackProfileEditCompleted({
+        profile_type: 'adult',
+        is_kids_profile: false,
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.PROFILE_EDIT_COMPLETED,
+        expect.objectContaining({
+          profile_type: 'adult',
+          is_kids_profile: false,
+        }),
+      );
+    });
   });
 
   describe('5. trackScreen()', () => {
@@ -784,6 +857,100 @@ describe('AnalyticsService (Day 1 Analytics Foundation)', () => {
             position: 150,
           }),
         );
+      });
+
+      it('tracks trackContinueWatchingSelected correctly with safe params', async () => {
+        await analytics.trackContinueWatchingSelected({
+          content_id: 'kalki-2898',
+          content_type: 'movie',
+          saved_position_seconds: 1420,
+          selection_source: 'continue_watching',
+        });
+
+        expect(mockLogEvent).toHaveBeenCalledWith(
+          mockFirebaseInstance,
+          AnalyticsEvent.CONTINUE_WATCHING_SELECTED,
+          expect.objectContaining({
+            content_id: 'kalki-2898',
+            content_type: 'movie',
+            saved_position_seconds: 1420,
+            selection_source: 'continue_watching',
+          }),
+        );
+      });
+
+      it('tracks trackResumePlayback correctly with positive position', async () => {
+        await analytics.trackResumePlayback({
+          playback_session_id: 'sess_cw_1',
+          content_id: 'kalki-2898',
+          content_type: 'movie',
+          resume_position_seconds: 520,
+          resume_source: 'continue_watching',
+        });
+
+        expect(mockLogEvent).toHaveBeenCalledWith(
+          mockFirebaseInstance,
+          AnalyticsEvent.RESUME_PLAYBACK,
+          expect.objectContaining({
+            playback_session_id: 'sess_cw_1',
+            content_id: 'kalki-2898',
+            resume_position_seconds: 520,
+            resume_source: 'continue_watching',
+          }),
+        );
+      });
+
+      it('does NOT track trackResumePlayback if position is zero or negative', async () => {
+        await analytics.trackResumePlayback({
+          playback_session_id: 'sess_cw_1',
+          content_id: 'kalki-2898',
+          resume_position_seconds: 0,
+        });
+
+        expect(mockLogEvent).not.toHaveBeenCalledWith(
+          mockFirebaseInstance,
+          AnalyticsEvent.RESUME_PLAYBACK,
+          expect.anything(),
+        );
+      });
+
+      it('tracks trackPlaybackProgressSaved correctly', async () => {
+        await analytics.trackPlaybackProgressSaved({
+          playback_session_id: 'sess_cw_1',
+          content_id: 'kalki-2898',
+          content_type: 'movie',
+          position_seconds: 600,
+        });
+
+        expect(mockLogEvent).toHaveBeenCalledWith(
+          mockFirebaseInstance,
+          AnalyticsEvent.PLAYBACK_PROGRESS_SAVED,
+          expect.objectContaining({
+            playback_session_id: 'sess_cw_1',
+            content_id: 'kalki-2898',
+            position_seconds: 600,
+          }),
+        );
+      });
+
+      it('tracks canonical completed event and CONTENT_COMPLETED alias maps to completed', async () => {
+        await analytics.trackPlaybackCompleted({
+          playbackSessionId: 'sess_123',
+          contentId: 'movie_456',
+          duration: 3600,
+        });
+
+        expect(mockLogEvent).toHaveBeenCalledWith(
+          mockFirebaseInstance,
+          AnalyticsEvent.COMPLETED,
+          expect.objectContaining({
+            playbackSessionId: 'sess_123',
+            contentId: 'movie_456',
+            duration: 3600,
+          }),
+        );
+
+        expect(AnalyticsEvent.CONTENT_COMPLETED).toBe('completed');
       });
     });
   });

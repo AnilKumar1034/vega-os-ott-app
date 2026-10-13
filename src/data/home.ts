@@ -118,6 +118,9 @@ export interface HomeContentItem {
   seekbarType?: SeekbarType;
   partialDisablingConfiguration?: any;
   thumbnails?: string[];
+  savedPositionSeconds?: number;
+  contentType?: 'movie' | 'episode' | 'live';
+  seriesId?: string;
 }
 
 export interface HomeContentRow {

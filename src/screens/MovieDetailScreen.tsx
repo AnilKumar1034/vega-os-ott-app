@@ -215,6 +215,7 @@ export const MovieDetailScreen = () => {
       recommendations={recommendations}
       focusedAction={focusedAction}
       continueWatchProgress={continueWatchProgress}
+      selectionSource={route?.params?.selectionSource || route?.params?.source}
       isInWatchlist={isInWatchlist}
       isFavourite={isInWatchlist}
       toastMessage={toastMsg}

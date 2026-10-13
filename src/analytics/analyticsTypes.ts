@@ -34,8 +34,50 @@ export interface ScreenViewEventParams {
 }
 
 export interface ProfileSelectedEventParams {
-  profileId: string;
-  profileType: 'adult' | 'kids';
+  profileId?: string;
+  profile_id?: string;
+  profileType?: 'adult' | 'kids';
+  profile_type?: 'adult' | 'kids';
+  is_kids_profile?: boolean;
+  isKidsProfile?: boolean;
+  selection_source?: string;
+  selectionSource?: string;
+  [key: string]: unknown;
+}
+
+export interface ProfileCreatedEventParams {
+  profile_type: 'adult' | 'kids';
+  profileType?: 'adult' | 'kids';
+  is_kids_profile: boolean;
+  isKidsProfile?: boolean;
+  creation_source?: string;
+  creationSource?: string;
+  [key: string]: unknown;
+}
+
+export interface ProfileSwitchedEventParams {
+  previous_profile_type: 'adult' | 'kids';
+  previousProfileType?: 'adult' | 'kids';
+  new_profile_type: 'adult' | 'kids';
+  newProfileType?: 'adult' | 'kids';
+  switch_source?: string;
+  switchSource?: string;
+  [key: string]: unknown;
+}
+
+export interface ProfileDeletedEventParams {
+  deleted_profile_type: 'adult' | 'kids';
+  deletedProfileType?: 'adult' | 'kids';
+  was_active_profile: boolean;
+  wasActiveProfile?: boolean;
+  [key: string]: unknown;
+}
+
+export interface ProfileEditCompletedEventParams {
+  profile_type: 'adult' | 'kids';
+  profileType?: 'adult' | 'kids';
+  is_kids_profile: boolean;
+  isKidsProfile?: boolean;
   [key: string]: unknown;
 }
 
@@ -258,10 +300,54 @@ export interface LivePlaybackStartedParams {
   [key: string]: unknown;
 }
 
+export interface ContinueWatchingSelectedParams {
+  content_id: string;
+  contentId?: string;
+  content_type?: string;
+  contentType?: string;
+  playback_session_id?: string;
+  playbackSessionId?: string;
+  saved_position_seconds?: number;
+  savedPositionSeconds?: number;
+  selection_source: 'continue_watching';
+  selectionSource?: 'continue_watching';
+  [key: string]: unknown;
+}
+
+export interface ResumePlaybackParams {
+  content_id: string;
+  contentId?: string;
+  content_type?: string;
+  contentType?: string;
+  playback_session_id: string;
+  playbackSessionId?: string;
+  resume_position_seconds: number;
+  resumePositionSeconds?: number;
+  resume_source?: 'continue_watching' | 'details' | 'deeplink' | string;
+  resumeSource?: 'continue_watching' | 'details' | 'deeplink' | string;
+  [key: string]: unknown;
+}
+
+export interface PlaybackProgressSavedParams {
+  content_id: string;
+  contentId?: string;
+  content_type?: string;
+  contentType?: string;
+  playback_session_id: string;
+  playbackSessionId?: string;
+  position_seconds: number;
+  positionSeconds?: number;
+  [key: string]: unknown;
+}
+
 export interface AnalyticsEventParamsMap {
   app_open: AppOpenEventParams;
   screen_view: ScreenViewEventParams;
   profile_selected: ProfileSelectedEventParams;
+  profile_created: ProfileCreatedEventParams;
+  profile_switched: ProfileSwitchedEventParams;
+  profile_deleted: ProfileDeletedEventParams;
+  profile_edit_completed: ProfileEditCompletedEventParams;
   playback_start_requested: PlaybackStartRequestedParams;
   player_ready: PlayerReadyParams;
   playback_started: PlaybackStartedParams;
@@ -288,6 +374,9 @@ export interface AnalyticsEventParamsMap {
   epg_program_selected: EPGProgramSelectedParams;
   go_live: GoLiveParams;
   live_playback_started: LivePlaybackStartedParams;
+  continue_watching_selected: ContinueWatchingSelectedParams;
+  resume_playback: ResumePlaybackParams;
+  playback_progress_saved: PlaybackProgressSavedParams;
 }
 
 export type AnalyticsEventParams<T extends AnalyticsEventName = AnalyticsEventName> =
@@ -320,7 +409,13 @@ export interface IAnalyticsService {
     extraParams?: Record<string, unknown>,
   ): Promise<void>;
   trackAppOpen(params?: AppOpenEventParams): Promise<void>;
+  trackProfileCreated(params: ProfileCreatedEventParams): Promise<void>;
   trackProfileSelected(params: ProfileSelectedEventParams): Promise<void>;
+  trackProfileSwitched(params: ProfileSwitchedEventParams): Promise<void>;
+  trackProfileDeleted(params: ProfileDeletedEventParams): Promise<void>;
+  trackProfileEditCompleted(
+    params: ProfileEditCompletedEventParams,
+  ): Promise<void>;
   trackPlaybackStartRequested(
     params: PlaybackStartRequestedParams,
   ): Promise<void>;
@@ -346,5 +441,12 @@ export interface IAnalyticsService {
   trackEpgProgramSelected(params: EPGProgramSelectedParams): Promise<void>;
   trackGoLive(params: GoLiveParams): Promise<void>;
   trackLivePlaybackStarted(params: LivePlaybackStartedParams): Promise<void>;
+  trackContinueWatchingSelected(
+    params: ContinueWatchingSelectedParams,
+  ): Promise<void>;
+  trackResumePlayback(params: ResumePlaybackParams): Promise<void>;
+  trackPlaybackProgressSaved(
+    params: PlaybackProgressSavedParams,
+  ): Promise<void>;
   reset(): void;
 }

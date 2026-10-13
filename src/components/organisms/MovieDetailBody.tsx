@@ -35,6 +35,7 @@ interface MovieDetailBodyProps {
   onRemoveFavourite?: () => void;
   onToggleWatchlist?: () => void;
   onRemoveContinueWatch: () => void;
+  selectionSource?: string;
 }
 
 export const MovieDetailBody = ({
@@ -55,6 +56,7 @@ export const MovieDetailBody = ({
   onRemoveFavourite,
   onToggleWatchlist,
   onRemoveContinueWatch,
+  selectionSource,
 }: MovieDetailBodyProps) => {
   const navigation = useNavigation<any>();
   const inList = isInWatchlist || isFavourite;
@@ -62,9 +64,14 @@ export const MovieDetailBody = ({
     onToggleWatchlist || (inList ? onRemoveFavourite : onAddFavourite);
 
   const handleWatchPress = () => {
+    const isCW =
+      selectionSource === 'continue_watching' ||
+      (continueWatchProgress !== null && continueWatchProgress > 0);
     navigation.navigate(Routes.VideoPlayer, {
       movie: selectedMovie,
       videoUrl: selectedMovie.videoUrl,
+      selectionSource: isCW ? 'continue_watching' : 'details',
+      source: isCW ? 'continue_watching' : 'details',
     });
   };
 
