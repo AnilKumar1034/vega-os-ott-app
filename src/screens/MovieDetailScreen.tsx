@@ -27,7 +27,7 @@ import {
   getWatchlistItem,
   removeFromWatchlist,
 } from '../services/watchlistService';
-import {findContentById} from '../utils/deeplink';
+import {findContentById, deeplinkManager} from '../utils/deeplink';
 import {isBackEvent, isKeyDown, isPlayPauseEvent} from '../utils/inputUtils';
 
 export const MovieDetailScreen = () => {
@@ -106,6 +106,14 @@ export const MovieDetailScreen = () => {
 
     navigation.replace(Routes.Home);
   }, [navigation, resolvedMovie, route.params?.movieId]);
+
+  useEffect(() => {
+    if (resolvedMovie) {
+      deeplinkManager
+        .onDestinationOpened('details', selectedMovie.contentType || 'movie')
+        .catch(() => {});
+    }
+  }, [resolvedMovie, selectedMovie.contentType]);
 
   useEffect(() => {
     let active = true;

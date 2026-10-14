@@ -41,6 +41,10 @@ export const AnalyticsEvent = {
   RESUME_PLAYBACK: 'resume_playback',
   PLAYBACK_PROGRESS_SAVED: 'playback_progress_saved',
   CONTENT_COMPLETED: 'completed',
+  DEEPLINK_RECEIVED: 'deeplink_received',
+  DEEPLINK_RESOLVED: 'deeplink_resolved',
+  DEEPLINK_FAILED: 'deeplink_failed',
+  DEEPLINK_CONTENT_OPENED: 'deeplink_content_opened',
 } as const;
 
 export type AnalyticsEventName =

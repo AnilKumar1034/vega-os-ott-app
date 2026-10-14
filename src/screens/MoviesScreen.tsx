@@ -19,7 +19,7 @@ import {
   canProfileAccessContent,
   filterContentRowsForProfile,
 } from '../utils/contentAccessPolicy';
-import {findContentById} from '../utils/deeplink';
+import {findContentById, deeplinkManager} from '../utils/deeplink';
 import {filterContentRows} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
 
@@ -49,6 +49,10 @@ export const MoviesScreen = () => {
   const [continueWatchRecords, setContinueWatchRecords] = useState<
     ContinueWatchRecord[]
   >([]);
+
+  useEffect(() => {
+    deeplinkManager.onDestinationOpened('movies').catch(() => {});
+  }, []);
 
   useTVEventHandler((evt) => {
     if (!evt) return;

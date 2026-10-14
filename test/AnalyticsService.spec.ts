@@ -952,6 +952,80 @@ describe('AnalyticsService (Day 1 Analytics Foundation)', () => {
 
         expect(AnalyticsEvent.CONTENT_COMPLETED).toBe('completed');
       });
+
+      describe('Deep-link Analytics Events', () => {
+        it('tracks deeplink_received with normalized privacy-safe parameters', async () => {
+          await analytics.trackDeeplinkReceived({
+            link_type: 'content',
+            link_source: 'cold_start',
+            app_state: 'cold_start',
+          });
+
+          expect(mockLogEvent).toHaveBeenCalledWith(
+            mockFirebaseInstance,
+            AnalyticsEvent.DEEPLINK_RECEIVED,
+            expect.objectContaining({
+              link_type: 'content',
+              link_source: 'cold_start',
+              app_state: 'cold_start',
+            }),
+          );
+        });
+
+        it('tracks deeplink_resolved with destination and resolution details', async () => {
+          await analytics.trackDeeplinkResolved({
+            destination_type: 'player',
+            content_type: 'movie',
+            resolution_source: 'deeplink_resolver',
+          });
+
+          expect(mockLogEvent).toHaveBeenCalledWith(
+            mockFirebaseInstance,
+            AnalyticsEvent.DEEPLINK_RESOLVED,
+            expect.objectContaining({
+              destination_type: 'player',
+              content_type: 'movie',
+              resolution_source: 'deeplink_resolver',
+            }),
+          );
+        });
+
+        it('tracks deeplink_failed with normalized failure stage and reason', async () => {
+          await analytics.trackDeeplinkFailed({
+            failure_stage: 'content_lookup',
+            failure_reason: 'content_not_found',
+            link_type: 'content',
+          });
+
+          expect(mockLogEvent).toHaveBeenCalledWith(
+            mockFirebaseInstance,
+            AnalyticsEvent.DEEPLINK_FAILED,
+            expect.objectContaining({
+              failure_stage: 'content_lookup',
+              failure_reason: 'content_not_found',
+              link_type: 'content',
+            }),
+          );
+        });
+
+        it('tracks deeplink_content_opened with open_source deeplink', async () => {
+          await analytics.trackDeeplinkContentOpened({
+            destination_type: 'player',
+            content_type: 'movie',
+            open_source: 'deeplink',
+          });
+
+          expect(mockLogEvent).toHaveBeenCalledWith(
+            mockFirebaseInstance,
+            AnalyticsEvent.DEEPLINK_CONTENT_OPENED,
+            expect.objectContaining({
+              destination_type: 'player',
+              content_type: 'movie',
+              open_source: 'deeplink',
+            }),
+          );
+        });
+      });
     });
   });
 });

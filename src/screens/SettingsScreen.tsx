@@ -15,6 +15,7 @@ import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
 import {useProfile} from '../profiles/hooks/useProfile';
 import {isBackEvent, isKeyDown, isSelectEvent} from '../utils/inputUtils';
+import {deeplinkManager} from '../utils/deeplink';
 import {styles} from './SettingsScreen.styles';
 
 const useSafeNavigation = () => {
@@ -525,6 +526,12 @@ export const SettingsScreen = () => {
       });
     }
   }, [loading, navigation, user]);
+
+  useEffect(() => {
+    if (!loading && user) {
+      deeplinkManager.onDestinationOpened('settings').catch(() => {});
+    }
+  }, [loading, user]);
 
   const displayName =
     activeProfile?.name ||

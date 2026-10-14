@@ -20,7 +20,7 @@ import {useProfile} from '../profiles/hooks/useProfile';
 import {fetchWatchlist} from '../services/watchlistService';
 import {WatchlistItem} from '../types/watchlist';
 import {canProfileAccessContent} from '../utils/contentAccessPolicy';
-import {findContentById} from '../utils/deeplink';
+import {findContentById, deeplinkManager} from '../utils/deeplink';
 import {filterContentItem} from '../utils/searchUtils';
 import {styles} from './MyListScreen.styles';
 
@@ -37,6 +37,10 @@ export const MyListScreen = () => {
   const [watchlistItems, setWatchlistItems] = useState<WatchlistItem[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    deeplinkManager.onDestinationOpened('my_list').catch(() => {});
+  }, []);
 
   const loadWatchlistData = useCallback(
     async (profileId?: string) => {

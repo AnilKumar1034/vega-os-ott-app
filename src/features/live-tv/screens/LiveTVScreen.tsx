@@ -23,6 +23,7 @@ import {analyticsService} from '../../../analytics';
 import {Routes} from '../../../constants/routes';
 import {strings} from '../../../constants/strings';
 import {colors} from '../../../theme/colors';
+import {deeplinkManager} from '../../../utils/deeplink';
 import {fontSizes} from '../../../theme/fonts';
 import {borderRadius, spacing} from '../../../theme/sizes';
 import {isBackEvent, isKeyDown, isSelectEvent} from '../../../utils/inputUtils';
@@ -95,6 +96,11 @@ export const LiveTVScreen = () => {
     'future' | 'past' | 'playbackUnavailable' | null
   >(null);
   const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    deeplinkManager.onDestinationOpened('live_tv').catch(() => {});
+  }, []);
+
   const [isEPGReady, setIsEPGReady] = useState(false);
   const [isLoadingNextPage, setIsLoadingNextPage] = useState(false);
   const [hasNoFreeLiveChannels, setHasNoFreeLiveChannels] = useState(false);

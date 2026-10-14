@@ -340,6 +340,100 @@ export interface PlaybackProgressSavedParams {
   [key: string]: unknown;
 }
 
+export type DeeplinkType =
+  | 'content'
+  | 'search'
+  | 'playback'
+  | 'navigation'
+  | 'settings'
+  | 'profile'
+  | 'auth'
+  | 'unknown';
+
+export type DeeplinkSource =
+  | 'cold_start'
+  | 'warm_start'
+  | 'in_app'
+  | 'external';
+
+export type DeeplinkAppState =
+  | 'active'
+  | 'background'
+  | 'inactive'
+  | 'cold_start';
+
+export type DeeplinkDestinationType =
+  | 'details'
+  | 'player'
+  | 'search'
+  | 'home'
+  | 'movies'
+  | 'live_tv'
+  | 'my_list'
+  | 'settings'
+  | 'profile'
+  | 'profiles'
+  | 'login'
+  | 'register'
+  | 'unknown';
+
+export type DeeplinkFailureStage =
+  | 'parsing'
+  | 'validation'
+  | 'content_lookup'
+  | 'navigation_preparation';
+
+export type DeeplinkFailureReason =
+  | 'invalid_url'
+  | 'malformed_url'
+  | 'unsupported_scheme'
+  | 'unsupported_route'
+  | 'missing_content_id'
+  | 'missing_parameters'
+  | 'content_not_found'
+  | 'navigation_failed'
+  | 'cancelled';
+
+export interface DeeplinkReceivedParams {
+  link_type?: DeeplinkType | string;
+  linkType?: DeeplinkType | string;
+  link_source?: DeeplinkSource | string;
+  linkSource?: DeeplinkSource | string;
+  app_state?: DeeplinkAppState | string;
+  appState?: DeeplinkAppState | string;
+  [key: string]: unknown;
+}
+
+export interface DeeplinkResolvedParams {
+  destination_type: DeeplinkDestinationType | string;
+  destinationType?: DeeplinkDestinationType | string;
+  content_type?: 'movie' | 'episode' | 'live' | string;
+  contentType?: 'movie' | 'episode' | 'live' | string;
+  resolution_source?: string;
+  resolutionSource?: string;
+  [key: string]: unknown;
+}
+
+export interface DeeplinkFailedParams {
+  failure_stage: DeeplinkFailureStage | string;
+  failureStage?: DeeplinkFailureStage | string;
+  failure_reason: DeeplinkFailureReason | string;
+  failureReason?: DeeplinkFailureReason | string;
+  link_type?: DeeplinkType | string;
+  linkType?: DeeplinkType | string;
+  [key: string]: unknown;
+}
+
+export interface DeeplinkContentOpenedParams {
+  destination_type: DeeplinkDestinationType | string;
+  destinationType?: DeeplinkDestinationType | string;
+  content_type?: 'movie' | 'episode' | 'live' | string;
+  contentType?: 'movie' | 'episode' | 'live' | string;
+  open_source: 'deeplink';
+  openSource?: 'deeplink';
+  [key: string]: unknown;
+}
+
 export interface AnalyticsEventParamsMap {
   app_open: AppOpenEventParams;
   screen_view: ScreenViewEventParams;
@@ -377,6 +471,10 @@ export interface AnalyticsEventParamsMap {
   continue_watching_selected: ContinueWatchingSelectedParams;
   resume_playback: ResumePlaybackParams;
   playback_progress_saved: PlaybackProgressSavedParams;
+  deeplink_received: DeeplinkReceivedParams;
+  deeplink_resolved: DeeplinkResolvedParams;
+  deeplink_failed: DeeplinkFailedParams;
+  deeplink_content_opened: DeeplinkContentOpenedParams;
 }
 
 export type AnalyticsEventParams<T extends AnalyticsEventName = AnalyticsEventName> =
@@ -448,5 +546,9 @@ export interface IAnalyticsService {
   trackPlaybackProgressSaved(
     params: PlaybackProgressSavedParams,
   ): Promise<void>;
+  trackDeeplinkReceived(params?: DeeplinkReceivedParams): Promise<void>;
+  trackDeeplinkResolved(params: DeeplinkResolvedParams): Promise<void>;
+  trackDeeplinkFailed(params: DeeplinkFailedParams): Promise<void>;
+  trackDeeplinkContentOpened(params: DeeplinkContentOpenedParams): Promise<void>;
   reset(): void;
 }

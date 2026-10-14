@@ -32,7 +32,7 @@ import {
   filterContentRowsForProfile,
   filterHeroSlidesForProfile,
 } from '../utils/contentAccessPolicy';
-import {findContentById} from '../utils/deeplink';
+import {findContentById, deeplinkManager} from '../utils/deeplink';
 import {filterContentRows, filterHeroSlides} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
 
@@ -65,6 +65,10 @@ export const HomeScreen = () => {
     ContinueWatchRecord[]
   >([]);
   const [watchlistRecords, setWatchlistRecords] = useState<WatchlistItem[]>([]);
+
+  useEffect(() => {
+    deeplinkManager.onDestinationOpened('home').catch(() => {});
+  }, []);
 
   useTVEventHandler((evt) => {
     if (!evt) return;

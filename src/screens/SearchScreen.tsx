@@ -1,4 +1,4 @@
-import React, {useRef, useState} from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import {FlatList, ImageBackground, View} from 'react-native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {CommonHeader} from '../components/molecules/CommonHeader';
@@ -12,6 +12,7 @@ import {filterContentRowsForProfile} from '../utils/contentAccessPolicy';
 import {filterContentRows} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
 import {useRoute} from '@react-navigation/native';
+import {deeplinkManager} from '../utils/deeplink';
 
 export const SearchScreen = () => {
   const route = useRoute<any>();
@@ -23,6 +24,10 @@ export const SearchScreen = () => {
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [lastFocusedRowIndex, setLastFocusedRowIndex] = useState(0);
   const rowRefs = useRef<{[key: number]: any}>({});
+
+  useEffect(() => {
+    deeplinkManager.onDestinationOpened('search').catch(() => {});
+  }, []);
 
   const allowedRows = filterContentRowsForProfile(
     activeProfile,

@@ -28,7 +28,7 @@ import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
 import {useProfile} from '../profiles/hooks/useProfile';
-import {findContentById} from '../utils/deeplink';
+import {findContentById, deeplinkManager} from '../utils/deeplink';
 import {
   clearContinueWatchProgress,
   fetchContinueWatchForContent,
@@ -268,6 +268,14 @@ export const VideoPlayerScreen = () => {
       });
     }
   }, [loading, movie.id, movie.videoUrl, navigation, route.params, user]);
+
+  useEffect(() => {
+    if (!loading && user && hasResolvedMovie) {
+      deeplinkManager
+        .onDestinationOpened('player', movie.contentType || 'movie')
+        .catch(() => {});
+    }
+  }, [hasResolvedMovie, loading, movie.contentType, user]);
 
   const playerRef = useRef<any>(null);
   const sourceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

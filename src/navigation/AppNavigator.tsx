@@ -20,7 +20,12 @@ import {AuthProvider} from '../context/AuthProvider';
 import {ProfileProvider} from '../profiles/context/ProfileProvider';
 import {ProfileSelectionScreen} from '../profiles/screens/ProfileSelectionScreen';
 import {CreateProfileScreen} from '../profiles/screens/CreateProfileScreen';
-import {DEEPLINK_PREFIX, DeeplinkRoutes} from '../utils/deeplink';
+import {Linking} from 'react-native';
+import {
+  DEEPLINK_PREFIX,
+  DeeplinkRoutes,
+  deeplinkManager,
+} from '../utils/deeplink';
 
 export type RootStackParamList = {
   [Routes.Splash]: undefined;
@@ -72,10 +77,34 @@ const PlayerTestRoute = () => {
 
 const linking: LinkingOptions<RootStackParamList> = {
   prefixes: [DEEPLINK_PREFIX],
-  getInitialURL: () =>
-    ((globalThis as any).process?.env?.NODE_ENV === 'test'
-      ? null
-      : (undefined as any)),
+  getInitialURL: () => {
+    if ((globalThis as any).process?.env?.NODE_ENV === 'test') {
+      const testUrl = deeplinkManager.getTestInitialUrl();
+      if (testUrl) {
+        deeplinkManager.handleIncomingUrl(testUrl, 'cold_start').catch(() => {});
+        return testUrl;
+      }
+      return null;
+    }
+    return Linking.getInitialURL()
+      .then((url) => {
+        if (url) {
+          deeplinkManager.handleIncomingUrl(url, 'cold_start').catch(() => {});
+        }
+        return url;
+      })
+      .catch(() => null);
+  },
+  subscribe: (listener: (url: string) => void) => {
+    const onReceiveURL = ({url}: {url: string}) => {
+      deeplinkManager.handleIncomingUrl(url, 'warm_start').catch(() => {});
+      listener(url);
+    };
+    const subscription = Linking.addEventListener('url', onReceiveURL);
+    return () => {
+      subscription?.remove?.();
+    };
+  },
   config: {
 
     screens: {

@@ -51,6 +51,10 @@ import {
   ContinueWatchingSelectedParams,
   ResumePlaybackParams,
   PlaybackProgressSavedParams,
+  DeeplinkReceivedParams,
+  DeeplinkResolvedParams,
+  DeeplinkFailedParams,
+  DeeplinkContentOpenedParams,
 } from './analyticsTypes';
 
 const getAsyncStorage = () => {
@@ -1449,6 +1453,143 @@ export class AnalyticsService implements IAnalyticsService {
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackPlaybackProgressSaved error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks deeplink received event when an incoming deep link is received by the application.
+   * Strictly excludes raw URLs, query strings, auth tokens, or other sensitive parameters.
+   */
+  public async trackDeeplinkReceived(
+    params: DeeplinkReceivedParams = {},
+  ): Promise<void> {
+    try {
+      const linkType = params.link_type ?? params.linkType ?? 'unknown';
+      const linkSource = params.link_source ?? params.linkSource ?? 'unknown';
+      const appState = params.app_state ?? params.appState;
+
+      const payload: Record<string, unknown> = {
+        link_type: linkType,
+        link_source: linkSource,
+      };
+      if (appState) {
+        payload.app_state = appState;
+      }
+
+      await this.track(
+        AnalyticsEvent.DEEPLINK_RECEIVED,
+        payload as DeeplinkReceivedParams,
+      );
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackDeeplinkReceived error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks deeplink resolved event when the link is successfully parsed and mapped to a supported destination.
+   */
+  public async trackDeeplinkResolved(
+    params: DeeplinkResolvedParams,
+  ): Promise<void> {
+    try {
+      if (!params) {
+        return;
+      }
+      const destinationType =
+        params.destination_type ?? params.destinationType ?? 'unknown';
+      const contentType = params.content_type ?? params.contentType;
+      const resolutionSource =
+        params.resolution_source ??
+        params.resolutionSource ??
+        'deeplink_resolver';
+
+      const payload: Record<string, unknown> = {
+        destination_type: destinationType,
+        resolution_source: resolutionSource,
+      };
+      if (contentType) {
+        payload.content_type = contentType;
+      }
+
+      await this.track(
+        AnalyticsEvent.DEEPLINK_RESOLVED,
+        payload as DeeplinkResolvedParams,
+      );
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackDeeplinkResolved error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks deeplink failed event when link parsing, validation, content lookup, or navigation preparation fails.
+   * Normalized reason code only; strictly excludes URLs, tokens, or raw exception objects.
+   */
+  public async trackDeeplinkFailed(
+    params: DeeplinkFailedParams,
+  ): Promise<void> {
+    try {
+      if (!params) {
+        return;
+      }
+      const failureStage =
+        params.failure_stage ?? params.failureStage ?? 'parsing';
+      const failureReason =
+        params.failure_reason ?? params.failureReason ?? 'invalid_url';
+      const linkType = params.link_type ?? params.linkType;
+
+      const payload: Record<string, unknown> = {
+        failure_stage: failureStage,
+        failure_reason: failureReason,
+      };
+      if (linkType) {
+        payload.link_type = linkType;
+      }
+
+      await this.track(
+        AnalyticsEvent.DEEPLINK_FAILED,
+        payload as DeeplinkFailedParams,
+      );
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackDeeplinkFailed error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks deeplink content opened event when the intended destination has actually opened successfully.
+   */
+  public async trackDeeplinkContentOpened(
+    params: DeeplinkContentOpenedParams,
+  ): Promise<void> {
+    try {
+      if (!params) {
+        return;
+      }
+      const destinationType =
+        params.destination_type ?? params.destinationType ?? 'unknown';
+      const contentType = params.content_type ?? params.contentType;
+
+      const payload: Record<string, unknown> = {
+        destination_type: destinationType,
+        open_source: 'deeplink',
+      };
+      if (contentType) {
+        payload.content_type = contentType;
+      }
+
+      await this.track(
+        AnalyticsEvent.DEEPLINK_CONTENT_OPENED,
+        payload as DeeplinkContentOpenedParams,
+      );
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackDeeplinkContentOpened error:', err);
       }
     }
   }

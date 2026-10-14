@@ -13,6 +13,7 @@ import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
 import {useProfile} from '../profiles/hooks/useProfile';
+import {deeplinkManager} from '../utils/deeplink';
 import {styles} from './ProfileScreen.styles';
 
 interface DetailTileProps {
@@ -100,6 +101,12 @@ export const ProfileScreen = () => {
       });
     }
   }, [loading, navigation, user]);
+
+  useEffect(() => {
+    if (!loading && user) {
+      deeplinkManager.onDestinationOpened('profile').catch(() => {});
+    }
+  }, [loading, user]);
 
   return (
     <ScreenLayout
