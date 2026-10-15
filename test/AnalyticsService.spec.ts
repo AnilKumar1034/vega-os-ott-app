@@ -346,6 +346,76 @@ describe('AnalyticsService (Day 1 Analytics Foundation)', () => {
       await expect(analytics.trackScreen('')).resolves.not.toThrow();
       expect(mockLogEvent).not.toHaveBeenCalled();
     });
+
+    it('generates screen_view with trackScreenView and maintains screen state', async () => {
+      analytics.resetScreenTracking();
+      await analytics.trackScreenView({
+        screen_name: 'Home',
+        screen_class: 'HomeScreen',
+        navigation_source: 'initial_launch',
+      });
+
+      expect(mockLogEvent).toHaveBeenCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.SCREEN_VIEW,
+        expect.objectContaining({
+          screen_name: 'Home',
+          screen_class: 'HomeScreen',
+          navigation_source: 'initial_launch',
+        }),
+      );
+
+      expect(analytics.getCurrentScreen()).toBe('Home');
+      expect(analytics.getPreviousScreen()).toBeNull();
+
+      // Navigating to Movies
+      await analytics.trackScreenView({
+        screen_name: 'Movies',
+        navigation_source: 'user_action',
+      });
+
+      expect(analytics.getCurrentScreen()).toBe('Movies');
+      expect(analytics.getPreviousScreen()).toBe('Home');
+      expect(mockLogEvent).toHaveBeenLastCalledWith(
+        mockFirebaseInstance,
+        AnalyticsEvent.SCREEN_VIEW,
+        expect.objectContaining({
+          screen_name: 'Movies',
+          screen_class: 'MoviesScreen',
+          previous_screen: 'Home',
+          navigation_source: 'user_action',
+        }),
+      );
+    });
+
+    it('deduplicates identical screen calls to the active screen', async () => {
+      analytics.resetScreenTracking();
+      await analytics.trackScreenView({
+        screen_name: 'LiveTV',
+      });
+      expect(mockLogEvent).toHaveBeenCalledTimes(1);
+
+      // Same screen call
+      await analytics.trackScreenView({
+        screen_name: 'LiveTV',
+      });
+      expect(mockLogEvent).toHaveBeenCalledTimes(1);
+    });
+
+    it('filters out sensitive parameters from screen_view', async () => {
+      await analytics.trackScreenView({
+        screen_name: 'Search',
+        q: 'batman',
+        query: 'batman',
+        user_password: 'secret',
+      });
+
+      const call = mockLogEvent.mock.calls[mockLogEvent.mock.calls.length - 1];
+      const payload = call[2];
+      expect(payload.q).toBeUndefined();
+      expect(payload.query).toBeUndefined();
+      expect(payload.user_password).toBeUndefined();
+    });
   });
 
   describe('6. trackAppOpen() and session deduplication', () => {

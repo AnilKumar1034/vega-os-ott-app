@@ -27,6 +27,7 @@ import {
   getWatchlistItem,
   removeFromWatchlist,
 } from '../services/watchlistService';
+import {analyticsService} from '../analytics';
 import {findContentById, deeplinkManager} from '../utils/deeplink';
 import {isBackEvent, isKeyDown, isPlayPauseEvent} from '../utils/inputUtils';
 
@@ -143,6 +144,11 @@ export const MovieDetailScreen = () => {
                 : null,
             );
             setIsInWatchlist(Boolean(watchlistItem));
+            if (watchlistItem) {
+              analyticsService.syncWatchlistState(activeProfile.id, [
+                selectedMovie.id,
+              ]);
+            }
           }
         }
       } catch (error) {
@@ -193,15 +199,33 @@ export const MovieDetailScreen = () => {
 
     setIsTogglingList(true);
     const profileId = activeProfile.id;
+    const resolvedContentType =
+      selectedMovie.contentType ||
+      (selectedMovie.meta?.includes('Series') ? 'series' : 'movie');
+
     try {
       if (isInWatchlist) {
         await removeFromWatchlist(profileId, selectedMovie.id);
         setIsInWatchlist(false);
         showToast(appStrings.toasts.removedFromWatchlist);
+        await analyticsService
+          .trackWatchlistRemoved({
+            content_type: resolvedContentType,
+            action_source: 'details',
+            content_id: selectedMovie.id,
+          })
+          .catch(() => {});
       } else {
         await addToWatchlist(profileId, selectedMovie);
         setIsInWatchlist(true);
         showToast(appStrings.toasts.addedToWatchlist);
+        await analyticsService
+          .trackWatchlistAdded({
+            content_type: resolvedContentType,
+            action_source: 'details',
+            content_id: selectedMovie.id,
+          })
+          .catch(() => {});
       }
     } catch (error) {
       console.log('Toggle watchlist error:', error);
@@ -209,6 +233,9 @@ export const MovieDetailScreen = () => {
       try {
         const item = await getWatchlistItem(profileId, selectedMovie.id);
         setIsInWatchlist(Boolean(item));
+        if (item) {
+          analyticsService.syncWatchlistState(profileId, [selectedMovie.id]);
+        }
       } catch {
         // ignore
       }

@@ -38,6 +38,8 @@ export interface ContentCardProps {
   isContinueWatching?: boolean;
   savedPositionSeconds?: number;
   contentType?: string;
+  isWatchlist?: boolean;
+  selectionSource?: string;
 }
 
 const useSafeNavigation = () => {
@@ -76,6 +78,8 @@ export const ContentCard = ({
   isContinueWatching,
   savedPositionSeconds,
   contentType,
+  isWatchlist,
+  selectionSource,
 }: ContentCardProps) => {
   const navigation = useSafeNavigation();
   const [isFocused, setIsFocused] = useState(false);
@@ -107,12 +111,33 @@ export const ContentCard = ({
     }
   };
 
+  const trackSelectionIfWatchlist = (destinationType: 'details' | 'player') => {
+    if (isWatchlist || rowId === 'my-list' || selectionSource === 'watchlist') {
+      const contentId = id || title.toLowerCase().replace(/\s+/g, '-');
+      const resolvedContentType =
+        contentType || (meta?.includes('Series') ? 'series' : 'movie');
+      const params = {
+        content_id: contentId,
+        contentId,
+        content_type: resolvedContentType,
+        contentType: resolvedContentType,
+        destination_type: destinationType,
+        destinationType: destinationType,
+        selection_source: 'watchlist',
+        selectionSource: 'watchlist',
+      };
+      analyticsService.trackWatchlistItemSelected(params).catch(() => {});
+    }
+  };
+
   const handlePress = () => {
     trackSelectionIfContinueWatching();
+    trackSelectionIfWatchlist('details');
     if (onPress) {
       onPress();
     } else {
       const isCW = isContinueWatching || rowId === 'continue-watching';
+      const isWL = isWatchlist || rowId === 'my-list' || selectionSource === 'watchlist';
       navigation.navigate(Routes.MovieDetail, {
         movie: {
           id: id || title.toLowerCase().replace(/\s+/g, '-'),
@@ -129,8 +154,8 @@ export const ContentCard = ({
           savedPositionSeconds,
           contentType,
         },
-        selectionSource: isCW ? 'continue_watching' : undefined,
-        source: isCW ? 'continue_watching' : undefined,
+        selectionSource: isCW ? 'continue_watching' : isWL ? 'watchlist' : undefined,
+        source: isCW ? 'continue_watching' : isWL ? 'watchlist' : undefined,
       });
     }
   };
@@ -149,7 +174,9 @@ export const ContentCard = ({
     } else if (type === 'play' || type === 'playpause') {
       trackSelectionIfContinueWatching();
       if (videoUrl) {
+        trackSelectionIfWatchlist('player');
         const isCW = isContinueWatching || rowId === 'continue-watching';
+        const isWL = isWatchlist || rowId === 'my-list' || selectionSource === 'watchlist';
         navigation.navigate(Routes.VideoPlayer, {
           movie: {
             id: id || title.toLowerCase().replace(/\s+/g, '-'),
@@ -167,8 +194,8 @@ export const ContentCard = ({
             contentType,
           },
           videoUrl,
-          selectionSource: isCW ? 'continue_watching' : undefined,
-          source: isCW ? 'continue_watching' : undefined,
+          selectionSource: isCW ? 'continue_watching' : isWL ? 'watchlist' : undefined,
+          source: isCW ? 'continue_watching' : isWL ? 'watchlist' : undefined,
         });
       } else {
         handlePress();

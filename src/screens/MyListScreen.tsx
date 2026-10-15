@@ -18,6 +18,7 @@ import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
 import {useProfile} from '../profiles/hooks/useProfile';
 import {fetchWatchlist} from '../services/watchlistService';
+import {analyticsService} from '../analytics';
 import {WatchlistItem} from '../types/watchlist';
 import {canProfileAccessContent} from '../utils/contentAccessPolicy';
 import {findContentById, deeplinkManager} from '../utils/deeplink';
@@ -55,6 +56,10 @@ export const MyListScreen = () => {
       try {
         const items = await fetchWatchlist(profileId);
         setWatchlistItems(items);
+        analyticsService.syncWatchlistState(
+          profileId,
+          items.map((i) => i.contentId),
+        );
       } catch (error: any) {
         console.log('Error loading watchlist:', error);
         setErrorMessage(error?.message || strings.myList.errorTitle);
@@ -86,6 +91,10 @@ export const MyListScreen = () => {
         const items = await fetchWatchlist(currentProfileId);
         if (isCurrent) {
           setWatchlistItems(items);
+          analyticsService.syncWatchlistState(
+            currentProfileId,
+            items.map((i) => i.contentId),
+          );
         }
       } catch (error: any) {
         console.log('Error loading profile watchlist:', error);
@@ -154,6 +163,9 @@ export const MyListScreen = () => {
     <ContentCard
       {...item}
       layout="grid"
+      isWatchlist={true}
+      selectionSource="watchlist"
+      rowId="my-list"
       onFocus={() => {
         setLastFocusedCardIndex(index);
         collapseMenu();

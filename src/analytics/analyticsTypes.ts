@@ -27,9 +27,23 @@ export interface AppOpenEventParams {
   [key: string]: unknown;
 }
 
+export type NavigationSource =
+  | 'user_action'
+  | 'deep_link'
+  | 'auth_redirect'
+  | 'initial_launch'
+  | 'startup'
+  | 'system';
+
 export interface ScreenViewEventParams {
   screen_name: string;
+  screenName?: string;
   screen_class?: string;
+  screenClass?: string;
+  previous_screen?: string | null;
+  previousScreen?: string | null;
+  navigation_source?: NavigationSource | string;
+  navigationSource?: NavigationSource | string;
   [key: string]: unknown;
 }
 
@@ -434,6 +448,48 @@ export interface DeeplinkContentOpenedParams {
   [key: string]: unknown;
 }
 
+export interface WatchlistAddedParams {
+  content_type?: string;
+  contentType?: string;
+  action_source?: string;
+  actionSource?: string;
+  list_type?: string;
+  listType?: string;
+  content_id?: string;
+  contentId?: string;
+  profile_id?: string;
+  profileId?: string;
+  [key: string]: unknown;
+}
+
+export interface WatchlistRemovedParams {
+  content_type?: string;
+  contentType?: string;
+  action_source?: string;
+  actionSource?: string;
+  list_type?: string;
+  listType?: string;
+  content_id?: string;
+  contentId?: string;
+  profile_id?: string;
+  profileId?: string;
+  [key: string]: unknown;
+}
+
+export interface WatchlistItemSelectedParams {
+  content_type?: string;
+  contentType?: string;
+  destination_type: 'details' | 'player' | string;
+  destinationType?: 'details' | 'player' | string;
+  selection_source: 'watchlist' | string;
+  selectionSource?: 'watchlist' | string;
+  content_id?: string;
+  contentId?: string;
+  profile_id?: string;
+  profileId?: string;
+  [key: string]: unknown;
+}
+
 export interface AnalyticsEventParamsMap {
   app_open: AppOpenEventParams;
   screen_view: ScreenViewEventParams;
@@ -475,6 +531,9 @@ export interface AnalyticsEventParamsMap {
   deeplink_resolved: DeeplinkResolvedParams;
   deeplink_failed: DeeplinkFailedParams;
   deeplink_content_opened: DeeplinkContentOpenedParams;
+  watchlist_added: WatchlistAddedParams;
+  watchlist_removed: WatchlistRemovedParams;
+  watchlist_item_selected: WatchlistItemSelectedParams;
 }
 
 export type AnalyticsEventParams<T extends AnalyticsEventName = AnalyticsEventName> =
@@ -506,6 +565,10 @@ export interface IAnalyticsService {
     screenName: string,
     extraParams?: Record<string, unknown>,
   ): Promise<void>;
+  trackScreenView(params: ScreenViewEventParams): Promise<void>;
+  getCurrentScreen(): string | null;
+  getPreviousScreen(): string | null;
+  resetScreenTracking(): void;
   trackAppOpen(params?: AppOpenEventParams): Promise<void>;
   trackProfileCreated(params: ProfileCreatedEventParams): Promise<void>;
   trackProfileSelected(params: ProfileSelectedEventParams): Promise<void>;
@@ -550,5 +613,9 @@ export interface IAnalyticsService {
   trackDeeplinkResolved(params: DeeplinkResolvedParams): Promise<void>;
   trackDeeplinkFailed(params: DeeplinkFailedParams): Promise<void>;
   trackDeeplinkContentOpened(params: DeeplinkContentOpenedParams): Promise<void>;
+  trackWatchlistAdded(params: WatchlistAddedParams): Promise<void>;
+  trackWatchlistRemoved(params: WatchlistRemovedParams): Promise<void>;
+  trackWatchlistItemSelected(params: WatchlistItemSelectedParams): Promise<void>;
+  syncWatchlistState(profileId: string, contentIds: string[]): void;
   reset(): void;
 }

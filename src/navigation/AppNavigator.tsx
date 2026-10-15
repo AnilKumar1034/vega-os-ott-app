@@ -1,5 +1,11 @@
-import React from 'react';
-import {LinkingOptions, NavigationContainer} from '@react-navigation/native';
+import React, {useCallback, useEffect} from 'react';
+import {
+  LinkingOptions,
+  NavigationContainer,
+  useNavigationContainerRef,
+} from '@react-navigation/native';
+import {useAuth} from '../context/authContext';
+import {screenNavigationTracker} from './navigationAnalytics';
 import {Routes} from '../constants/routes';
 import {HomeScreen} from '../screens/HomeScreen';
 import {DetailsScreen} from '../screens/DetailsScreen';
@@ -138,51 +144,94 @@ const linking: LinkingOptions<RootStackParamList> = {
   },
 };
 
+const AppNavigatorInner = () => {
+  const navigationRef = useNavigationContainerRef<RootStackParamList>();
+  const {user, loading: authLoading} = useAuth();
+
+  const handleReady = useCallback(() => {
+    const route = navigationRef.getCurrentRoute();
+    screenNavigationTracker
+      .handleRoute(route, {user, authLoading, isInitial: true})
+      .catch(() => {});
+  }, [authLoading, navigationRef, user]);
+
+  const handleStateChange = useCallback(() => {
+    const route = navigationRef.getCurrentRoute();
+    screenNavigationTracker
+      .handleRoute(route, {user, authLoading, isInitial: false})
+      .catch(() => {});
+  }, [authLoading, navigationRef, user]);
+
+  useEffect(() => {
+    if (
+      !authLoading &&
+      (typeof navigationRef.isReady === 'function'
+        ? navigationRef.isReady()
+        : true)
+    ) {
+      const route = navigationRef.getCurrentRoute();
+      if (route) {
+        screenNavigationTracker
+          .handleRoute(route, {user, authLoading, isInitial: false})
+          .catch(() => {});
+      }
+    }
+  }, [authLoading, navigationRef, user]);
+
+  return (
+    <NavigationContainer
+      ref={navigationRef}
+      linking={linking}
+      onReady={handleReady}
+      onStateChange={handleStateChange}>
+      <Stack.Navigator
+        initialRouteName={Routes.Splash}
+        screenOptions={{headerShown: false}}>
+        <Stack.Screen name={Routes.Splash} component={SplashScreen} />
+        <Stack.Screen name={Routes.Home} component={HomeScreen} />
+        <Stack.Screen name={Routes.Movies} component={MoviesScreen} />
+        <Stack.Screen name={Routes.LiveTV} component={LiveTVScreen} />
+        <Stack.Screen name={Routes.MyList} component={MyListScreen} />
+        <Stack.Screen name={Routes.Search} component={SearchScreen} />
+        <Stack.Screen name={Routes.Details} component={DetailsScreen} />
+        <Stack.Screen
+          name={Routes.MovieDetail}
+          component={MovieDetailScreen}
+        />
+        <Stack.Screen
+          name={Routes.VideoPlayer}
+          component={VideoPlayerRoute}
+        />
+        <Stack.Screen
+          name={Routes.PlayerTest}
+          component={PlayerTestRoute}
+        />
+        <Stack.Screen name={Routes.Settings} component={SettingsScreen} />
+        <Stack.Screen name={Routes.Profile} component={ProfileScreen} />
+        <Stack.Screen
+          name={Routes.EditProfile}
+          component={EditProfileScreen}
+        />
+        <Stack.Screen
+          name={Routes.ProfileSelection}
+          component={ProfileSelectionScreen}
+        />
+        <Stack.Screen
+          name={Routes.CreateProfile}
+          component={CreateProfileScreen}
+        />
+        <Stack.Screen name={Routes.Login} component={LoginScreen} />
+        <Stack.Screen name={Routes.Register} component={RegisterScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+};
+
 export const AppNavigator = () => {
   return (
     <AuthProvider>
       <ProfileProvider>
-        <NavigationContainer linking={linking}>
-          <Stack.Navigator
-            initialRouteName={Routes.Splash}
-            screenOptions={{headerShown: false}}>
-            <Stack.Screen name={Routes.Splash} component={SplashScreen} />
-            <Stack.Screen name={Routes.Home} component={HomeScreen} />
-            <Stack.Screen name={Routes.Movies} component={MoviesScreen} />
-            <Stack.Screen name={Routes.LiveTV} component={LiveTVScreen} />
-            <Stack.Screen name={Routes.MyList} component={MyListScreen} />
-            <Stack.Screen name={Routes.Search} component={SearchScreen} />
-            <Stack.Screen name={Routes.Details} component={DetailsScreen} />
-            <Stack.Screen
-              name={Routes.MovieDetail}
-              component={MovieDetailScreen}
-            />
-            <Stack.Screen
-              name={Routes.VideoPlayer}
-              component={VideoPlayerRoute}
-            />
-            <Stack.Screen
-              name={Routes.PlayerTest}
-              component={PlayerTestRoute}
-            />
-            <Stack.Screen name={Routes.Settings} component={SettingsScreen} />
-            <Stack.Screen name={Routes.Profile} component={ProfileScreen} />
-            <Stack.Screen
-              name={Routes.EditProfile}
-              component={EditProfileScreen}
-            />
-            <Stack.Screen
-              name={Routes.ProfileSelection}
-              component={ProfileSelectionScreen}
-            />
-            <Stack.Screen
-              name={Routes.CreateProfile}
-              component={CreateProfileScreen}
-            />
-            <Stack.Screen name={Routes.Login} component={LoginScreen} />
-            <Stack.Screen name={Routes.Register} component={RegisterScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
+        <AppNavigatorInner />
       </ProfileProvider>
     </AuthProvider>
   );

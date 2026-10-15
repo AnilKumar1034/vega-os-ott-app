@@ -27,6 +27,8 @@ export const ContentRowCardItem = ({
       layout={layout}
       rowId={rowId}
       isContinueWatching={rowId === 'continue-watching'}
+      isWatchlist={rowId === 'my-list'}
+      selectionSource={rowId === 'my-list' ? 'watchlist' : undefined}
       savedPositionSeconds={item.savedPositionSeconds}
       contentType={item.contentType}
       testID={`content-card-${item.id}`}

@@ -20,6 +20,7 @@ import {
   isInWatchlist,
   removeFromWatchlist,
 } from '../../services/watchlistService';
+import {analyticsService} from '../../analytics';
 import {styles} from './HeroCarousel.styles';
 
 const MetaSeparator = () => <Text style={styles.metaDot}>•</Text>;
@@ -82,6 +83,7 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
     | null
   >(null);
   const [isSavedInList, setIsSavedInList] = useState(false);
+  const [isTogglingList, setIsTogglingList] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const isCarouselFocusedRef = useRef(false);
 
@@ -149,6 +151,11 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
         const inList = await isInWatchlist(activeProfile.id, currentSlide.id);
         if (active) {
           setIsSavedInList(inList);
+          if (inList) {
+            analyticsService.syncWatchlistState(activeProfile.id, [
+              currentSlide.id,
+            ]);
+          }
         }
       } catch (error) {
         console.log('Hero watchlist load error:', error);
@@ -206,6 +213,10 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
   };
 
   const toggleWatchlist = async () => {
+    if (isTogglingList) {
+      return;
+    }
+
     if (!currentSlide || !user) {
       setToastMsg(strings.toasts.signInToAddToWatchlist);
       setTimeout(() => setToastMsg(null), 2500);
@@ -219,21 +230,42 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
       return;
     }
 
+    setIsTogglingList(true);
     const profileId = activeProfile.id;
+    const resolvedContentType =
+      (currentSlide as any).contentType ||
+      (currentSlide.meta?.includes('Series') ? 'series' : 'movie');
+
     try {
       if (isSavedInList) {
         await removeFromWatchlist(profileId, currentSlide.id);
         setIsSavedInList(false);
         setToastMsg(strings.toasts.removedFromWatchlist);
+        await analyticsService
+          .trackWatchlistRemoved({
+            content_type: resolvedContentType,
+            action_source: 'hero',
+            content_id: currentSlide.id,
+          })
+          .catch(() => {});
       } else {
         await addToWatchlist(profileId, currentSlide as any);
         setIsSavedInList(true);
         setToastMsg(strings.toasts.addedToWatchlist);
+        await analyticsService
+          .trackWatchlistAdded({
+            content_type: resolvedContentType,
+            action_source: 'hero',
+            content_id: currentSlide.id,
+          })
+          .catch(() => {});
       }
       setTimeout(() => setToastMsg(null), 2500);
       onLibraryChange?.();
     } catch (error) {
       console.log('Hero watchlist toggle error:', error);
+    } finally {
+      setIsTogglingList(false);
     }
   };
 

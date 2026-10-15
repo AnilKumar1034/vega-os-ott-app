@@ -143,6 +143,7 @@ export class AnalyticsContextManager {
    */
   public buildEventPayload(
     params?: Record<string, unknown>,
+    eventName?: string,
   ): Record<string, unknown> {
     const payload: Record<string, unknown> = {};
 
@@ -156,14 +157,17 @@ export class AnalyticsContextManager {
     if (this.context.appVersion) {
       payload.appVersion = this.context.appVersion;
     }
-    if (this.context.userId) {
-      payload.userId = this.context.userId;
-    }
-    if (this.context.profileId) {
-      payload.profileId = this.context.profileId;
-    }
-    if (this.context.profileType) {
-      payload.profileType = this.context.profileType;
+    // Strictly exclude raw user IDs and profile IDs from screen_view navigation events
+    if (eventName !== 'screen_view') {
+      if (this.context.userId) {
+        payload.userId = this.context.userId;
+      }
+      if (this.context.profileId) {
+        payload.profileId = this.context.profileId;
+      }
+      if (this.context.profileType) {
+        payload.profileType = this.context.profileType;
+      }
     }
 
     // 2. Merge event-specific parameters (safely sanitized)

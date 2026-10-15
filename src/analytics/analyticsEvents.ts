@@ -45,6 +45,9 @@ export const AnalyticsEvent = {
   DEEPLINK_RESOLVED: 'deeplink_resolved',
   DEEPLINK_FAILED: 'deeplink_failed',
   DEEPLINK_CONTENT_OPENED: 'deeplink_content_opened',
+  WATCHLIST_ADDED: 'watchlist_added',
+  WATCHLIST_REMOVED: 'watchlist_removed',
+  WATCHLIST_ITEM_SELECTED: 'watchlist_item_selected',
 } as const;
 
 export type AnalyticsEventName =

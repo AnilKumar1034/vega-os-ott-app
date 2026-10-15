@@ -55,6 +55,10 @@ import {
   DeeplinkResolvedParams,
   DeeplinkFailedParams,
   DeeplinkContentOpenedParams,
+  WatchlistAddedParams,
+  WatchlistRemovedParams,
+  WatchlistItemSelectedParams,
+  ScreenViewEventParams,
 } from './analyticsTypes';
 
 const getAsyncStorage = () => {
@@ -70,6 +74,26 @@ const getAsyncStorage = () => {
   }
 };
 
+export const SCREEN_CLASS_MAP: Record<string, string> = {
+  Splash: 'SplashScreen',
+  Home: 'HomeScreen',
+  Movies: 'MoviesScreen',
+  LiveTV: 'LiveTVScreen',
+  Search: 'SearchScreen',
+  Details: 'DetailsScreen',
+  MovieDetail: 'MovieDetailScreen',
+  VideoPlayer: 'VideoPlayerScreen',
+  PlayerTest: 'PlayerTestScreen',
+  Settings: 'SettingsScreen',
+  Profile: 'ProfileScreen',
+  EditProfile: 'EditProfileScreen',
+  ProfileSelection: 'ProfileSelectionScreen',
+  CreateProfile: 'CreateProfileScreen',
+  Login: 'LoginScreen',
+  Register: 'RegisterScreen',
+  MyList: 'MyListScreen',
+};
+
 export class AnalyticsService implements IAnalyticsService {
   private static instance: AnalyticsService;
 
@@ -83,11 +107,20 @@ export class AnalyticsService implements IAnalyticsService {
   private measurementProtocolSecret: string = '';
   private warnedMissingSecret = false;
   private readonly contextManager: AnalyticsContextManager;
+  private currentScreenName: string | null = null;
+  private previousScreenName: string | null = null;
+  private lastTrackedScreenRouteKey: string | null = null;
   private lastChannelSelectedTime = 0;
   private lastSelectedChannelId: string | null = null;
   private lastChannelChange: {from: string; to: string; timestamp: number} | null = null;
   private lastEpgProgramKey: string | null = null;
   private lastEpgProgramTime = 0;
+  private addedWatchlistItemsByProfile = new Map<string, Set<string>>();
+  private removedWatchlistItemsByProfile = new Map<string, Set<string>>();
+  private lastWatchlistActionTime = 0;
+  private lastWatchlistActionKey: string | null = null;
+  private lastWatchlistSelectedKey: string | null = null;
+  private lastWatchlistSelectedTime = 0;
 
   constructor(contextManager: AnalyticsContextManager = analyticsContextManager) {
     this.contextManager = contextManager;
@@ -248,6 +281,13 @@ export class AnalyticsService implements IAnalyticsService {
       this.lastChannelChange = null;
       this.lastEpgProgramKey = null;
       this.lastEpgProgramTime = 0;
+      this.addedWatchlistItemsByProfile.clear();
+      this.removedWatchlistItemsByProfile.clear();
+      this.lastWatchlistActionTime = 0;
+      this.lastWatchlistActionKey = null;
+      this.lastWatchlistSelectedKey = null;
+      this.lastWatchlistSelectedTime = 0;
+      this.resetScreenTracking();
       if (this.firebaseSupported && this.firebaseAnalytics) {
         setUserId(this.firebaseAnalytics, null);
         setUserProperties(this.firebaseAnalytics, {
@@ -439,6 +479,7 @@ export class AnalyticsService implements IAnalyticsService {
 
       const payload = this.contextManager.buildEventPayload(
         params as Record<string, unknown> | undefined,
+        eventName,
       );
 
       // Controlled development logging
@@ -479,6 +520,159 @@ export class AnalyticsService implements IAnalyticsService {
     }
   }
 
+  public getCurrentScreen(): string | null {
+    return this.currentScreenName;
+  }
+
+  public getPreviousScreen(): string | null {
+    return this.previousScreenName;
+  }
+
+  public resetScreenTracking(): void {
+    this.currentScreenName = null;
+    this.previousScreenName = null;
+    this.lastTrackedScreenRouteKey = null;
+  }
+
+  /**
+   * Tracks screen navigation event (screen_view).
+   * Validates screen name, normalizes screen class and navigation source,
+   * dedupes redundant navigation to the active screen,
+   * and sanitizes any sensitive parameters.
+   */
+  public async trackScreenView(
+    params: ScreenViewEventParams,
+  ): Promise<void> {
+    try {
+      if (!params || typeof params !== 'object') {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn('[Analytics] trackScreenView called with invalid params.');
+        }
+        return;
+      }
+
+      const rawScreenName = params.screen_name || params.screenName;
+      if (!rawScreenName || typeof rawScreenName !== 'string' || !rawScreenName.trim()) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn('[Analytics] trackScreenView called with invalid screenName.');
+        }
+        return;
+      }
+
+      const screenName = rawScreenName.trim();
+      const routeKey = (params.route_key || params.routeKey || screenName) as string;
+
+      // Deduplication: prevent reporting duplicate screen views for re-renders or re-selecting current route
+      const isSameRouteInstance =
+        this.currentScreenName === screenName &&
+        this.lastTrackedScreenRouteKey === routeKey &&
+        !params.force;
+
+      if (isSameRouteInstance) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.log(`[Analytics] Skipping duplicate screen_view for "${screenName}".`);
+        }
+        return;
+      }
+
+      const screenClass =
+        (params.screen_class || params.screenClass) ??
+        (SCREEN_CLASS_MAP[screenName] || `${screenName}Screen`);
+
+      const previousScreen =
+        'previous_screen' in params
+          ? (params.previous_screen ?? undefined)
+          : 'previousScreen' in params
+          ? (params.previousScreen ?? undefined)
+          : (this.currentScreenName || undefined);
+
+      const navSource =
+        params.navigation_source ||
+        params.navigationSource ||
+        (this.currentScreenName ? 'user_action' : 'initial_launch');
+
+      // Sanitize extra parameters: strictly exclude any sensitive PII, queries, URLs, titles, etc.
+      const sanitizedExtra: Record<string, unknown> = {};
+      const knownKeys = new Set([
+        'screen_name',
+        'screenname',
+        'screen_class',
+        'screenclass',
+        'previous_screen',
+        'previousscreen',
+        'navigation_source',
+        'navigationsource',
+        'route_key',
+        'routekey',
+        'force',
+      ]);
+
+      const disallowedSubstrings = [
+        'url',
+        'uri',
+        'query',
+        'search',
+        'title',
+        'contenttitle',
+        'movietitle',
+        'name',
+        'profilename',
+        'userid',
+        'user_id',
+        'profileid',
+        'profile_id',
+        'email',
+        'password',
+        'token',
+        'auth',
+        'secret',
+        'credential',
+        'pin',
+        'phone',
+      ];
+
+      const disallowedExactKeys = new Set(['q', 'query', 'p', 'pwd']);
+
+      for (const [key, value] of Object.entries(params)) {
+        const lowerKey = key.toLowerCase();
+        if (knownKeys.has(lowerKey)) {
+          continue;
+        }
+        if (
+          disallowedExactKeys.has(lowerKey) ||
+          disallowedSubstrings.some(sub => lowerKey.includes(sub))
+        ) {
+          if (typeof __DEV__ !== 'undefined' && __DEV__) {
+            console.warn(
+              `[Analytics] Omitted disallowed parameter "${key}" from screen_view payload.`,
+            );
+          }
+          continue;
+        }
+        sanitizedExtra[key] = value;
+      }
+
+      const payload: ScreenViewEventParams = {
+        screen_name: screenName,
+        screen_class: screenClass as string,
+        ...(previousScreen ? {previous_screen: previousScreen} : {}),
+        ...(navSource ? {navigation_source: navSource} : {}),
+        ...sanitizedExtra,
+      };
+
+      // Update screen state
+      this.previousScreenName = this.currentScreenName;
+      this.currentScreenName = screenName;
+      this.lastTrackedScreenRouteKey = routeKey;
+
+      await this.track(AnalyticsEvent.SCREEN_VIEW, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackScreenView error:', err);
+      }
+    }
+  }
+
   /**
    * Reusable method for screen tracking.
    */
@@ -486,22 +680,10 @@ export class AnalyticsService implements IAnalyticsService {
     screenName: string,
     extraParams?: Record<string, unknown>,
   ): Promise<void> {
-    try {
-      if (!screenName || typeof screenName !== 'string') {
-        if (typeof __DEV__ !== 'undefined' && __DEV__) {
-          console.warn('[Analytics] trackScreen called with invalid screenName.');
-        }
-        return;
-      }
-      await this.track(AnalyticsEvent.SCREEN_VIEW, {
-        screen_name: screenName,
-        ...extraParams,
-      });
-    } catch (err) {
-      if (typeof __DEV__ !== 'undefined' && __DEV__) {
-        console.warn('[Analytics] trackScreen error:', err);
-      }
-    }
+    return this.trackScreenView({
+      screen_name: screenName,
+      ...extraParams,
+    });
   }
 
   /**
@@ -1595,6 +1777,256 @@ export class AnalyticsService implements IAnalyticsService {
   }
 
   /**
+   * Synchronizes known watchlist content IDs for a profile (e.g. on screen load).
+   * Prevents false add events when an item is already present in the user's list.
+   * Does NOT emit any analytics events.
+   */
+  public syncWatchlistState(profileId: string, contentIds: string[]): void {
+    try {
+      if (!profileId || !Array.isArray(contentIds)) {
+        return;
+      }
+      this.addedWatchlistItemsByProfile.set(
+        profileId,
+        new Set(contentIds.filter(Boolean)),
+      );
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] syncWatchlistState error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks watchlist added event when content is successfully added to My List.
+   * Emits ONLY after successful addition.
+   * Ignores duplicates if item is already present in the active profile's list.
+   * Strictly avoids PII, content titles, or full metadata.
+   */
+  public async trackWatchlistAdded(
+    params: WatchlistAddedParams,
+  ): Promise<void> {
+    try {
+      if (!params) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn('[Analytics] trackWatchlistAdded called with missing params.');
+        }
+        return;
+      }
+
+      const pId =
+        params.profile_id ??
+        params.profileId ??
+        this.contextManager.getContext().profileId ??
+        'default';
+      const contentId = params.content_id ?? params.contentId;
+      const contentType = params.content_type ?? params.contentType ?? 'movie';
+      const actionSource = params.action_source ?? params.actionSource ?? 'details';
+      const listType = params.list_type ?? params.listType;
+
+      // Duplicate prevention: check if item is already present in this profile's watchlist
+      let addedSet = this.addedWatchlistItemsByProfile.get(pId);
+      if (!addedSet) {
+        addedSet = new Set<string>();
+        this.addedWatchlistItemsByProfile.set(pId, addedSet);
+      }
+
+      if (contentId && addedSet.has(contentId)) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.log(
+            `[Analytics] Watchlist item "${contentId}" is already present for profile "${pId}". Skipping duplicate watchlist_added.`,
+          );
+        }
+        return;
+      }
+
+      // Debounce rapid duplicate invocations
+      const actionKey = `add_${pId}_${contentId || contentType}`;
+      const now = Date.now();
+      if (
+        this.lastWatchlistActionKey === actionKey &&
+        now - this.lastWatchlistActionTime < 500
+      ) {
+        return;
+      }
+      this.lastWatchlistActionKey = actionKey;
+      this.lastWatchlistActionTime = now;
+
+      // Update tracking sets
+      if (contentId) {
+        addedSet.add(contentId);
+        const removedSet = this.removedWatchlistItemsByProfile.get(pId);
+        if (removedSet) {
+          removedSet.delete(contentId);
+        }
+      }
+
+      const payload: Record<string, unknown> = {
+        content_type: contentType,
+        action_source: actionSource,
+      };
+      if (listType) {
+        payload.list_type = listType;
+      }
+      if (contentId) {
+        payload.content_id = contentId;
+      }
+
+      await this.track(
+        AnalyticsEvent.WATCHLIST_ADDED,
+        payload as WatchlistAddedParams,
+      );
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackWatchlistAdded error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks watchlist removed event when content is successfully removed from My List.
+   * Emits ONLY after successful removal.
+   * Ignores duplicates if item was already removed or snapshot reflects same removal.
+   */
+  public async trackWatchlistRemoved(
+    params: WatchlistRemovedParams,
+  ): Promise<void> {
+    try {
+      if (!params) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn('[Analytics] trackWatchlistRemoved called with missing params.');
+        }
+        return;
+      }
+
+      const pId =
+        params.profile_id ??
+        params.profileId ??
+        this.contextManager.getContext().profileId ??
+        'default';
+      const contentId = params.content_id ?? params.contentId;
+      const contentType = params.content_type ?? params.contentType ?? 'movie';
+      const actionSource = params.action_source ?? params.actionSource ?? 'details';
+      const listType = params.list_type ?? params.listType;
+
+      let removedSet = this.removedWatchlistItemsByProfile.get(pId);
+      if (!removedSet) {
+        removedSet = new Set<string>();
+        this.removedWatchlistItemsByProfile.set(pId, removedSet);
+      }
+
+      if (contentId && removedSet.has(contentId)) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.log(
+            `[Analytics] Watchlist item "${contentId}" was already removed for profile "${pId}". Skipping duplicate watchlist_removed.`,
+          );
+        }
+        return;
+      }
+
+      // Debounce rapid duplicate invocations
+      const actionKey = `remove_${pId}_${contentId || contentType}`;
+      const now = Date.now();
+      if (
+        this.lastWatchlistActionKey === actionKey &&
+        now - this.lastWatchlistActionTime < 500
+      ) {
+        return;
+      }
+      this.lastWatchlistActionKey = actionKey;
+      this.lastWatchlistActionTime = now;
+
+      // Update tracking sets
+      if (contentId) {
+        removedSet.add(contentId);
+        const addedSet = this.addedWatchlistItemsByProfile.get(pId);
+        if (addedSet) {
+          addedSet.delete(contentId);
+        }
+      }
+
+      const payload: Record<string, unknown> = {
+        content_type: contentType,
+        action_source: actionSource,
+      };
+      if (listType) {
+        payload.list_type = listType;
+      }
+      if (contentId) {
+        payload.content_id = contentId;
+      }
+
+      await this.track(
+        AnalyticsEvent.WATCHLIST_REMOVED,
+        payload as WatchlistRemovedParams,
+      );
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackWatchlistRemoved error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks watchlist item selected event when user explicitly selects a saved item.
+   * Never emits simply because an item is focused, rendered, or restored.
+   */
+  public async trackWatchlistItemSelected(
+    params: WatchlistItemSelectedParams,
+  ): Promise<void> {
+    try {
+      if (!params) {
+        if (typeof __DEV__ !== 'undefined' && __DEV__) {
+          console.warn('[Analytics] trackWatchlistItemSelected called with missing params.');
+        }
+        return;
+      }
+
+      const pId =
+        params.profile_id ??
+        params.profileId ??
+        this.contextManager.getContext().profileId ??
+        'default';
+      const contentId = params.content_id ?? params.contentId;
+      const contentType = params.content_type ?? params.contentType ?? 'movie';
+      const destinationType =
+        params.destination_type ?? params.destinationType ?? 'details';
+      const selectionSource =
+        params.selection_source ?? params.selectionSource ?? 'watchlist';
+
+      // Debounce rapid duplicate selections
+      const key = `${pId}_${contentId || ''}_${destinationType}`;
+      const now = Date.now();
+      if (
+        this.lastWatchlistSelectedKey === key &&
+        now - this.lastWatchlistSelectedTime < 500
+      ) {
+        return;
+      }
+      this.lastWatchlistSelectedKey = key;
+      this.lastWatchlistSelectedTime = now;
+
+      const payload: Record<string, unknown> = {
+        content_type: contentType,
+        destination_type: destinationType,
+        selection_source: selectionSource,
+      };
+      if (contentId) {
+        payload.content_id = contentId;
+      }
+
+      await this.track(
+        AnalyticsEvent.WATCHLIST_ITEM_SELECTED,
+        payload as WatchlistItemSelectedParams,
+      );
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackWatchlistItemSelected error:', err);
+      }
+    }
+  }
+
+  /**
    * Internal test helper to reset singleton state between unit tests.
    */
   public __resetForTesting(): void {
@@ -1612,6 +2044,12 @@ export class AnalyticsService implements IAnalyticsService {
     this.lastChannelChange = null;
     this.lastEpgProgramKey = null;
     this.lastEpgProgramTime = 0;
+    this.addedWatchlistItemsByProfile.clear();
+    this.removedWatchlistItemsByProfile.clear();
+    this.lastWatchlistActionTime = 0;
+    this.lastWatchlistActionKey = null;
+    this.lastWatchlistSelectedKey = null;
+    this.lastWatchlistSelectedTime = 0;
     this.contextManager.reset();
   }
 }

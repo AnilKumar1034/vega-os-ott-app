@@ -26,6 +26,7 @@ import {
   fetchContinueWatchItems,
 } from '../services/watchProgressService';
 import {fetchWatchlist} from '../services/watchlistService';
+import {analyticsService} from '../analytics';
 import {WatchlistItem} from '../types/watchlist';
 import {
   canProfileAccessContent,
@@ -110,6 +111,10 @@ export const HomeScreen = () => {
         ]);
         setContinueWatchRecords(continueWatch);
         setWatchlistRecords(watchlist);
+        analyticsService.syncWatchlistState(
+          activeProfile.id,
+          watchlist.map((i) => i.contentId),
+        );
       } catch (error) {
         console.log('Library load error:', error);
       }
@@ -141,6 +146,10 @@ export const HomeScreen = () => {
         if (isCurrent) {
           setContinueWatchRecords(continueWatch);
           setWatchlistRecords(watchlist);
+          analyticsService.syncWatchlistState(
+            currentProfileId,
+            watchlist.map((i) => i.contentId),
+          );
         }
       } catch (error) {
         console.log('Profile library load error:', error);
