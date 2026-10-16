@@ -184,7 +184,11 @@ export class AnalyticsContextManager {
           }
           continue;
         }
-        payload[key] = value;
+        if (typeof value === 'string' && value.length > 100) {
+          payload[key] = value.substring(0, 100);
+        } else {
+          payload[key] = value;
+        }
       }
     }
 

@@ -59,6 +59,12 @@ import {
   WatchlistRemovedParams,
   WatchlistItemSelectedParams,
   ScreenViewEventParams,
+  ContentImpressionEventParams,
+  ContentSelectedEventParams,
+  ContentDetailsViewedEventParams,
+  SearchPerformedEventParams,
+  SearchResultSelectedEventParams,
+  ContentCategorySelectedEventParams,
 } from './analyticsTypes';
 
 const getAsyncStorage = () => {
@@ -121,6 +127,17 @@ export class AnalyticsService implements IAnalyticsService {
   private lastWatchlistActionKey: string | null = null;
   private lastWatchlistSelectedKey: string | null = null;
   private lastWatchlistSelectedTime = 0;
+  private lastContentSelectedKey: string | null = null;
+  private lastContentSelectedTime = 0;
+  private lastContentDetailsViewedId: string | null = null;
+  private trackedImpressionContentIds = new Set<string>();
+  private lastSearchLength = -1;
+  private lastSearchResultCount = -1;
+  private lastSearchTime = 0;
+  private lastSelectedCategory: string | null = null;
+  private lastCategorySelectionTime = 0;
+  private sessionStartTime: number = Math.floor(Date.now() / 1000);
+  private lastEventTime: number = Date.now();
 
   constructor(contextManager: AnalyticsContextManager = analyticsContextManager) {
     this.contextManager = contextManager;
@@ -287,6 +304,15 @@ export class AnalyticsService implements IAnalyticsService {
       this.lastWatchlistActionKey = null;
       this.lastWatchlistSelectedKey = null;
       this.lastWatchlistSelectedTime = 0;
+      this.lastContentSelectedKey = null;
+      this.lastContentSelectedTime = 0;
+      this.lastContentDetailsViewedId = null;
+      this.trackedImpressionContentIds.clear();
+      this.lastSearchLength = -1;
+      this.lastSearchResultCount = -1;
+      this.lastSearchTime = 0;
+      this.lastSelectedCategory = null;
+      this.lastCategorySelectionTime = 0;
       this.resetScreenTracking();
       if (this.firebaseSupported && this.firebaseAnalytics) {
         setUserId(this.firebaseAnalytics, null);
@@ -358,6 +384,20 @@ export class AnalyticsService implements IAnalyticsService {
   }
 
   /**
+   * Returns a valid integer session ID for GA4 (Unix timestamp in seconds).
+   * Automatically starts a new session if inactivity exceeds 30 minutes.
+   */
+  public getSessionId(): number {
+    const now = Date.now();
+    // Standard GA4 session timeout: 30 minutes (1,800,000 ms) of inactivity
+    if (now - this.lastEventTime > 30 * 60 * 1000) {
+      this.sessionStartTime = Math.floor(now / 1000);
+    }
+    this.lastEventTime = now;
+    return this.sessionStartTime;
+  }
+
+  /**
    * Dispatches analytics event via Google Analytics 4 Measurement Protocol REST API.
    * This is the official and primary event transmission path for Amazon Vega OS / React Native headless JS.
    */
@@ -391,13 +431,27 @@ export class AnalyticsService implements IAnalyticsService {
     try {
       const appInstanceId = await this.getOrCreateAppInstanceId();
       const context = this.contextManager.getContext();
+      const sessionId = this.getSessionId();
+
+      const eventParams: Record<string, unknown> = {
+        ...payload,
+        session_id:
+          typeof payload.session_id === 'number'
+            ? payload.session_id
+            : sessionId,
+        engagement_time_msec:
+          typeof payload.engagement_time_msec === 'number' &&
+          payload.engagement_time_msec > 0
+            ? payload.engagement_time_msec
+            : 100,
+      };
 
       const body: Record<string, unknown> = {
         app_instance_id: appInstanceId,
         events: [
           {
             name: eventName,
-            params: payload,
+            params: eventParams,
           },
         ],
       };
@@ -598,10 +652,36 @@ export class AnalyticsService implements IAnalyticsService {
         'screenname',
         'screen_class',
         'screenclass',
+        'firebase_screen',
+        'firebasescreen',
+        'firebase_screen_class',
+        'firebasescreenclass',
+        'page_title',
+        'pagetitle',
+        'item_id',
+        'itemid',
+        'item_name',
+        'itemname',
+        'video_title',
+        'videotitle',
+        'session_id',
+        'engagement_time_msec',
         'previous_screen',
         'previousscreen',
         'navigation_source',
         'navigationsource',
+        'source_screen',
+        'sourcescreen',
+        'content_id',
+        'contentid',
+        'content_type',
+        'contenttype',
+        'content_title',
+        'contenttitle',
+        'series_id',
+        'seriesid',
+        'episode_id',
+        'episodeid',
         'route_key',
         'routekey',
         'force',
@@ -612,9 +692,6 @@ export class AnalyticsService implements IAnalyticsService {
         'uri',
         'query',
         'search',
-        'title',
-        'contenttitle',
-        'movietitle',
         'name',
         'profilename',
         'userid',
@@ -631,7 +708,7 @@ export class AnalyticsService implements IAnalyticsService {
         'phone',
       ];
 
-      const disallowedExactKeys = new Set(['q', 'query', 'p', 'pwd']);
+      const disallowedExactKeys = new Set(['q', 'query', 'p', 'pwd', 'title']);
 
       for (const [key, value] of Object.entries(params)) {
         const lowerKey = key.toLowerCase();
@@ -652,11 +729,31 @@ export class AnalyticsService implements IAnalyticsService {
         sanitizedExtra[key] = value;
       }
 
+      const sourceScreen = params.source_screen || params.sourceScreen;
+      const contentId = params.content_id || params.contentId;
+      const contentType = params.content_type || params.contentType;
+      const rawTitle = params.content_title || params.contentTitle;
+      const contentTitle =
+        typeof rawTitle === 'string' && rawTitle.length > 100
+          ? rawTitle.substring(0, 100)
+          : rawTitle;
+      const seriesId = params.series_id || params.seriesId;
+      const episodeId = params.episode_id || params.episodeId;
+
       const payload: ScreenViewEventParams = {
         screen_name: screenName,
         screen_class: screenClass as string,
+        firebase_screen: screenName,
+        firebase_screen_class: screenClass as string,
+        page_title: screenName,
         ...(previousScreen ? {previous_screen: previousScreen} : {}),
         ...(navSource ? {navigation_source: navSource} : {}),
+        ...(sourceScreen ? {source_screen: sourceScreen} : {}),
+        ...(contentId ? {content_id: contentId, item_id: contentId} : {}),
+        ...(contentType ? {content_type: contentType} : {}),
+        ...(contentTitle ? {content_title: contentTitle, item_name: contentTitle} : {}),
+        ...(seriesId ? {series_id: seriesId} : {}),
+        ...(episodeId ? {episode_id: episodeId} : {}),
         ...sanitizedExtra,
       };
 
@@ -1823,6 +1920,13 @@ export class AnalyticsService implements IAnalyticsService {
       const contentType = params.content_type ?? params.contentType ?? 'movie';
       const actionSource = params.action_source ?? params.actionSource ?? 'details';
       const listType = params.list_type ?? params.listType;
+      const rawTitle = params.content_title ?? params.contentTitle;
+      const contentTitle =
+        typeof rawTitle === 'string' && rawTitle.length > 100
+          ? rawTitle.substring(0, 100)
+          : rawTitle;
+      const sourceScreen = params.source_screen ?? params.sourceScreen;
+      const sourceComponent = params.source_component ?? params.sourceComponent;
 
       // Duplicate prevention: check if item is already present in this profile's watchlist
       let addedSet = this.addedWatchlistItemsByProfile.get(pId);
@@ -1864,12 +1968,24 @@ export class AnalyticsService implements IAnalyticsService {
       const payload: Record<string, unknown> = {
         content_type: contentType,
         action_source: actionSource,
+        success: true,
       };
       if (listType) {
         payload.list_type = listType;
       }
       if (contentId) {
         payload.content_id = contentId;
+        payload.item_id = contentId;
+      }
+      if (contentTitle) {
+        payload.content_title = contentTitle;
+        payload.item_name = contentTitle;
+      }
+      if (sourceScreen) {
+        payload.source_screen = sourceScreen;
+      }
+      if (sourceComponent) {
+        payload.source_component = sourceComponent;
       }
 
       await this.track(
@@ -1908,6 +2024,13 @@ export class AnalyticsService implements IAnalyticsService {
       const contentType = params.content_type ?? params.contentType ?? 'movie';
       const actionSource = params.action_source ?? params.actionSource ?? 'details';
       const listType = params.list_type ?? params.listType;
+      const rawTitle = params.content_title ?? params.contentTitle;
+      const contentTitle =
+        typeof rawTitle === 'string' && rawTitle.length > 100
+          ? rawTitle.substring(0, 100)
+          : rawTitle;
+      const sourceScreen = params.source_screen ?? params.sourceScreen;
+      const sourceComponent = params.source_component ?? params.sourceComponent;
 
       let removedSet = this.removedWatchlistItemsByProfile.get(pId);
       if (!removedSet) {
@@ -1948,12 +2071,24 @@ export class AnalyticsService implements IAnalyticsService {
       const payload: Record<string, unknown> = {
         content_type: contentType,
         action_source: actionSource,
+        success: true,
       };
       if (listType) {
         payload.list_type = listType;
       }
       if (contentId) {
         payload.content_id = contentId;
+        payload.item_id = contentId;
+      }
+      if (contentTitle) {
+        payload.content_title = contentTitle;
+        payload.item_name = contentTitle;
+      }
+      if (sourceScreen) {
+        payload.source_screen = sourceScreen;
+      }
+      if (sourceComponent) {
+        payload.source_component = sourceComponent;
       }
 
       await this.track(
@@ -1993,6 +2128,13 @@ export class AnalyticsService implements IAnalyticsService {
         params.destination_type ?? params.destinationType ?? 'details';
       const selectionSource =
         params.selection_source ?? params.selectionSource ?? 'watchlist';
+      const rawTitle = params.content_title ?? params.contentTitle;
+      const contentTitle =
+        typeof rawTitle === 'string' && rawTitle.length > 100
+          ? rawTitle.substring(0, 100)
+          : rawTitle;
+      const sourceScreen = params.source_screen ?? params.sourceScreen;
+      const sourceComponent = params.source_component ?? params.sourceComponent;
 
       // Debounce rapid duplicate selections
       const key = `${pId}_${contentId || ''}_${destinationType}`;
@@ -2013,6 +2155,17 @@ export class AnalyticsService implements IAnalyticsService {
       };
       if (contentId) {
         payload.content_id = contentId;
+        payload.item_id = contentId;
+      }
+      if (contentTitle) {
+        payload.content_title = contentTitle;
+        payload.item_name = contentTitle;
+      }
+      if (sourceScreen) {
+        payload.source_screen = sourceScreen;
+      }
+      if (sourceComponent) {
+        payload.source_component = sourceComponent;
       }
 
       await this.track(
@@ -2022,6 +2175,289 @@ export class AnalyticsService implements IAnalyticsService {
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackWatchlistItemSelected error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks content impression when a movie/show tile becomes active in hero carousel or receives TV D-pad focus.
+   * Deduplicated per content item per session/screen visit to avoid high frequency impression firing.
+   */
+  public async trackContentImpression(
+    params: ContentImpressionEventParams,
+  ): Promise<void> {
+    try {
+      if (!params || (!params.content_id && !params.contentId)) {
+        return;
+      }
+      const contentId = (params.content_id || params.contentId) as string;
+      if (this.trackedImpressionContentIds.has(contentId)) {
+        return;
+      }
+      this.trackedImpressionContentIds.add(contentId);
+
+      const rawTitle = params.content_title ?? params.contentTitle;
+      const contentTitle =
+        typeof rawTitle === 'string' && rawTitle.length > 100
+          ? rawTitle.substring(0, 100)
+          : rawTitle;
+
+      const payload: ContentImpressionEventParams = {
+        content_id: contentId,
+        item_id: contentId,
+        ...(params.content_type || params.contentType
+          ? {content_type: params.content_type || params.contentType}
+          : {}),
+        ...(contentTitle
+          ? {content_title: contentTitle, item_name: contentTitle}
+          : {}),
+        ...(params.source_screen || params.sourceScreen
+          ? {source_screen: params.source_screen || params.sourceScreen}
+          : {}),
+        ...(params.source_component || params.sourceComponent
+          ? {source_component: params.source_component || params.sourceComponent}
+          : {}),
+      };
+
+      await this.track(AnalyticsEvent.CONTENT_IMPRESSION, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackContentImpression error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks explicit content selection (opening details, clicking hero play, pressing play on card).
+   * Debounces rapid duplicate selections within 500ms.
+   */
+  public async trackContentSelected(
+    params: ContentSelectedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params || (!params.content_id && !params.contentId)) {
+        return;
+      }
+      const contentId = (params.content_id || params.contentId) as string;
+      const actionName = (params.action_name || params.actionName || 'open_details') as string;
+      const selectionKey = `${contentId}_${actionName}`;
+      const now = Date.now();
+      if (
+        this.lastContentSelectedKey === selectionKey &&
+        now - this.lastContentSelectedTime < 500
+      ) {
+        return;
+      }
+      this.lastContentSelectedKey = selectionKey;
+      this.lastContentSelectedTime = now;
+
+      const rawTitle = params.content_title ?? params.contentTitle;
+      const contentTitle =
+        typeof rawTitle === 'string' && rawTitle.length > 100
+          ? rawTitle.substring(0, 100)
+          : rawTitle;
+
+      const payload: ContentSelectedEventParams = {
+        content_id: contentId,
+        content_type: params.content_type || params.contentType || 'movie',
+        action_name: actionName,
+        item_id: contentId,
+        ...(contentTitle
+          ? {content_title: contentTitle, item_name: contentTitle}
+          : {}),
+        ...(params.source_screen || params.sourceScreen
+          ? {source_screen: params.source_screen || params.sourceScreen}
+          : {}),
+        ...(params.source_component || params.sourceComponent
+          ? {source_component: params.source_component || params.sourceComponent}
+          : {}),
+        ...(params.destination_screen || params.destinationScreen
+          ? {destination_screen: params.destination_screen || params.destinationScreen}
+          : {}),
+        ...(params.series_id || params.seriesId
+          ? {series_id: params.series_id || params.seriesId}
+          : {}),
+        ...(params.episode_id || params.episodeId
+          ? {episode_id: params.episode_id || params.episodeId}
+          : {}),
+      };
+
+      await this.track(AnalyticsEvent.CONTENT_SELECTED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackContentSelected error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks content details viewed when the details screen successfully opens for an individual title.
+   * Prevents duplicate reporting for the same title on re-renders.
+   */
+  public async trackContentDetailsViewed(
+    params: ContentDetailsViewedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params || (!params.content_id && !params.contentId)) {
+        return;
+      }
+      const contentId = (params.content_id || params.contentId) as string;
+      if (this.lastContentDetailsViewedId === contentId) {
+        return;
+      }
+      this.lastContentDetailsViewedId = contentId;
+
+      const rawTitle = params.content_title ?? params.contentTitle;
+      const contentTitle =
+        typeof rawTitle === 'string' && rawTitle.length > 100
+          ? rawTitle.substring(0, 100)
+          : rawTitle;
+
+      const payload: ContentDetailsViewedEventParams = {
+        content_id: contentId,
+        content_type: params.content_type || params.contentType || 'movie',
+        item_id: contentId,
+        ...(contentTitle
+          ? {content_title: contentTitle, item_name: contentTitle}
+          : {}),
+        ...(params.source_screen || params.sourceScreen
+          ? {source_screen: params.source_screen || params.sourceScreen}
+          : {}),
+        ...(params.source_component || params.sourceComponent
+          ? {source_component: params.source_component || params.sourceComponent}
+          : {}),
+      };
+
+      await this.track(AnalyticsEvent.CONTENT_DETAILS_VIEWED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackContentDetailsViewed error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks search performed metrics (result count, search term length, has results).
+   * Strictly avoids logging raw search query text or PII.
+   * Debounces identical rapid query submissions within 1000ms.
+   */
+  public async trackSearchPerformed(
+    params: SearchPerformedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params) {
+        return;
+      }
+      const termLength =
+        params.search_term_length ?? params.searchTermLength ?? 0;
+      const resultCount =
+        params.result_count ?? params.resultCount ?? 0;
+      const hasResults =
+        params.has_results ?? params.hasResults ?? resultCount > 0;
+      const sourceScreen =
+        params.source_screen || params.sourceScreen || 'search';
+
+      const now = Date.now();
+      if (
+        this.lastSearchLength === termLength &&
+        this.lastSearchResultCount === resultCount &&
+        now - this.lastSearchTime < 1000
+      ) {
+        return;
+      }
+      this.lastSearchLength = termLength;
+      this.lastSearchResultCount = resultCount;
+      this.lastSearchTime = now;
+
+      const payload: SearchPerformedEventParams = {
+        search_term_length: termLength,
+        has_results: hasResults,
+        result_count: resultCount,
+        source_screen: sourceScreen,
+      };
+
+      await this.track(AnalyticsEvent.SEARCH_PERFORMED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSearchPerformed error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks when a user selects a search result item from the search results list.
+   */
+  public async trackSearchResultSelected(
+    params: SearchResultSelectedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params || (!params.content_id && !params.contentId)) {
+        return;
+      }
+      const contentId = (params.content_id || params.contentId) as string;
+      const rawTitle = params.content_title ?? params.contentTitle;
+      const contentTitle =
+        typeof rawTitle === 'string' && rawTitle.length > 100
+          ? rawTitle.substring(0, 100)
+          : rawTitle;
+
+      const payload: SearchResultSelectedEventParams = {
+        content_id: contentId,
+        content_type: params.content_type || params.contentType || 'movie',
+        item_id: contentId,
+        ...(contentTitle
+          ? {content_title: contentTitle, item_name: contentTitle}
+          : {}),
+        source_screen: 'search',
+        source_component: 'search_results',
+        destination_screen:
+          params.destination_screen || params.destinationScreen || 'MovieDetail',
+      };
+
+      await this.track(AnalyticsEvent.SEARCH_RESULT_SELECTED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSearchResultSelected error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks user selection of a content category or genre filter.
+   */
+  public async trackContentCategorySelected(
+    params: ContentCategorySelectedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params || (!params.category_name && !params.categoryName)) {
+        return;
+      }
+      const categoryName = (params.category_name || params.categoryName) as string;
+      const now = Date.now();
+      if (
+        this.lastSelectedCategory === categoryName &&
+        now - this.lastCategorySelectionTime < 500
+      ) {
+        return;
+      }
+      this.lastSelectedCategory = categoryName;
+      this.lastCategorySelectionTime = now;
+
+      const payload: ContentCategorySelectedEventParams = {
+        category_name: categoryName,
+        source_screen: params.source_screen || params.sourceScreen || 'LiveTV',
+        ...(params.source_component || params.sourceComponent
+          ? {source_component: params.source_component || params.sourceComponent}
+          : {}),
+        ...(params.action_name || params.actionName
+          ? {action_name: params.action_name || params.actionName}
+          : {}),
+      };
+
+      await this.track(AnalyticsEvent.CONTENT_CATEGORY_SELECTED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackContentCategorySelected error:', err);
       }
     }
   }
@@ -2050,6 +2486,15 @@ export class AnalyticsService implements IAnalyticsService {
     this.lastWatchlistActionKey = null;
     this.lastWatchlistSelectedKey = null;
     this.lastWatchlistSelectedTime = 0;
+    this.lastContentSelectedKey = null;
+    this.lastContentSelectedTime = 0;
+    this.lastContentDetailsViewedId = null;
+    this.trackedImpressionContentIds.clear();
+    this.lastSearchLength = -1;
+    this.lastSearchResultCount = -1;
+    this.lastSearchTime = 0;
+    this.lastSelectedCategory = null;
+    this.lastCategorySelectionTime = 0;
     this.contextManager.reset();
   }
 }

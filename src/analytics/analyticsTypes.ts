@@ -40,10 +40,29 @@ export interface ScreenViewEventParams {
   screenName?: string;
   screen_class?: string;
   screenClass?: string;
+  firebase_screen?: string;
+  firebase_screen_class?: string;
+  page_title?: string;
   previous_screen?: string | null;
   previousScreen?: string | null;
   navigation_source?: NavigationSource | string;
   navigationSource?: NavigationSource | string;
+  source_screen?: string;
+  sourceScreen?: string;
+  content_id?: string;
+  contentId?: string;
+  content_type?: string;
+  contentType?: string;
+  content_title?: string;
+  contentTitle?: string;
+  item_id?: string;
+  item_name?: string;
+  series_id?: string;
+  seriesId?: string;
+  episode_id?: string;
+  episodeId?: string;
+  session_id?: number;
+  engagement_time_msec?: number;
   [key: string]: unknown;
 }
 
@@ -101,7 +120,13 @@ export interface PlaybackBaseParams {
   contentId: string;
   content_id?: string;
   contentTitle?: string;
-  contentType?: 'movie' | 'episode' | 'live';
+  content_title?: string;
+  contentType?: 'movie' | 'episode' | 'live' | string;
+  content_type?: 'movie' | 'episode' | 'live' | string;
+  seriesId?: string;
+  series_id?: string;
+  episodeId?: string;
+  episode_id?: string;
   playbackType?: string;
   streamType?: string;
   isLive?: boolean;
@@ -112,6 +137,13 @@ export interface PlaybackBaseParams {
   channel_name?: string;
   profileId?: string;
   profileType?: 'adult' | 'kids';
+  position_ms?: number;
+  duration_ms?: number;
+  source_screen?: string;
+  sourceScreen?: string;
+  item_id?: string;
+  item_name?: string;
+  video_title?: string;
   [key: string]: unknown;
 }
 
@@ -319,21 +351,25 @@ export interface ContinueWatchingSelectedParams {
   contentId?: string;
   content_type?: string;
   contentType?: string;
+  content_title?: string;
+  contentTitle?: string;
+  source_screen?: string;
+  sourceScreen?: string;
   playback_session_id?: string;
   playbackSessionId?: string;
   saved_position_seconds?: number;
   savedPositionSeconds?: number;
-  selection_source: 'continue_watching';
+  selection_source?: 'continue_watching';
   selectionSource?: 'continue_watching';
   [key: string]: unknown;
 }
 
 export interface ResumePlaybackParams {
-  content_id: string;
+  content_id?: string;
   contentId?: string;
   content_type?: string;
   contentType?: string;
-  playback_session_id: string;
+  playback_session_id?: string;
   playbackSessionId?: string;
   resume_position_seconds: number;
   resumePositionSeconds?: number;
@@ -343,11 +379,11 @@ export interface ResumePlaybackParams {
 }
 
 export interface PlaybackProgressSavedParams {
-  content_id: string;
+  content_id?: string;
   contentId?: string;
   content_type?: string;
   contentType?: string;
-  playback_session_id: string;
+  playback_session_id?: string;
   playbackSessionId?: string;
   position_seconds: number;
   positionSeconds?: number;
@@ -451,24 +487,58 @@ export interface DeeplinkContentOpenedParams {
 export interface WatchlistAddedParams {
   content_type?: string;
   contentType?: string;
+  content_title?: string;
+  contentTitle?: string;
   action_source?: string;
   actionSource?: string;
+  source_screen?: string;
+  sourceScreen?: string;
+  source_component?: string;
+  sourceComponent?: string;
   list_type?: string;
   listType?: string;
   content_id?: string;
   contentId?: string;
   profile_id?: string;
   profileId?: string;
+  success?: boolean;
   [key: string]: unknown;
 }
 
 export interface WatchlistRemovedParams {
   content_type?: string;
   contentType?: string;
+  content_title?: string;
+  contentTitle?: string;
   action_source?: string;
   actionSource?: string;
+  source_screen?: string;
+  sourceScreen?: string;
+  source_component?: string;
+  sourceComponent?: string;
   list_type?: string;
   listType?: string;
+  content_id?: string;
+  contentId?: string;
+  profile_id?: string;
+  profileId?: string;
+  success?: boolean;
+  [key: string]: unknown;
+}
+
+export interface WatchlistItemSelectedParams {
+  content_type?: string;
+  contentType?: string;
+  content_title?: string;
+  contentTitle?: string;
+  source_screen?: string;
+  sourceScreen?: string;
+  source_component?: string;
+  sourceComponent?: string;
+  destination_type: 'details' | 'player' | string;
+  destinationType?: 'details' | 'player' | string;
+  selection_source?: 'watchlist' | string;
+  selectionSource?: 'watchlist' | string;
   content_id?: string;
   contentId?: string;
   profile_id?: string;
@@ -476,17 +546,101 @@ export interface WatchlistRemovedParams {
   [key: string]: unknown;
 }
 
-export interface WatchlistItemSelectedParams {
+export interface ContentImpressionEventParams {
+  content_id: string;
+  contentId?: string;
   content_type?: string;
   contentType?: string;
-  destination_type: 'details' | 'player' | string;
-  destinationType?: 'details' | 'player' | string;
-  selection_source: 'watchlist' | string;
-  selectionSource?: 'watchlist' | string;
-  content_id?: string;
+  content_title?: string;
+  contentTitle?: string;
+  item_id?: string;
+  item_name?: string;
+  source_screen?: string;
+  sourceScreen?: string;
+  source_component?: string;
+  sourceComponent?: string;
+  [key: string]: unknown;
+}
+
+export interface ContentSelectedEventParams {
+  content_id: string;
   contentId?: string;
-  profile_id?: string;
-  profileId?: string;
+  content_type: 'movie' | 'series' | 'episode' | 'live' | string;
+  contentType?: string;
+  content_title?: string;
+  contentTitle?: string;
+  item_id?: string;
+  item_name?: string;
+  source_screen?: string;
+  sourceScreen?: string;
+  source_component?: string;
+  sourceComponent?: string;
+  destination_screen?: string;
+  destinationScreen?: string;
+  action_name?: string;
+  actionName?: string;
+  series_id?: string;
+  seriesId?: string;
+  episode_id?: string;
+  episodeId?: string;
+  [key: string]: unknown;
+}
+
+export interface ContentDetailsViewedEventParams {
+  content_id: string;
+  contentId?: string;
+  content_type: 'movie' | 'series' | 'episode' | string;
+  contentType?: string;
+  content_title?: string;
+  contentTitle?: string;
+  item_id?: string;
+  item_name?: string;
+  source_screen?: string;
+  sourceScreen?: string;
+  source_component?: string;
+  sourceComponent?: string;
+  [key: string]: unknown;
+}
+
+export interface SearchPerformedEventParams {
+  search_term_length: number;
+  searchTermLength?: number;
+  has_results: boolean;
+  hasResults?: boolean;
+  result_count: number;
+  resultCount?: number;
+  source_screen?: string;
+  sourceScreen?: string;
+  [key: string]: unknown;
+}
+
+export interface SearchResultSelectedEventParams {
+  content_id: string;
+  contentId?: string;
+  content_type: string;
+  contentType?: string;
+  content_title?: string;
+  contentTitle?: string;
+  item_id?: string;
+  item_name?: string;
+  source_screen?: string;
+  sourceScreen?: string;
+  source_component?: string;
+  sourceComponent?: string;
+  destination_screen?: string;
+  destinationScreen?: string;
+  [key: string]: unknown;
+}
+
+export interface ContentCategorySelectedEventParams {
+  category_name: string;
+  categoryName?: string;
+  source_screen: string;
+  sourceScreen?: string;
+  source_component?: string;
+  sourceComponent?: string;
+  action_name?: string;
+  actionName?: string;
   [key: string]: unknown;
 }
 
@@ -534,6 +688,12 @@ export interface AnalyticsEventParamsMap {
   watchlist_added: WatchlistAddedParams;
   watchlist_removed: WatchlistRemovedParams;
   watchlist_item_selected: WatchlistItemSelectedParams;
+  content_impression: ContentImpressionEventParams;
+  content_selected: ContentSelectedEventParams;
+  content_details_viewed: ContentDetailsViewedEventParams;
+  search_performed: SearchPerformedEventParams;
+  search_result_selected: SearchResultSelectedEventParams;
+  content_category_selected: ContentCategorySelectedEventParams;
 }
 
 export type AnalyticsEventParams<T extends AnalyticsEventName = AnalyticsEventName> =
@@ -616,6 +776,12 @@ export interface IAnalyticsService {
   trackWatchlistAdded(params: WatchlistAddedParams): Promise<void>;
   trackWatchlistRemoved(params: WatchlistRemovedParams): Promise<void>;
   trackWatchlistItemSelected(params: WatchlistItemSelectedParams): Promise<void>;
+  trackContentImpression(params: ContentImpressionEventParams): Promise<void>;
+  trackContentSelected(params: ContentSelectedEventParams): Promise<void>;
+  trackContentDetailsViewed(params: ContentDetailsViewedEventParams): Promise<void>;
+  trackSearchPerformed(params: SearchPerformedEventParams): Promise<void>;
+  trackSearchResultSelected(params: SearchResultSelectedEventParams): Promise<void>;
+  trackContentCategorySelected(params: ContentCategorySelectedEventParams): Promise<void>;
   syncWatchlistState(profileId: string, contentIds: string[]): void;
   reset(): void;
 }

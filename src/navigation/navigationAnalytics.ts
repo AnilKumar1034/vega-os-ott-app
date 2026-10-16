@@ -65,8 +65,8 @@ export const getActiveRouteInfo = (
 };
 
 export interface RouteTransitionOptions {
-  user: unknown | null;
-  authLoading: boolean;
+  user?: unknown | null;
+  authLoading?: boolean;
   isInitial?: boolean;
 }
 
@@ -90,7 +90,7 @@ export class ScreenNavigationTracker {
    */
   public async handleRoute(
     route: ActiveRouteInfo | null | undefined,
-    options: RouteTransitionOptions,
+    options: RouteTransitionOptions = {},
   ): Promise<void> {
     if (!route || !route.name || typeof route.name !== 'string') {
       return;
@@ -179,11 +179,58 @@ export class ScreenNavigationTracker {
     // 5. Screen Class Normalization
     const screenClass = SCREEN_CLASS_MAP[routeName] || `${routeName}Screen`;
 
-    // 6. Update tracking state before async dispatch to prevent duplicate calls
+    // 6. Extract content parameters safely when navigating to content or player screens
+    let contentId: string | undefined;
+    let contentType: string | undefined;
+    let contentTitle: string | undefined;
+    let sourceScreen: string | undefined;
+    let seriesId: string | undefined;
+    let episodeId: string | undefined;
+
+    if (
+      (routeName === Routes.MovieDetail || routeName === Routes.VideoPlayer) &&
+      route.params &&
+      typeof route.params === 'object'
+    ) {
+      const p = route.params as Record<string, any>;
+      const movie = p.movie;
+      if (movie && typeof movie === 'object') {
+        contentId = movie.id || movie.contentId || movie.content_id;
+        contentType =
+          movie.type ||
+          movie.contentType ||
+          movie.content_type ||
+          (p.isLive ? 'live' : 'movie');
+        contentTitle =
+          movie.title ||
+          movie.name ||
+          movie.contentTitle ||
+          movie.content_title;
+        seriesId = movie.seriesId || movie.series_id;
+        episodeId = movie.episodeId || movie.episode_id;
+      }
+      contentId = contentId || p.contentId || p.content_id || p.id;
+      contentType =
+        contentType ||
+        p.contentType ||
+        p.content_type ||
+        (p.isLive ? 'live' : undefined);
+      contentTitle =
+        contentTitle || p.contentTitle || p.content_title || p.title;
+      sourceScreen = p.sourceScreen || p.source_screen || p.source;
+      seriesId = seriesId || p.seriesId || p.series_id;
+      episodeId = episodeId || p.episodeId || p.episode_id;
+    }
+
+    if (typeof contentTitle === 'string' && contentTitle.length > 100) {
+      contentTitle = contentTitle.substring(0, 100);
+    }
+
+    // 7. Update tracking state before async dispatch to prevent duplicate calls
     this.lastTrackedScreen = routeName;
     this.lastTrackedRouteKey = routeKey;
 
-    // 7. Dispatch via Centralized Analytics Service
+    // 8. Dispatch via Centralized Analytics Service
     try {
       const params: ScreenViewEventParams = {
         screen_name: routeName,
@@ -191,6 +238,12 @@ export class ScreenNavigationTracker {
         previous_screen: previousScreen,
         navigation_source: navigationSource,
         route_key: routeKey,
+        ...(contentId ? {content_id: String(contentId)} : {}),
+        ...(contentType ? {content_type: String(contentType)} : {}),
+        ...(contentTitle ? {content_title: String(contentTitle)} : {}),
+        ...(sourceScreen ? {source_screen: String(sourceScreen)} : {}),
+        ...(seriesId ? {series_id: String(seriesId)} : {}),
+        ...(episodeId ? {episode_id: String(episodeId)} : {}),
       };
 
       await this.analytics.trackScreenView(params);

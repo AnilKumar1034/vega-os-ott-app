@@ -8,6 +8,7 @@ import {strings} from '../../constants/strings';
 import {ContentCard} from '../molecules/ContentCard';
 import {styles} from '../../screens/MovieDetailScreen.styles';
 import {isKeyDown, isSelectEvent} from '../../utils/inputUtils';
+import {analyticsService} from '../../analytics';
 
 interface MovieDetailBodyProps {
   selectedMovie: HomeContentItem;
@@ -67,11 +68,28 @@ export const MovieDetailBody = ({
     const isCW =
       selectionSource === 'continue_watching' ||
       (continueWatchProgress !== null && continueWatchProgress > 0);
+    const resolvedContentType =
+      selectedMovie.contentType ||
+      (selectedMovie.meta?.includes('Series') ? 'series' : 'movie');
+
+    analyticsService
+      .trackContentSelected({
+        content_id: selectedMovie.id,
+        content_type: resolvedContentType,
+        content_title: selectedMovie.title,
+        source_screen: 'MovieDetail',
+        source_component: isCW ? 'continue_watching_button' : 'play_button',
+        destination_screen: 'VideoPlayer',
+        action_name: isCW ? 'continue_watching' : 'play_content',
+      })
+      .catch(() => {});
+
     navigation.navigate(Routes.VideoPlayer, {
       movie: selectedMovie,
       videoUrl: selectedMovie.videoUrl,
       selectionSource: isCW ? 'continue_watching' : 'details',
       source: isCW ? 'continue_watching' : 'details',
+      sourceScreen: 'MovieDetail',
     });
   };
 
@@ -305,6 +323,8 @@ export const MovieDetailBody = ({
             <ContentCard
               {...item}
               layout="portrait"
+              selectionSource="MovieDetail"
+              rowId="recommendations"
               onFocus={onCardFocus}
               hasTVPreferredFocus={
                 lastFocusedArea === 'recommendations' &&

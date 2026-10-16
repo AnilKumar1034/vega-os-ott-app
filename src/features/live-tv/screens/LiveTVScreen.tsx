@@ -135,6 +135,17 @@ export const LiveTVScreen = () => {
     [],
   );
 
+  const handleSelectCategory = useCallback((category: string) => {
+    setSelectedCategory(category);
+    analyticsService
+      .trackContentCategorySelected({
+        category_name: category,
+        source_screen: 'LiveTV',
+        source_component: 'category_menu',
+      })
+      .catch(() => {});
+  }, []);
+
   const handleProgramPress = useCallback(
     (
       program: EPGProgram,
@@ -182,6 +193,18 @@ export const LiveTVScreen = () => {
         }
       }
 
+      analyticsService
+        .trackContentSelected({
+          content_id: effectiveChannelId,
+          content_type: 'live_channel',
+          content_title: channelName || program.title,
+          source_screen: 'LiveTV',
+          source_component: 'epg',
+          destination_screen: 'VideoPlayer',
+          action_name: 'play_content',
+        })
+        .catch(() => {});
+
       navigation.navigate(Routes.VideoPlayer, {
         videoUrl: streamUrl,
         isLive: true,
@@ -191,6 +214,7 @@ export const LiveTVScreen = () => {
         channelId: effectiveChannelId,
         channelName,
         selectionSource: 'epg',
+        sourceScreen: 'LiveTV',
         movie: {
           id: `live-${program.id}`,
           title: program.title,
@@ -249,12 +273,20 @@ export const LiveTVScreen = () => {
           (showFreeLiveOnly ? 'free' : selectedCategory);
         if (option === 'all') {
           setShowFreeLiveOnly(false);
+          handleSelectCategory(strings.liveTV.allCategories);
           dismissCategoryMenu();
         } else if (option === 'free') {
           setShowFreeLiveOnly(true);
+          analyticsService
+            .trackContentCategorySelected({
+              category_name: 'Free Channels',
+              source_screen: 'LiveTV',
+              source_component: 'category_menu',
+            })
+            .catch(() => {});
           dismissCategoryMenu();
         } else if (option) {
-          setSelectedCategory(option);
+          handleSelectCategory(option);
           dismissCategoryMenu();
         }
         return;
@@ -264,7 +296,7 @@ export const LiveTVScreen = () => {
     if (hasNoFreeLiveChannels && isEPGReady) {
       if (isSelectEvent(type) && isEmptyButtonFocusedRef.current) {
         setShowFreeLiveOnly(false);
-        setSelectedCategory(strings.liveTV.allCategories);
+        handleSelectCategory(strings.liveTV.allCategories);
         return;
       }
     }
@@ -699,6 +731,7 @@ export const LiveTVScreen = () => {
               onBlur={() => setFocusedCategoryOption(null)}
               onPress={() => {
                 setShowFreeLiveOnly(false);
+                handleSelectCategory(strings.liveTV.allCategories);
                 dismissCategoryMenu();
               }}
               hasTVPreferredFocus={!showFreeLiveOnly}
@@ -719,6 +752,13 @@ export const LiveTVScreen = () => {
               onBlur={() => setFocusedCategoryOption(null)}
               onPress={() => {
                 setShowFreeLiveOnly(true);
+                analyticsService
+                  .trackContentCategorySelected({
+                    category_name: 'Free Channels',
+                    source_screen: 'LiveTV',
+                    source_component: 'category_menu',
+                  })
+                  .catch(() => {});
                 dismissCategoryMenu();
               }}
               hasTVPreferredFocus={showFreeLiveOnly}
@@ -742,7 +782,7 @@ export const LiveTVScreen = () => {
                 onFocus={() => setFocusedCategoryOption(category)}
                 onBlur={() => setFocusedCategoryOption(null)}
                 onPress={() => {
-                  setSelectedCategory(category);
+                  handleSelectCategory(category);
                   dismissCategoryMenu();
                 }}
                 hasTVPreferredFocus={selectedCategory === category}

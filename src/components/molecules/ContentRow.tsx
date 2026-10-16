@@ -10,6 +10,7 @@ interface ContentRowProps {
   onContentFocus: () => void;
   shouldPreferFocus?: boolean;
   onMenuEscapeLeft?: () => void;
+  selectionSource?: string;
 }
 
 export const ContentRow = React.forwardRef<any, ContentRowProps>(
@@ -19,6 +20,7 @@ export const ContentRow = React.forwardRef<any, ContentRowProps>(
       onContentFocus,
       shouldPreferFocus,
       onMenuEscapeLeft,
+      selectionSource,
     }: ContentRowProps,
     ref,
   ) => {
@@ -41,6 +43,7 @@ export const ContentRow = React.forwardRef<any, ContentRowProps>(
               shouldPreferFocus={shouldPreferFocus}
               onMenuEscapeLeft={onMenuEscapeLeft}
               rowId={row.id}
+              selectionSource={selectionSource}
             />
           )}
           showsHorizontalScrollIndicator={false}

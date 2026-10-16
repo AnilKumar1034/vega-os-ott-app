@@ -10,6 +10,7 @@ interface ContentRowCardItemProps {
   shouldPreferFocus?: boolean;
   onMenuEscapeLeft?: () => void;
   rowId?: string;
+  selectionSource?: string;
 }
 
 export const ContentRowCardItem = ({
@@ -20,6 +21,7 @@ export const ContentRowCardItem = ({
   shouldPreferFocus,
   onMenuEscapeLeft,
   rowId,
+  selectionSource,
 }: ContentRowCardItemProps) => {
   return (
     <ContentCard
@@ -28,7 +30,9 @@ export const ContentRowCardItem = ({
       rowId={rowId}
       isContinueWatching={rowId === 'continue-watching'}
       isWatchlist={rowId === 'my-list'}
-      selectionSource={rowId === 'my-list' ? 'watchlist' : undefined}
+      selectionSource={
+        rowId === 'my-list' ? 'watchlist' : selectionSource
+      }
       savedPositionSeconds={item.savedPositionSeconds}
       contentType={item.contentType}
       testID={`content-card-${item.id}`}

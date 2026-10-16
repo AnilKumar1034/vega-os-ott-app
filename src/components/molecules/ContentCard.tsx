@@ -96,6 +96,12 @@ export const ContentCard = ({
         contentId,
         content_type: resolvedContentType,
         contentType: resolvedContentType,
+        content_title: title,
+        contentTitle: title,
+        source_screen: 'Home',
+        sourceScreen: 'Home',
+        source_component: 'continue_watching',
+        sourceComponent: 'continue_watching',
         selection_source: 'continue_watching',
         selectionSource: 'continue_watching',
       };
@@ -121,6 +127,12 @@ export const ContentCard = ({
         contentId,
         content_type: resolvedContentType,
         contentType: resolvedContentType,
+        content_title: title,
+        contentTitle: title,
+        source_screen: 'MyList',
+        sourceScreen: 'MyList',
+        source_component: 'my_list',
+        sourceComponent: 'my_list',
         destination_type: destinationType,
         destinationType: destinationType,
         selection_source: 'watchlist',
@@ -133,12 +145,47 @@ export const ContentCard = ({
   const handlePress = () => {
     trackSelectionIfContinueWatching();
     trackSelectionIfWatchlist('details');
+
+    const contentId = id || title.toLowerCase().replace(/\s+/g, '-');
+    const resolvedContentType =
+      contentType || (meta?.includes('Series') ? 'series' : 'movie');
+    const isCW = isContinueWatching || rowId === 'continue-watching';
+    const isWL = isWatchlist || rowId === 'my-list' || selectionSource === 'watchlist';
+    const sourceScreen = isCW
+      ? 'ContinueWatching'
+      : isWL
+      ? 'MyList'
+      : selectionSource || 'Home';
+
+    analyticsService
+      .trackContentSelected({
+        content_id: contentId,
+        content_type: resolvedContentType,
+        content_title: title,
+        source_screen: sourceScreen,
+        source_component: rowId || (isCW ? 'continue_watching' : isWL ? 'my_list' : 'content_card'),
+        destination_screen: 'MovieDetail',
+        action_name: 'open_details',
+      })
+      .catch(() => {});
+
+    if (sourceScreen === 'Search' || selectionSource === 'Search') {
+      analyticsService
+        .trackSearchResultSelected({
+          content_id: contentId,
+          content_type: resolvedContentType,
+          content_title: title,
+          source_screen: 'Search',
+          source_component: rowId || 'search_results',
+          destination_screen: 'MovieDetail',
+        })
+        .catch(() => {});
+    }
+
     if (onPress) {
       onPress();
     } else {
-      const isCW = isContinueWatching || rowId === 'continue-watching';
-      const isWL = isWatchlist || rowId === 'my-list' || selectionSource === 'watchlist';
-      navigation.navigate(Routes.MovieDetail, {
+      const navParams: Record<string, any> = {
         movie: {
           id: id || title.toLowerCase().replace(/\s+/g, '-'),
           title,
@@ -154,9 +201,18 @@ export const ContentCard = ({
           savedPositionSeconds,
           contentType,
         },
-        selectionSource: isCW ? 'continue_watching' : isWL ? 'watchlist' : undefined,
-        source: isCW ? 'continue_watching' : isWL ? 'watchlist' : undefined,
-      });
+      };
+      if (isCW) {
+        navParams.selectionSource = 'continue_watching';
+        navParams.source = 'continue_watching';
+      } else if (isWL) {
+        navParams.selectionSource = 'watchlist';
+        navParams.source = 'watchlist';
+      }
+      if (sourceScreen && sourceScreen !== 'Home') {
+        navParams.sourceScreen = sourceScreen;
+      }
+      navigation.navigate(Routes.MovieDetail, navParams);
     }
   };
 
@@ -172,12 +228,46 @@ export const ContentCard = ({
         onMenuEscapeLeft();
       }
     } else if (type === 'play' || type === 'playpause') {
+      const contentId = id || title.toLowerCase().replace(/\s+/g, '-');
+      const resolvedContentType =
+        contentType || (meta?.includes('Series') ? 'series' : 'movie');
+      const isCW = isContinueWatching || rowId === 'continue-watching';
+      const isWL = isWatchlist || rowId === 'my-list' || selectionSource === 'watchlist';
+      const sourceScreen = isCW
+        ? 'ContinueWatching'
+        : isWL
+        ? 'MyList'
+        : selectionSource || 'Home';
+
+      analyticsService
+        .trackContentSelected({
+          content_id: contentId,
+          content_type: resolvedContentType,
+          content_title: title,
+          source_screen: sourceScreen,
+          source_component: rowId || (isCW ? 'continue_watching' : isWL ? 'my_list' : 'content_card'),
+          destination_screen: videoUrl ? 'VideoPlayer' : 'MovieDetail',
+          action_name: 'play_content',
+        })
+        .catch(() => {});
+
+      if (sourceScreen === 'Search' || selectionSource === 'Search') {
+        analyticsService
+          .trackSearchResultSelected({
+            content_id: contentId,
+            content_type: resolvedContentType,
+            content_title: title,
+            source_screen: 'Search',
+            source_component: rowId || 'search_results',
+            destination_screen: videoUrl ? 'VideoPlayer' : 'MovieDetail',
+          })
+          .catch(() => {});
+      }
+
       trackSelectionIfContinueWatching();
       if (videoUrl) {
         trackSelectionIfWatchlist('player');
-        const isCW = isContinueWatching || rowId === 'continue-watching';
-        const isWL = isWatchlist || rowId === 'my-list' || selectionSource === 'watchlist';
-        navigation.navigate(Routes.VideoPlayer, {
+        const playerParams: Record<string, any> = {
           movie: {
             id: id || title.toLowerCase().replace(/\s+/g, '-'),
             title,
@@ -194,9 +284,18 @@ export const ContentCard = ({
             contentType,
           },
           videoUrl,
-          selectionSource: isCW ? 'continue_watching' : isWL ? 'watchlist' : undefined,
-          source: isCW ? 'continue_watching' : isWL ? 'watchlist' : undefined,
-        });
+        };
+        if (isCW) {
+          playerParams.selectionSource = 'continue_watching';
+          playerParams.source = 'continue_watching';
+        } else if (isWL) {
+          playerParams.selectionSource = 'watchlist';
+          playerParams.source = 'watchlist';
+        }
+        if (sourceScreen && sourceScreen !== 'Home') {
+          playerParams.sourceScreen = sourceScreen;
+        }
+        navigation.navigate(Routes.VideoPlayer, playerParams);
       } else {
         handlePress();
       }
@@ -215,6 +314,26 @@ export const ContentCard = ({
       style={containerStyle}
       onFocus={() => {
         setIsFocused(true);
+        const contentId = id || title.toLowerCase().replace(/\s+/g, '-');
+        const resolvedContentType =
+          contentType || (meta?.includes('Series') ? 'series' : 'movie');
+        const isCW = isContinueWatching || rowId === 'continue-watching';
+        const isWL = isWatchlist || rowId === 'my-list' || selectionSource === 'watchlist';
+        const sourceScreen = isCW
+          ? 'ContinueWatching'
+          : isWL
+          ? 'MyList'
+          : selectionSource || 'Home';
+
+        analyticsService
+          .trackContentImpression({
+            content_id: contentId,
+            content_type: resolvedContentType,
+            content_title: title,
+            source_screen: sourceScreen,
+            source_component: rowId || 'content_card',
+          })
+          .catch(() => {});
         onFocus?.();
       }}
       onBlur={() => setIsFocused(false)}

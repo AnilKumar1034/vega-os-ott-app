@@ -82,7 +82,7 @@ import {
   isAutoplayEnabled,
 } from '../services/episodeService';
 import {NextEpisodeModal} from '../components/molecules/NextEpisodeModal';
-import {playbackSessionManager} from '../analytics';
+import {analyticsService, playbackSessionManager} from '../analytics';
 
 let KeplerVideoViewComponent: any = View;
 let VideoPlayerClass: any = null;
@@ -1590,6 +1590,22 @@ export const VideoPlayerScreen = () => {
             profileId: playbackProfileIdRef.current || activeProfile?.id,
             profileType: activeProfile?.isKids ? 'kids' : 'adult',
             deferPlaybackStarted: true,
+            seriesId:
+              route.params?.seriesId ||
+              route.params?.series_id ||
+              route.params?.movie?.seriesId ||
+              movie.seriesId ||
+              route.params?.episode?.seriesId ||
+              undefined,
+            episodeId:
+              route.params?.episodeId ||
+              route.params?.episode_id ||
+              route.params?.episode?.id ||
+              (movie.seriesId ? movie.id : undefined),
+            sourceScreen:
+              route.params?.sourceScreen ||
+              route.params?.source_screen ||
+              (isLive ? 'LiveTV' : 'MovieDetail'),
           })
           .catch(() => {});
 
@@ -1875,6 +1891,22 @@ export const VideoPlayerScreen = () => {
         })
         .catch(() => {});
 
+      analyticsService
+        .trackContentSelected({
+          content_id: ep.id,
+          content_type: 'episode',
+          content_title: ep.title,
+          series_id: ep.seriesId,
+          episode_id: ep.id,
+          source_screen: 'VideoPlayer',
+          source_component: targetEpisode
+            ? 'next_episode_modal_list'
+            : 'autoplay_countdown',
+          destination_screen: 'VideoPlayer',
+          action_name: 'play_content',
+        })
+        .catch(() => {});
+
       navigation.replace(Routes.VideoPlayer, {
         movieId: ep.id,
         movie: {
@@ -1897,6 +1929,11 @@ export const VideoPlayerScreen = () => {
         videoUrl: ep.videoUrl,
         seek: 0,
         isLive: false,
+        seriesId: ep.seriesId,
+        series_id: ep.seriesId,
+        episodeId: ep.id,
+        episode_id: ep.id,
+        sourceScreen: 'VideoPlayer',
       });
     },
     [movie, navigation, resolvedNextEpisode],

@@ -41,6 +41,8 @@ export const AnalyticsEvent = {
   RESUME_PLAYBACK: 'resume_playback',
   PLAYBACK_PROGRESS_SAVED: 'playback_progress_saved',
   CONTENT_COMPLETED: 'completed',
+  PLAYBACK_COMPLETED: 'completed',
+  FIRST_FRAME_RENDERED: 'first_frame',
   DEEPLINK_RECEIVED: 'deeplink_received',
   DEEPLINK_RESOLVED: 'deeplink_resolved',
   DEEPLINK_FAILED: 'deeplink_failed',
@@ -48,6 +50,12 @@ export const AnalyticsEvent = {
   WATCHLIST_ADDED: 'watchlist_added',
   WATCHLIST_REMOVED: 'watchlist_removed',
   WATCHLIST_ITEM_SELECTED: 'watchlist_item_selected',
+  CONTENT_IMPRESSION: 'content_impression',
+  CONTENT_SELECTED: 'content_selected',
+  CONTENT_DETAILS_VIEWED: 'content_details_viewed',
+  SEARCH_PERFORMED: 'search_performed',
+  SEARCH_RESULT_SELECTED: 'search_result_selected',
+  CONTENT_CATEGORY_SELECTED: 'content_category_selected',
 } as const;
 
 export type AnalyticsEventName =

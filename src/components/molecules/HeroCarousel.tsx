@@ -172,6 +172,23 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
     };
   }, [activeProfile?.id, currentSlide, user]);
 
+  useEffect(() => {
+    if (currentSlide?.id) {
+      const resolvedContentType =
+        (currentSlide as any).contentType ||
+        (currentSlide.meta?.includes('Series') ? 'series' : 'movie');
+      analyticsService
+        .trackContentImpression({
+          content_id: currentSlide.id,
+          content_type: resolvedContentType,
+          content_title: currentSlide.title,
+          source_screen: 'Home',
+          source_component: 'hero_carousel',
+        })
+        .catch(() => {});
+    }
+  }, [currentSlide?.id, currentSlide?.title]);
+
   const handleFocus = (action: 'play' | 'list' | 'prev' | 'next' | number) => {
     isCarouselFocusedRef.current = true;
     setFocusedAction(action);
@@ -197,6 +214,21 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
 
   const playVideo = () => {
     if (currentSlide) {
+      const resolvedContentType =
+        (currentSlide as any).contentType ||
+        (currentSlide.meta?.includes('Series') ? 'series' : 'movie');
+      analyticsService
+        .trackContentSelected({
+          content_id: currentSlide.id,
+          content_type: resolvedContentType,
+          content_title: currentSlide.title,
+          source_screen: 'Home',
+          source_component: 'hero_carousel',
+          destination_screen: 'VideoPlayer',
+          action_name: 'hero_play',
+        })
+        .catch(() => {});
+
       navigation.navigate(Routes.VideoPlayer, {
         movie: currentSlide,
         videoUrl: (currentSlide as any).videoUrl,
@@ -206,8 +238,24 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
 
   const openMovieDetails = () => {
     if (currentSlide) {
+      const resolvedContentType =
+        (currentSlide as any).contentType ||
+        (currentSlide.meta?.includes('Series') ? 'series' : 'movie');
+      analyticsService
+        .trackContentSelected({
+          content_id: currentSlide.id,
+          content_type: resolvedContentType,
+          content_title: currentSlide.title,
+          source_screen: 'Home',
+          source_component: 'hero_carousel',
+          destination_screen: 'MovieDetail',
+          action_name: 'hero_details',
+        })
+        .catch(() => {});
+
       navigation.navigate(Routes.MovieDetail, {
         movie: currentSlide,
+        sourceScreen: 'Home',
       });
     }
   };
@@ -246,6 +294,10 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
             content_type: resolvedContentType,
             action_source: 'hero',
             content_id: currentSlide.id,
+            content_title: currentSlide.title,
+            source_screen: 'Home',
+            source_component: 'hero_action_button',
+            success: true,
           })
           .catch(() => {});
       } else {
@@ -257,6 +309,10 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
             content_type: resolvedContentType,
             action_source: 'hero',
             content_id: currentSlide.id,
+            content_title: currentSlide.title,
+            source_screen: 'Home',
+            source_component: 'hero_action_button',
+            success: true,
           })
           .catch(() => {});
       }

@@ -63,9 +63,25 @@ export const MovieDetailScreen = () => {
 
     if (isPlayPauseEvent(type)) {
       if (!isMenuExpanded && isContentAllowed) {
+        const resolvedContentType =
+          selectedMovie.contentType ||
+          (selectedMovie.meta?.includes('Series') ? 'series' : 'movie');
+        analyticsService
+          .trackContentSelected({
+            content_id: selectedMovie.id,
+            content_type: resolvedContentType,
+            content_title: selectedMovie.title,
+            source_screen: 'MovieDetail',
+            source_component: 'dpad_play',
+            destination_screen: 'VideoPlayer',
+            action_name: 'play_content',
+          })
+          .catch(() => {});
+
         navigation.navigate(Routes.VideoPlayer, {
           movie: selectedMovie,
           videoUrl: selectedMovie.videoUrl,
+          sourceScreen: 'MovieDetail',
         });
       }
     }
@@ -114,7 +130,32 @@ export const MovieDetailScreen = () => {
         .onDestinationOpened('details', selectedMovie.contentType || 'movie')
         .catch(() => {});
     }
-  }, [resolvedMovie, selectedMovie.contentType]);
+
+    if (selectedMovie?.id) {
+      const resolvedContentType =
+        selectedMovie.contentType ||
+        (selectedMovie.meta?.includes('Series') ? 'series' : 'movie');
+      analyticsService
+        .trackContentDetailsViewed({
+          content_id: selectedMovie.id,
+          content_type: resolvedContentType,
+          content_title: selectedMovie.title,
+          source_screen:
+            route.params?.sourceScreen ||
+            route.params?.source_screen ||
+            'Home',
+        })
+        .catch(() => {});
+    }
+  }, [
+    resolvedMovie,
+    selectedMovie.id,
+    selectedMovie.title,
+    selectedMovie.contentType,
+    selectedMovie.meta,
+    route.params?.sourceScreen,
+    route.params?.source_screen,
+  ]);
 
   useEffect(() => {
     let active = true;
@@ -213,6 +254,10 @@ export const MovieDetailScreen = () => {
             content_type: resolvedContentType,
             action_source: 'details',
             content_id: selectedMovie.id,
+            content_title: selectedMovie.title,
+            source_screen: 'MovieDetail',
+            source_component: 'details_action_button',
+            success: true,
           })
           .catch(() => {});
       } else {
@@ -224,6 +269,10 @@ export const MovieDetailScreen = () => {
             content_type: resolvedContentType,
             action_source: 'details',
             content_id: selectedMovie.id,
+            content_title: selectedMovie.title,
+            source_screen: 'MovieDetail',
+            source_component: 'details_action_button',
+            success: true,
           })
           .catch(() => {});
       }

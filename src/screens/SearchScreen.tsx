@@ -13,6 +13,7 @@ import {filterContentRows} from '../utils/searchUtils';
 import {styles} from './HomeScreen.styles';
 import {useRoute} from '@react-navigation/native';
 import {deeplinkManager} from '../utils/deeplink';
+import {analyticsService} from '../analytics';
 
 export const SearchScreen = () => {
   const route = useRoute<any>();
@@ -34,6 +35,24 @@ export const SearchScreen = () => {
     homeContentRows,
   );
   const filteredRows = filterContentRows(allowedRows, searchQuery);
+
+  useEffect(() => {
+    const trimmed = searchQuery.trim();
+    if (trimmed.length > 0) {
+      const totalResults = filteredRows.reduce(
+        (acc, r) => acc + (r.items?.length || 0),
+        0,
+      );
+      analyticsService
+        .trackSearchPerformed({
+          search_term_length: trimmed.length,
+          has_results: totalResults > 0,
+          result_count: totalResults,
+          source_screen: 'Search',
+        })
+        .catch(() => {});
+    }
+  }, [searchQuery, filteredRows]);
 
   const handleMenuFocus = () => {
     setIsMenuExpanded(true);
@@ -63,6 +82,7 @@ export const SearchScreen = () => {
         rowRefs.current[index] = node;
       }}
       row={row}
+      selectionSource="Search"
       onContentFocus={() => {
         setLastFocusedRowIndex(index);
         handleCardFocus();

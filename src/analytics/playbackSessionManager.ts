@@ -10,6 +10,7 @@ import {
   LiveChannelChangedParams,
   LiveChannelSelectedParams,
   LivePlaybackStartedParams,
+  PlaybackBaseParams,
   PlaybackBufferMetrics,
   PlaybackCompletedParams,
   PlaybackErrorParams,
@@ -58,6 +59,9 @@ export interface StartPlaybackSessionOptions {
   contentId: string;
   contentTitle?: string;
   contentType?: 'movie' | 'episode' | 'live';
+  seriesId?: string;
+  episodeId?: string;
+  sourceScreen?: string;
   playbackType?: string;
   streamType?: string;
   isLive?: boolean;
@@ -78,6 +82,9 @@ export interface ActivePlaybackSession {
   contentId: string;
   contentTitle?: string;
   contentType?: 'movie' | 'episode' | 'live';
+  seriesId?: string;
+  episodeId?: string;
+  sourceScreen?: string;
   playbackType?: string;
   streamType?: string;
   isLive?: boolean;
@@ -331,6 +338,9 @@ export class PlaybackSessionManager {
       contentId: options.contentId,
       contentTitle: options.contentTitle,
       contentType,
+      seriesId: options.seriesId,
+      episodeId: options.episodeId,
+      sourceScreen: options.sourceScreen,
       playbackType,
       streamType: options.streamType,
       isLive,
@@ -381,6 +391,89 @@ export class PlaybackSessionManager {
   }
 
   /**
+   * Helper to construct unified base parameters across all playback events,
+   * ensuring content identity (title, type, seriesId, episodeId, sourceScreen, position, duration)
+   * is attached consistently.
+   */
+  private getBasePlaybackParams(
+    session: ActivePlaybackSession,
+    positionSeconds?: number,
+    durationSeconds?: number,
+  ): PlaybackBaseParams {
+    const posSec =
+      typeof positionSeconds === 'number' && Number.isFinite(positionSeconds)
+        ? positionSeconds
+        : session.startPosition;
+    const durSec =
+      typeof durationSeconds === 'number' && Number.isFinite(durationSeconds)
+        ? durationSeconds
+        : session.duration;
+    const posMs =
+      typeof posSec === 'number' && Number.isFinite(posSec)
+        ? Math.round(posSec * 1000)
+        : undefined;
+    const durMs =
+      typeof durSec === 'number' && Number.isFinite(durSec) && durSec > 0
+        ? Math.round(durSec * 1000)
+        : undefined;
+
+    return {
+      playbackSessionId: session.playbackSessionId,
+      playback_session_id: session.playbackSessionId,
+      contentId: session.contentId,
+      content_id: session.contentId,
+      ...(session.contentId ? {item_id: session.contentId} : {}),
+      ...(session.contentTitle
+        ? {
+            contentTitle: session.contentTitle,
+            content_title: session.contentTitle,
+            item_name: session.contentTitle,
+            video_title: session.contentTitle,
+          }
+        : {}),
+      contentType: session.contentType,
+      content_type: session.contentType,
+      ...(session.seriesId
+        ? {
+            seriesId: session.seriesId,
+            series_id: session.seriesId,
+          }
+        : {}),
+      ...(session.episodeId
+        ? {
+            episodeId: session.episodeId,
+            episode_id: session.episodeId,
+          }
+        : {}),
+      ...(session.sourceScreen
+        ? {
+            sourceScreen: session.sourceScreen,
+            source_screen: session.sourceScreen,
+          }
+        : {}),
+      playbackType: session.playbackType || session.contentType,
+      playback_type: session.playbackType || session.contentType,
+      streamType: session.streamType,
+      isLive: session.isLive,
+      is_live: session.isLive,
+      profileId: session.profileId,
+      profile_id: session.profileId,
+      profileType: session.profileType,
+      profile_type: session.profileType,
+      ...(posMs !== undefined ? {position_ms: posMs} : {}),
+      ...(durMs !== undefined ? {duration_ms: durMs} : {}),
+      ...(session.channelId
+        ? {
+            channelId: session.channelId,
+            channel_id: session.channelId,
+            channelName: session.channelName,
+            channel_name: session.channelName,
+          }
+        : {}),
+    };
+  }
+
+  /**
    * Day 3 Event: playback_start_requested.
    * Represents the application initiating the playback request.
    * Emitted exactly once per playback session.
@@ -407,26 +500,11 @@ export class PlaybackSessionManager {
         ? params.startPosition
         : this.currentSession.startPosition;
 
+    const base = this.getBasePlaybackParams(this.currentSession, startPosition);
     const startRequestedParams: PlaybackStartRequestedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
+      ...base,
       startPosition,
-      ...(this.currentSession.channelId
-        ? {
-            channelId: this.currentSession.channelId,
-            channel_id: this.currentSession.channelId,
-            channelName: this.currentSession.channelName,
-            channel_name: this.currentSession.channelName,
-          }
-        : {}),
+      start_position: startPosition,
     };
 
     try {
@@ -467,25 +545,9 @@ export class PlaybackSessionManager {
       this.currentSession.state = 'ready';
     }
 
+    const base = this.getBasePlaybackParams(this.currentSession);
     const playerReadyParams: PlayerReadyParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
-      ...(this.currentSession.channelId
-        ? {
-            channelId: this.currentSession.channelId,
-            channel_id: this.currentSession.channelId,
-            channelName: this.currentSession.channelName,
-            channel_name: this.currentSession.channelName,
-          }
-        : {}),
+      ...base,
     };
 
     try {
@@ -539,36 +601,12 @@ export class PlaybackSessionManager {
         ? params.duration
         : this.currentSession.duration;
 
+    const base = this.getBasePlaybackParams(this.currentSession, startPos, dur);
     const startedParams: PlaybackStartedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      playback_session_id: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      content_id: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      content_type: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      playback_type:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      is_live: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profile_id: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
-      profile_type: this.currentSession.profileType,
+      ...base,
       startPosition: startPos,
       start_position: startPos,
       duration: dur,
-      ...(this.currentSession.channelId
-        ? {
-            channelId: this.currentSession.channelId,
-            channel_id: this.currentSession.channelId,
-            channelName: this.currentSession.channelName,
-            channel_name: this.currentSession.channelName,
-          }
-        : {}),
     };
 
     try {
@@ -611,9 +649,13 @@ export class PlaybackSessionManager {
    * Measures startup_time_ms / timeToFirstFrameMs from start request to first frame render.
    * Fired exactly once per session.
    */
-  public async recordFirstFrame(params?: {
-    position?: number;
-  }): Promise<void> {
+  public async recordFirstFrame(
+    params?:
+      | {
+          position?: number;
+        }
+      | number,
+  ): Promise<void> {
     if (!this.currentSession) {
       return;
     }
@@ -628,20 +670,27 @@ export class PlaybackSessionManager {
       return;
     }
 
+    const now = Date.now();
+    // Primary startup metric: first_frame_timestamp - playback_start_requested_timestamp
+    const startupTimeMs =
+      typeof params === 'number'
+        ? params
+        : typeof params?.startupTimeMs === 'number'
+        ? params.startupTimeMs
+        : Math.max(0, now - this.currentSession.startRequestedTime);
+
+    const pos =
+      typeof params === 'object' && typeof params?.position === 'number'
+        ? params.position
+        : this.currentSession.startPosition;
+
     // Ensure playback_started precedes first_frame
     if (!this.currentSession.hasPlaybackStarted) {
       await this.recordPlaybackStarted({
-        startPosition: params?.position ?? this.currentSession.startPosition,
+        startPosition: pos,
         duration: this.currentSession.duration,
       });
     }
-
-    const now = Date.now();
-    // Primary startup metric: first_frame_timestamp - playback_start_requested_timestamp
-    const startupTimeMs = Math.max(
-      0,
-      now - this.currentSession.startRequestedTime,
-    );
 
     this.currentSession.hasFirstFrame = true;
     this.currentSession.firstFrameTime = now;
@@ -654,43 +703,14 @@ export class PlaybackSessionManager {
       this.currentSession.lastPlayStartTime = now;
     }
 
-    const pos =
-      typeof params?.position === 'number'
-        ? params.position
-        : this.currentSession.startPosition;
-
+    const base = this.getBasePlaybackParams(this.currentSession, pos);
     const firstFrameParams: FirstFrameParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      playback_session_id: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      content_id: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      content_type: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      playback_type:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      is_live: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profile_id: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
-      profile_type: this.currentSession.profileType,
+      ...base,
       timeToFirstFrameMs: startupTimeMs,
       time_to_first_frame_ms: startupTimeMs,
       startup_time_ms: startupTimeMs,
       startupTimeMs,
       position: pos,
-      ...(this.currentSession.channelId
-        ? {
-            channelId: this.currentSession.channelId,
-            channel_id: this.currentSession.channelId,
-            channelName: this.currentSession.channelName,
-            channel_name: this.currentSession.channelName,
-          }
-        : {}),
     };
 
     try {
@@ -746,17 +766,9 @@ export class PlaybackSessionManager {
 
     this.currentSession.state = 'buffering';
 
+    const base = this.getBasePlaybackParams(this.currentSession);
     const bufferStartedParams: BufferStartedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
+      ...base,
       bufferCount: this.currentSession.bufferMetrics.bufferCount,
       buffer_count: this.currentSession.bufferMetrics.bufferCount,
     };
@@ -802,17 +814,9 @@ export class PlaybackSessionManager {
     this.currentSession.state = 'playing';
     this.currentSession.lastPlayStartTime = now;
 
+    const base = this.getBasePlaybackParams(this.currentSession);
     const bufferEndedParams: BufferEndedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
+      ...base,
       bufferDurationMs,
       buffer_duration_ms: bufferDurationMs,
       bufferCount: this.currentSession.bufferMetrics.bufferCount,
@@ -867,25 +871,9 @@ export class PlaybackSessionManager {
         ? Math.max(0, position)
         : 0;
 
+    const base = this.getBasePlaybackParams(this.currentSession, numericPosition);
     const pausedParams: PlaybackPausedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      playback_session_id: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      content_id: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      content_type: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      playback_type:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      is_live: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profile_id: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
-      profile_type: this.currentSession.profileType,
+      ...base,
       position: numericPosition,
     };
 
@@ -933,25 +921,9 @@ export class PlaybackSessionManager {
         ? Math.max(0, position)
         : 0;
 
+    const base = this.getBasePlaybackParams(this.currentSession, numericPosition);
     const resumedParams: PlaybackResumedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      playback_session_id: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      content_id: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      content_type: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      playback_type:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      is_live: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profile_id: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
-      profile_type: this.currentSession.profileType,
+      ...base,
       position: numericPosition,
       pauseDurationMs,
       pause_duration_ms: pauseDurationMs,
@@ -1003,25 +975,10 @@ export class PlaybackSessionManager {
 
     this.currentSession.hasResumePlaybackEmitted = true;
 
+    const base = this.getBasePlaybackParams(this.currentSession, numericPosition);
     const resumeParams: ResumePlaybackParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      playback_session_id: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
+      ...base,
       content_id: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      content_type: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      playback_type:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      is_live: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profile_id: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
-      profile_type: this.currentSession.profileType,
       resume_position_seconds: numericPosition,
       resumePositionSeconds: numericPosition,
       ...(params.resumeSource
@@ -1069,25 +1026,10 @@ export class PlaybackSessionManager {
 
     this.currentSession.lastReportedProgressSeconds = numericPosition;
 
+    const base = this.getBasePlaybackParams(this.currentSession, numericPosition);
     const progressParams: PlaybackProgressSavedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      playback_session_id: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
+      ...base,
       content_id: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      content_type: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      playback_type:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      is_live: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profile_id: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
-      profile_type: this.currentSession.profileType,
       position_seconds: numericPosition,
       positionSeconds: numericPosition,
     };
@@ -1109,9 +1051,14 @@ export class PlaybackSessionManager {
    * Emitted when playback naturally reaches the end. Mutually exclusive with stopped.
    * Normal Live TV sessions do NOT emit completed.
    */
-  public async recordComplete(params?: {
-    duration?: number;
-  }): Promise<void> {
+  public async recordComplete(
+    params?:
+      | {
+          duration?: number;
+        }
+      | number,
+    _duration?: number,
+  ): Promise<void> {
     if (!this.currentSession) {
       return;
     }
@@ -1147,29 +1094,17 @@ export class PlaybackSessionManager {
     }
 
     const finalDuration =
-      typeof params?.duration === 'number' && params.duration > 0
+      typeof params === 'number'
+        ? params
+        : typeof params?.duration === 'number' && params.duration > 0
         ? params.duration
+        : typeof _duration === 'number' && _duration > 0
+        ? _duration
         : this.currentSession.duration;
 
+    const base = this.getBasePlaybackParams(this.currentSession, undefined, finalDuration);
     const completedParams: PlaybackCompletedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      playback_session_id: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      content_id: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      content_type: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      playback_type:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      is_live: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profile_id: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
-      profile_type: this.currentSession.profileType,
+      ...base,
       duration: finalDuration,
       totalPlayTimeMs: this.currentSession.totalPlayTimeMs,
       total_play_time_ms: this.currentSession.totalPlayTimeMs,
@@ -1263,25 +1198,9 @@ export class PlaybackSessionManager {
         ? Math.max(0, params.position)
         : 0;
 
+    const base = this.getBasePlaybackParams(this.currentSession, numericPos, finalDuration);
     const stoppedParams: PlaybackStoppedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      playback_session_id: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      content_id: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      content_type: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      playback_type:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      is_live: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profile_id: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
-      profile_type: this.currentSession.profileType,
+      ...base,
       position: numericPos,
       duration: finalDuration,
       totalPlayTimeMs: this.currentSession.totalPlayTimeMs,
@@ -1289,14 +1208,6 @@ export class PlaybackSessionManager {
       reason: params?.reason || controlledStopReason,
       stopReason: controlledStopReason,
       stop_reason: controlledStopReason,
-      ...(this.currentSession.channelId
-        ? {
-            channelId: this.currentSession.channelId,
-            channel_id: this.currentSession.channelId,
-            channelName: this.currentSession.channelName,
-            channel_name: this.currentSession.channelName,
-          }
-        : {}),
     };
 
     this.currentSession.state = 'stopped';
@@ -1357,25 +1268,9 @@ export class PlaybackSessionManager {
         ? Math.max(0, options.position)
         : 0;
 
+    const base = this.getBasePlaybackParams(this.currentSession, numericPos);
     const errorParams: PlaybackErrorParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      playback_session_id: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      content_id: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      content_type: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      playback_type:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      is_live: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profile_id: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
-      profile_type: this.currentSession.profileType,
+      ...base,
       errorCategory: normalized.category,
       error_category: normalized.category,
       errorCode: normalized.code,
@@ -1385,14 +1280,6 @@ export class PlaybackSessionManager {
       isFatal,
       is_fatal: isFatal,
       position: numericPos,
-      ...(this.currentSession.channelId
-        ? {
-            channelId: this.currentSession.channelId,
-            channel_id: this.currentSession.channelId,
-            channelName: this.currentSession.channelName,
-            channel_name: this.currentSession.channelName,
-          }
-        : {}),
     };
 
     this.currentSession.hasPlaybackError = true;
@@ -1451,29 +1338,13 @@ export class PlaybackSessionManager {
     this.currentSession.currentSeekStartPosition = startPos;
     this.currentSession.currentSeekTargetPosition = targetPos;
 
+    const base = this.getBasePlaybackParams(this.currentSession, startPos);
     const seekStartedParams: SeekStartedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
+      ...base,
       seekStartPosition: startPos,
       seek_start_position: startPos,
       seekTargetPosition: targetPos,
       seek_target_position: targetPos,
-      ...(this.currentSession.channelId
-        ? {
-            channelId: this.currentSession.channelId,
-            channel_id: this.currentSession.channelId,
-            channelName: this.currentSession.channelName,
-            channel_name: this.currentSession.channelName,
-          }
-        : {}),
     };
 
     try {
@@ -1489,7 +1360,11 @@ export class PlaybackSessionManager {
    * Day 4 Event: seek_completed.
    * Tracks when the seek operation finishes (e.g. seeked event from media player).
    */
-  public async recordSeekCompleted(position?: number): Promise<void> {
+  public async recordSeekCompleted(
+    position?: number,
+    _seekDuration?: number,
+    _success?: boolean,
+  ): Promise<void> {
     if (!this.currentSession) {
       return;
     }
@@ -1511,31 +1386,15 @@ export class PlaybackSessionManager {
     this.currentSession.currentSeekStartPosition = undefined;
     this.currentSession.currentSeekTargetPosition = undefined;
 
+    const base = this.getBasePlaybackParams(this.currentSession, targetPos);
     const seekCompletedParams: SeekCompletedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
+      ...base,
       seekStartPosition: startPos,
       seek_start_position: startPos,
       seekTargetPosition: targetPos,
       seek_target_position: targetPos,
       seekDurationMs,
       seek_duration_ms: seekDurationMs,
-      ...(this.currentSession.channelId
-        ? {
-            channelId: this.currentSession.channelId,
-            channel_id: this.currentSession.channelId,
-            channelName: this.currentSession.channelName,
-            channel_name: this.currentSession.channelName,
-          }
-        : {}),
     };
 
     try {
@@ -1583,17 +1442,9 @@ export class PlaybackSessionManager {
     this.currentSession.currentAudioLanguage = params.toLanguage;
     this.currentSession.currentAudioFormat = params.toFormat;
 
+    const base = this.getBasePlaybackParams(this.currentSession);
     const audioParams: AudioTrackChangedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
+      ...base,
       fromAudioTrackId,
       toAudioTrackId: params.toAudioTrackId,
       fromLanguage,
@@ -1648,17 +1499,9 @@ export class PlaybackSessionManager {
     this.currentSession.currentSubtitleTrackId = params.toSubtitleTrackId;
     this.currentSession.currentSubtitleLanguage = params.toLanguage;
 
+    const base = this.getBasePlaybackParams(this.currentSession);
     const subParams: SubtitleTrackChangedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
+      ...base,
       fromSubtitleTrackId,
       toSubtitleTrackId: params.toSubtitleTrackId,
       fromLanguage,
@@ -1700,17 +1543,9 @@ export class PlaybackSessionManager {
     this.currentSession.currentQualityId = params.qualityId;
     this.currentSession.currentQualityMode = qualityMode;
 
+    const base = this.getBasePlaybackParams(this.currentSession);
     const qualityParams: QualitySelectedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
+      ...base,
       qualityId: params.qualityId,
       qualityMode,
       targetResolution: params.targetResolution,
@@ -1754,17 +1589,9 @@ export class PlaybackSessionManager {
         : this.currentSession.currentBitrate;
     this.currentSession.currentBitrate = params.toBitrate;
 
+    const base = this.getBasePlaybackParams(this.currentSession);
     const bitrateParams: BitrateChangedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
+      ...base,
       fromBitrate,
       toBitrate: params.toBitrate,
       bitrateMbps: params.bitrateMbps,
@@ -1818,17 +1645,9 @@ export class PlaybackSessionManager {
     this.currentSession.currentWidth = params.toWidth;
     this.currentSession.currentHeight = params.toHeight;
 
+    const base = this.getBasePlaybackParams(this.currentSession);
     const resParams: ResolutionChangedParams = {
-      playbackSessionId: this.currentSession.playbackSessionId,
-      contentId: this.currentSession.contentId,
-      contentTitle: this.currentSession.contentTitle,
-      contentType: this.currentSession.contentType,
-      playbackType:
-        this.currentSession.playbackType || this.currentSession.contentType,
-      streamType: this.currentSession.streamType,
-      isLive: this.currentSession.isLive,
-      profileId: this.currentSession.profileId,
-      profileType: this.currentSession.profileType,
+      ...base,
       fromWidth,
       fromHeight,
       toWidth: params.toWidth,
