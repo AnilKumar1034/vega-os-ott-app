@@ -65,6 +65,8 @@ import {
   SearchPerformedEventParams,
   SearchResultSelectedEventParams,
   ContentCategorySelectedEventParams,
+  RecommendationImpressionEventParams,
+  RecommendationSelectedEventParams,
 } from './analyticsTypes';
 
 const getAsyncStorage = () => {
@@ -131,6 +133,9 @@ export class AnalyticsService implements IAnalyticsService {
   private lastContentSelectedTime = 0;
   private lastContentDetailsViewedId: string | null = null;
   private trackedImpressionContentIds = new Set<string>();
+  private trackedRecommendationImpressionKeys = new Set<string>();
+  private lastRecommendationSelectedKey: string | null = null;
+  private lastRecommendationSelectedTime = 0;
   private lastSearchLength = -1;
   private lastSearchResultCount = -1;
   private lastSearchTime = 0;
@@ -2463,6 +2468,152 @@ export class AnalyticsService implements IAnalyticsService {
   }
 
   /**
+   * Tracks recommendation section or item impression when visible/focused.
+   * Prevents duplicate reporting for the same section + contentId within a session.
+   */
+  public async trackRecommendationImpression(
+    params: RecommendationImpressionEventParams,
+  ): Promise<void> {
+    try {
+      if (!params || (!params.content_id && !params.contentId)) {
+        return;
+      }
+      const contentId = (params.content_id || params.contentId) as string;
+      const sectionName =
+        (params.section_name || params.sectionName || 'recommendations') as string;
+      const impressionKey = `${sectionName}_${contentId}`;
+
+      if (this.trackedRecommendationImpressionKeys.has(impressionKey)) {
+        return;
+      }
+      this.trackedRecommendationImpressionKeys.add(impressionKey);
+
+      const rawTitle = params.content_title ?? params.contentTitle;
+      const contentTitle =
+        typeof rawTitle === 'string' && rawTitle.length > 100
+          ? rawTitle.substring(0, 100)
+          : rawTitle;
+
+        const position =
+          typeof params.position === 'number'
+            ? params.position
+            : typeof (params as any).position_index === 'number'
+            ? (params as any).position_index
+            : undefined;
+
+        const payload: RecommendationImpressionEventParams = {
+          content_id: contentId,
+          item_id: contentId,
+          content_type: params.content_type || params.contentType || 'movie',
+          section_name: sectionName,
+          recommendation_source:
+            params.recommendation_source || params.recommendationSource || 'catalog_fallback',
+          ...(params.section_id || params.sectionId
+            ? {section_id: params.section_id || params.sectionId}
+            : {}),
+          ...(typeof position === 'number'
+            ? {position, position_index: position}
+            : {}),
+          ...(contentTitle
+            ? {content_title: contentTitle, item_name: contentTitle}
+            : {}),
+        ...(params.source_screen || params.sourceScreen
+          ? {source_screen: params.source_screen || params.sourceScreen}
+          : {source_screen: 'Home'}),
+        ...(params.source_component || params.sourceComponent
+          ? {source_component: params.source_component || params.sourceComponent}
+          : {source_component: sectionName}),
+      };
+
+      await this.track(AnalyticsEvent.RECOMMENDATION_IMPRESSION, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackRecommendationImpression error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks user selection of a recommended content item.
+   * Debounces duplicate selection events within 500ms.
+   */
+  public async trackRecommendationSelected(
+    params: RecommendationSelectedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params || (!params.content_id && !params.contentId)) {
+        return;
+      }
+      const contentId = (params.content_id || params.contentId) as string;
+      const sectionName =
+        (params.section_name || params.sectionName || 'recommendations') as string;
+      const selectionKey = `${contentId}_${sectionName}`;
+      const now = Date.now();
+
+      if (
+        this.lastRecommendationSelectedKey === selectionKey &&
+        now - this.lastRecommendationSelectedTime < 500
+      ) {
+        return;
+      }
+      this.lastRecommendationSelectedKey = selectionKey;
+      this.lastRecommendationSelectedTime = now;
+
+      const rawTitle = params.content_title ?? params.contentTitle;
+      const contentTitle =
+        typeof rawTitle === 'string' && rawTitle.length > 100
+          ? rawTitle.substring(0, 100)
+          : rawTitle;
+
+      const position =
+        typeof params.position === 'number'
+          ? params.position
+          : typeof (params as any).position_index === 'number'
+          ? (params as any).position_index
+          : undefined;
+
+      const payload: RecommendationSelectedEventParams = {
+        content_id: contentId,
+        item_id: contentId,
+        content_type: params.content_type || params.contentType || 'movie',
+        section_name: sectionName,
+        recommendation_source:
+          params.recommendation_source || params.recommendationSource || 'catalog_fallback',
+        destination_screen:
+          params.destination_screen || params.destinationScreen || 'MovieDetail',
+        action_name: params.action_name || params.actionName || 'open_details',
+        ...(params.section_id || params.sectionId
+          ? {section_id: params.section_id || params.sectionId}
+          : {}),
+        ...(typeof position === 'number'
+          ? {position, position_index: position}
+          : {}),
+        ...(contentTitle
+          ? {content_title: contentTitle, item_name: contentTitle}
+          : {}),
+        ...(params.source_screen || params.sourceScreen
+          ? {source_screen: params.source_screen || params.sourceScreen}
+          : {source_screen: 'Home'}),
+        ...(params.source_component || params.sourceComponent
+          ? {source_component: params.source_component || params.sourceComponent}
+          : {source_component: sectionName}),
+      };
+
+      await this.track(AnalyticsEvent.RECOMMENDATION_SELECTED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackRecommendationSelected error:', err);
+      }
+    }
+  }
+
+  public resetRecommendationImpressions(): void {
+    this.trackedRecommendationImpressionKeys.clear();
+    this.lastRecommendationSelectedKey = null;
+    this.lastRecommendationSelectedTime = 0;
+  }
+
+  /**
    * Internal test helper to reset singleton state between unit tests.
    */
   public __resetForTesting(): void {
@@ -2490,6 +2641,9 @@ export class AnalyticsService implements IAnalyticsService {
     this.lastContentSelectedTime = 0;
     this.lastContentDetailsViewedId = null;
     this.trackedImpressionContentIds.clear();
+    this.trackedRecommendationImpressionKeys.clear();
+    this.lastRecommendationSelectedKey = null;
+    this.lastRecommendationSelectedTime = 0;
     this.lastSearchLength = -1;
     this.lastSearchResultCount = -1;
     this.lastSearchTime = 0;

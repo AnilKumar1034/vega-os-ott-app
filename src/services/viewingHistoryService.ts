@@ -3,6 +3,8 @@ import {HomeContentItem} from '../data/home';
 import {RecordHistoryInput, ViewingHistoryItem} from '../types/history';
 import {authenticatedFirestoreFetch, getStoredSession} from './authService';
 
+export type {ViewingHistoryItem, RecordHistoryInput};
+
 const FIRESTORE_BASE = 'https://firestore.googleapis.com/v1';
 const HISTORY_COLLECTION = 'history';
 

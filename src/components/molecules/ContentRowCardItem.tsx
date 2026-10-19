@@ -11,6 +11,9 @@ interface ContentRowCardItemProps {
   onMenuEscapeLeft?: () => void;
   rowId?: string;
   selectionSource?: string;
+  isRecommendation?: boolean;
+  recommendationSource?: string;
+  sectionName?: string;
 }
 
 export const ContentRowCardItem = ({
@@ -22,6 +25,9 @@ export const ContentRowCardItem = ({
   onMenuEscapeLeft,
   rowId,
   selectionSource,
+  isRecommendation,
+  recommendationSource,
+  sectionName,
 }: ContentRowCardItemProps) => {
   return (
     <ContentCard
@@ -30,12 +36,28 @@ export const ContentRowCardItem = ({
       rowId={rowId}
       isContinueWatching={rowId === 'continue-watching'}
       isWatchlist={rowId === 'my-list'}
+      isRecommendation={
+        isRecommendation ||
+        rowId === 'recommended-for-you' ||
+        rowId === 'because-you-watched' ||
+        rowId === 'recently-added'
+      }
+      recommendationSource={recommendationSource}
+      position={index}
+      sectionName={sectionName}
       selectionSource={
         rowId === 'my-list' ? 'watchlist' : selectionSource
       }
       savedPositionSeconds={item.savedPositionSeconds}
       contentType={item.contentType}
-      testID={`content-card-${item.id}`}
+      testID={
+        rowId &&
+        (rowId === 'recommended-for-you' ||
+          rowId === 'because-you-watched' ||
+          rowId === 'recently-added')
+          ? `${rowId}-card-${item.id}`
+          : `content-card-${item.id}`
+      }
       onFocus={onContentFocus}
       hasTVPreferredFocus={shouldPreferFocus && index === 0}
       onMenuEscapeLeft={index === 0 ? onMenuEscapeLeft : undefined}

@@ -356,6 +356,13 @@ export const strings = {
     favourites: 'Favourites',
   },
 
+  recommendations: {
+    recommendedForYou: 'Recommended for You',
+    becauseYouWatched: (title: string) => `Because You Watched ${title}`,
+    recentlyAdded: 'Recently Added',
+    topPicks: 'Top Picks for You',
+  },
+
   // Search Screen
   search: {
     noResults: 'No results found for',

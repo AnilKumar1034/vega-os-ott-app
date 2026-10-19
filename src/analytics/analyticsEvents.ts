@@ -56,6 +56,8 @@ export const AnalyticsEvent = {
   SEARCH_PERFORMED: 'search_performed',
   SEARCH_RESULT_SELECTED: 'search_result_selected',
   CONTENT_CATEGORY_SELECTED: 'content_category_selected',
+  RECOMMENDATION_IMPRESSION: 'recommendation_impression',
+  RECOMMENDATION_SELECTED: 'recommendation_selected',
 } as const;
 
 export type AnalyticsEventName =

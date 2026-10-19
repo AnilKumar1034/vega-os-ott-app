@@ -644,6 +644,56 @@ export interface ContentCategorySelectedEventParams {
   [key: string]: unknown;
 }
 
+export interface RecommendationImpressionEventParams {
+  content_id: string;
+  contentId?: string;
+  content_type?: string;
+  contentType?: string;
+  content_title?: string;
+  contentTitle?: string;
+  section_name?: string;
+  sectionName?: string;
+  section_id?: string;
+  sectionId?: string;
+  recommendation_source?: string;
+  recommendationSource?: string;
+  position?: number;
+  source_screen?: string;
+  sourceScreen?: string;
+  source_component?: string;
+  sourceComponent?: string;
+  item_id?: string;
+  item_name?: string;
+  [key: string]: unknown;
+}
+
+export interface RecommendationSelectedEventParams {
+  content_id: string;
+  contentId?: string;
+  content_type?: string;
+  contentType?: string;
+  content_title?: string;
+  contentTitle?: string;
+  section_name?: string;
+  sectionName?: string;
+  section_id?: string;
+  sectionId?: string;
+  recommendation_source?: string;
+  recommendationSource?: string;
+  position?: number;
+  source_screen?: string;
+  sourceScreen?: string;
+  source_component?: string;
+  sourceComponent?: string;
+  destination_screen?: string;
+  destinationScreen?: string;
+  action_name?: string;
+  actionName?: string;
+  item_id?: string;
+  item_name?: string;
+  [key: string]: unknown;
+}
+
 export interface AnalyticsEventParamsMap {
   app_open: AppOpenEventParams;
   screen_view: ScreenViewEventParams;
@@ -694,6 +744,8 @@ export interface AnalyticsEventParamsMap {
   search_performed: SearchPerformedEventParams;
   search_result_selected: SearchResultSelectedEventParams;
   content_category_selected: ContentCategorySelectedEventParams;
+  recommendation_impression: RecommendationImpressionEventParams;
+  recommendation_selected: RecommendationSelectedEventParams;
 }
 
 export type AnalyticsEventParams<T extends AnalyticsEventName = AnalyticsEventName> =
@@ -782,6 +834,9 @@ export interface IAnalyticsService {
   trackSearchPerformed(params: SearchPerformedEventParams): Promise<void>;
   trackSearchResultSelected(params: SearchResultSelectedEventParams): Promise<void>;
   trackContentCategorySelected(params: ContentCategorySelectedEventParams): Promise<void>;
+  trackRecommendationImpression(params: RecommendationImpressionEventParams): Promise<void>;
+  trackRecommendationSelected(params: RecommendationSelectedEventParams): Promise<void>;
+  resetRecommendationImpressions(): void;
   syncWatchlistState(profileId: string, contentIds: string[]): void;
   reset(): void;
 }

@@ -44,6 +44,21 @@ export const ContentRow = React.forwardRef<any, ContentRowProps>(
               onMenuEscapeLeft={onMenuEscapeLeft}
               rowId={row.id}
               selectionSource={selectionSource}
+              isRecommendation={
+                row.id === 'recommended-for-you' ||
+                row.id === 'because-you-watched' ||
+                row.id === 'recently-added'
+              }
+              recommendationSource={
+                row.id === 'recommended-for-you'
+                  ? 'genre_match'
+                  : row.id === 'because-you-watched'
+                  ? 'viewing_history'
+                  : row.id === 'recently-added'
+                  ? 'recently_added'
+                  : undefined
+              }
+              sectionName={row.title}
             />
           )}
           showsHorizontalScrollIndicator={false}

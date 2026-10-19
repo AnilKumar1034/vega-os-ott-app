@@ -653,6 +653,7 @@ export class PlaybackSessionManager {
     params?:
       | {
           position?: number;
+          startupTimeMs?: number;
         }
       | number,
   ): Promise<void> {

@@ -26,6 +26,14 @@ import {
   fetchContinueWatchItems,
 } from '../services/watchProgressService';
 import {fetchWatchlist} from '../services/watchlistService';
+import {
+  ViewingHistoryItem,
+  fetchViewingHistory,
+} from '../services/viewingHistoryService';
+import {
+  getAllCatalogItems,
+  getPersonalizedRecommendations,
+} from '../services/recommendationService';
 import {analyticsService} from '../analytics';
 import {WatchlistItem} from '../types/watchlist';
 import {
@@ -66,6 +74,9 @@ export const HomeScreen = () => {
     ContinueWatchRecord[]
   >([]);
   const [watchlistRecords, setWatchlistRecords] = useState<WatchlistItem[]>([]);
+  const [viewingHistoryRecords, setViewingHistoryRecords] = useState<
+    ViewingHistoryItem[]
+  >([]);
 
   useEffect(() => {
     deeplinkManager.onDestinationOpened('home').catch(() => {});
@@ -100,17 +111,20 @@ export const HomeScreen = () => {
     if (!user) {
       setContinueWatchRecords([]);
       setWatchlistRecords([]);
+      setViewingHistoryRecords([]);
       return;
     }
 
     if (activeProfile?.id) {
       try {
-        const [continueWatch, watchlist] = await Promise.all([
-          fetchContinueWatchItems(activeProfile.id),
-          fetchWatchlist(activeProfile.id),
+        const [continueWatch, watchlist, history] = await Promise.all([
+          fetchContinueWatchItems(activeProfile.id).catch(() => []),
+          fetchWatchlist(activeProfile.id).catch(() => []),
+          fetchViewingHistory(activeProfile.id).catch(() => []),
         ]);
         setContinueWatchRecords(continueWatch);
         setWatchlistRecords(watchlist);
+        setViewingHistoryRecords(history);
         analyticsService.syncWatchlistState(
           activeProfile.id,
           watchlist.map((i) => i.contentId),
@@ -121,6 +135,7 @@ export const HomeScreen = () => {
     } else {
       setContinueWatchRecords([]);
       setWatchlistRecords([]);
+      setViewingHistoryRecords([]);
     }
   }, [user, activeProfile?.id]);
 
@@ -131,6 +146,7 @@ export const HomeScreen = () => {
     // to prevent showing previous profile's items
     setContinueWatchRecords([]);
     setWatchlistRecords([]);
+    setViewingHistoryRecords([]);
 
     if (!user || !activeProfile?.id) {
       return;
@@ -139,13 +155,15 @@ export const HomeScreen = () => {
     const currentProfileId = activeProfile.id;
     (async () => {
       try {
-        const [continueWatch, watchlist] = await Promise.all([
-          fetchContinueWatchItems(currentProfileId),
-          fetchWatchlist(currentProfileId),
+        const [continueWatch, watchlist, history] = await Promise.all([
+          fetchContinueWatchItems(currentProfileId).catch(() => []),
+          fetchWatchlist(currentProfileId).catch(() => []),
+          fetchViewingHistory(currentProfileId).catch(() => []),
         ]);
         if (isCurrent) {
           setContinueWatchRecords(continueWatch);
           setWatchlistRecords(watchlist);
+          setViewingHistoryRecords(history);
           analyticsService.syncWatchlistState(
             currentProfileId,
             watchlist.map((i) => i.contentId),
@@ -156,6 +174,7 @@ export const HomeScreen = () => {
         if (isCurrent) {
           setContinueWatchRecords([]);
           setWatchlistRecords([]);
+          setViewingHistoryRecords([]);
         }
       }
     })();
@@ -228,12 +247,82 @@ export const HomeScreen = () => {
       }
     : null;
 
+  const catalogItems = useMemo(() => getAllCatalogItems(), []);
+
+  const recommendations = useMemo(() => {
+    return getPersonalizedRecommendations({
+      activeProfile,
+      catalog: catalogItems,
+      viewingHistory: viewingHistoryRecords,
+      continueWatching: continueWatchRecords,
+      watchlist: watchlistRecords,
+      limit: 15,
+    });
+  }, [
+    activeProfile,
+    catalogItems,
+    viewingHistoryRecords,
+    continueWatchRecords,
+    watchlistRecords,
+  ]);
+
+  const recommendedForYouRow: HomeContentRow | null = useMemo(() => {
+    if (
+      !recommendations.recommendedForYou ||
+      recommendations.recommendedForYou.length === 0
+    ) {
+      return null;
+    }
+    return {
+      id: 'recommended-for-you',
+      title: strings.recommendations.recommendedForYou,
+      layout: 'portrait',
+      items: recommendations.recommendedForYou,
+    };
+  }, [recommendations.recommendedForYou]);
+
+  const becauseYouWatchedRow: HomeContentRow | null = useMemo(() => {
+    if (
+      !recommendations.becauseYouWatched ||
+      !recommendations.becauseYouWatched.items ||
+      recommendations.becauseYouWatched.items.length === 0
+    ) {
+      return null;
+    }
+    return {
+      id: 'because-you-watched',
+      title: strings.recommendations.becauseYouWatched(
+        recommendations.becauseYouWatched.sourceTitle,
+      ),
+      layout: 'portrait',
+      items: recommendations.becauseYouWatched.items,
+    };
+  }, [recommendations.becauseYouWatched]);
+
+  const recentlyAddedRow: HomeContentRow | null = useMemo(() => {
+    if (
+      !recommendations.recentlyAdded ||
+      recommendations.recentlyAdded.length === 0
+    ) {
+      return null;
+    }
+    return {
+      id: 'recently-added',
+      title: strings.recommendations.recentlyAdded,
+      layout: 'portrait',
+      items: recommendations.recentlyAdded,
+    };
+  }, [recommendations.recentlyAdded]);
+
   const allowedCatalogRows = useMemo(() => {
     const rawCatalog = homeContentRows.filter(
       (row) =>
         row.id !== 'continue-watching' &&
         row.id !== 'favourites' &&
-        row.id !== 'my-list',
+        row.id !== 'my-list' &&
+        row.id !== 'recommended-for-you' &&
+        row.id !== 'because-you-watched' &&
+        row.id !== 'recently-added',
     );
     return filterContentRowsForProfile(activeProfile, rawCatalog);
   }, [activeProfile]);
@@ -245,6 +334,9 @@ export const HomeScreen = () => {
       ? (homeContentRows.filter((r) => r.id === 'continue-watching') as HomeContentRow[])
       : []),
     ...(watchlistRow ? [watchlistRow] : []),
+    ...(recommendedForYouRow ? [recommendedForYouRow] : []),
+    ...(becauseYouWatchedRow ? [becauseYouWatchedRow] : []),
+    ...(recentlyAddedRow ? [recentlyAddedRow] : []),
     ...allowedCatalogRows,
   ];
 

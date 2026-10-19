@@ -40,6 +40,10 @@ export interface ContentCardProps {
   contentType?: string;
   isWatchlist?: boolean;
   selectionSource?: string;
+  isRecommendation?: boolean;
+  recommendationSource?: string;
+  position?: number;
+  sectionName?: string;
 }
 
 const useSafeNavigation = () => {
@@ -80,6 +84,10 @@ export const ContentCard = ({
   contentType,
   isWatchlist,
   selectionSource,
+  isRecommendation,
+  recommendationSource,
+  position,
+  sectionName,
 }: ContentCardProps) => {
   const navigation = useSafeNavigation();
   const [isFocused, setIsFocused] = useState(false);
@@ -142,9 +150,63 @@ export const ContentCard = ({
     }
   };
 
+  const isRec =
+    isRecommendation ||
+    rowId === 'recommended-for-you' ||
+    rowId === 'because-you-watched' ||
+    rowId === 'recently-added';
+
+  const resolvedSectionName =
+    sectionName ||
+    (rowId === 'recommended-for-you'
+      ? 'Recommended for You'
+      : rowId === 'because-you-watched'
+      ? 'Because You Watched'
+      : rowId === 'recently-added'
+      ? 'Recently Added'
+      : 'Recommendations');
+
+  const resolvedRecommendationSource =
+    recommendationSource ||
+    (rowId === 'recommended-for-you'
+      ? 'genre_match'
+      : rowId === 'because-you-watched'
+      ? 'viewing_history'
+      : rowId === 'recently-added'
+      ? 'recently_added'
+      : 'catalog_fallback');
+
+  const trackSelectionIfRecommendation = (
+    actionName: string = 'open_details',
+    destScreen: string = 'MovieDetail',
+  ) => {
+    if (isRec) {
+      const contentId = id || title.toLowerCase().replace(/\s+/g, '-');
+      const resolvedContentType =
+        contentType || (meta?.includes('Series') ? 'series' : 'movie');
+
+      analyticsService
+        .trackRecommendationSelected({
+          content_id: contentId,
+          content_type: resolvedContentType,
+          content_title: title,
+          section_name: resolvedSectionName,
+          section_id: rowId,
+          recommendation_source: resolvedRecommendationSource,
+          position,
+          source_screen: 'Home',
+          source_component: rowId || 'recommendations',
+          destination_screen: destScreen,
+          action_name: actionName,
+        })
+        .catch(() => {});
+    }
+  };
+
   const handlePress = () => {
     trackSelectionIfContinueWatching();
     trackSelectionIfWatchlist('details');
+    trackSelectionIfRecommendation('open_details', 'MovieDetail');
 
     const contentId = id || title.toLowerCase().replace(/\s+/g, '-');
     const resolvedContentType =
@@ -155,6 +217,8 @@ export const ContentCard = ({
       ? 'ContinueWatching'
       : isWL
       ? 'MyList'
+      : isRec
+      ? 'Recommendations'
       : selectionSource || 'Home';
 
     analyticsService
@@ -163,7 +227,7 @@ export const ContentCard = ({
         content_type: resolvedContentType,
         content_title: title,
         source_screen: sourceScreen,
-        source_component: rowId || (isCW ? 'continue_watching' : isWL ? 'my_list' : 'content_card'),
+        source_component: rowId || (isCW ? 'continue_watching' : isWL ? 'my_list' : isRec ? 'recommendations' : 'content_card'),
         destination_screen: 'MovieDetail',
         action_name: 'open_details',
       })
@@ -208,6 +272,11 @@ export const ContentCard = ({
       } else if (isWL) {
         navParams.selectionSource = 'watchlist';
         navParams.source = 'watchlist';
+      } else if (isRec) {
+        navParams.isRecommendation = true;
+        navParams.recommendationSource = resolvedRecommendationSource;
+        navParams.selectionSource = 'recommendations';
+        navParams.source = 'recommendations';
       }
       if (sourceScreen && sourceScreen !== 'Home') {
         navParams.sourceScreen = sourceScreen;
@@ -265,6 +334,7 @@ export const ContentCard = ({
       }
 
       trackSelectionIfContinueWatching();
+      trackSelectionIfRecommendation('play_content', videoUrl ? 'VideoPlayer' : 'MovieDetail');
       if (videoUrl) {
         trackSelectionIfWatchlist('player');
         const playerParams: Record<string, any> = {
@@ -291,6 +361,12 @@ export const ContentCard = ({
         } else if (isWL) {
           playerParams.selectionSource = 'watchlist';
           playerParams.source = 'watchlist';
+        } else if (isRec) {
+          playerParams.isRecommendation = true;
+          playerParams.recommendationSource = resolvedRecommendationSource;
+          playerParams.sectionName = resolvedSectionName;
+          playerParams.selectionSource = 'recommendations';
+          playerParams.source = 'recommendations';
         }
         if (sourceScreen && sourceScreen !== 'Home') {
           playerParams.sourceScreen = sourceScreen;
@@ -323,6 +399,8 @@ export const ContentCard = ({
           ? 'ContinueWatching'
           : isWL
           ? 'MyList'
+          : isRec
+          ? 'Recommendations'
           : selectionSource || 'Home';
 
         analyticsService
@@ -334,6 +412,23 @@ export const ContentCard = ({
             source_component: rowId || 'content_card',
           })
           .catch(() => {});
+
+        if (isRec) {
+          analyticsService
+            .trackRecommendationImpression({
+              content_id: contentId,
+              content_type: resolvedContentType,
+              content_title: title,
+              section_name: resolvedSectionName,
+              section_id: rowId,
+              recommendation_source: resolvedRecommendationSource,
+              position,
+              source_screen: 'Home',
+              source_component: rowId || 'recommendations',
+            })
+            .catch(() => {});
+        }
+
         onFocus?.();
       }}
       onBlur={() => setIsFocused(false)}
