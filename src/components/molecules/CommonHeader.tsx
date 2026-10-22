@@ -25,6 +25,8 @@ export interface CommonHeaderProps {
   onFocusEscapeDown?: () => void;
   filterFocusGuideRef?: React.Ref<React.ElementRef<typeof TVFocusGuideView>>;
   filterHasTVPreferredFocus?: boolean;
+  onSearchSubmit?: () => void;
+  searchMaxLength?: number;
 }
 
 export const CommonHeader = ({
@@ -42,6 +44,8 @@ export const CommonHeader = ({
   onFocusEscapeDown,
   filterFocusGuideRef,
   filterHasTVPreferredFocus,
+  onSearchSubmit,
+  searchMaxLength,
 }: CommonHeaderProps) => {
   const [isFilterFocused, setIsFilterFocused] = useState(false);
   const [filterButton, setFilterButton] = useState<React.ElementRef<
@@ -87,6 +91,8 @@ export const CommonHeader = ({
             onFocus={onSearchFocus}
             onBlur={onSearchBlur}
             hasTVPreferredFocus={searchHasTVPreferredFocus}
+            onSubmitEditing={onSearchSubmit}
+            maxLength={searchMaxLength}
           />
         )}
         {filterLabel && onFilterPress && (

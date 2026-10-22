@@ -119,7 +119,7 @@ export interface HomeContentItem {
   partialDisablingConfiguration?: any;
   thumbnails?: string[];
   savedPositionSeconds?: number;
-  contentType?: 'movie' | 'episode' | 'live';
+  contentType?: 'movie' | 'episode' | 'live' | 'series';
   seriesId?: string;
 }
 

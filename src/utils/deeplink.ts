@@ -117,7 +117,7 @@ export interface ParsedDeeplinkResult {
   success: boolean;
   linkType: DeeplinkType;
   destinationType?: DeeplinkDestinationType;
-  contentType?: 'movie' | 'episode' | 'live';
+  contentType?: 'movie' | 'episode' | 'live' | 'series';
   routeName?: string;
   params: Record<string, any>;
   movieId?: string;
@@ -409,7 +409,7 @@ export const parseDeeplink = (url: unknown): ParsedDeeplinkResult => {
 
 export interface ActivePendingDeeplink {
   destinationType: DeeplinkDestinationType;
-  contentType?: 'movie' | 'episode' | 'live';
+  contentType?: 'movie' | 'episode' | 'live' | 'series';
   contentId?: string;
   routeName?: string;
   timestamp: number;

@@ -632,6 +632,53 @@ export interface SearchResultSelectedEventParams {
   [key: string]: unknown;
 }
 
+export interface SearchSubmittedEventParams {
+  search_term_length: number;
+  has_results?: boolean;
+  result_count?: number;
+  source_screen?: string;
+  [key: string]: unknown;
+}
+
+export interface SearchResultsViewedEventParams {
+  search_term_length: number;
+  result_count: number;
+  source_screen?: string;
+  active_filters_count?: number;
+  [key: string]: unknown;
+}
+
+export interface SearchNoResultsEventParams {
+  search_term_length: number;
+  active_filters_count?: number;
+  source_screen?: string;
+  [key: string]: unknown;
+}
+
+export interface SearchFilterAppliedEventParams {
+  filter_type: string;
+  filter_value: string;
+  source_screen?: string;
+  result_count?: number;
+  [key: string]: unknown;
+}
+
+export interface SearchFilterClearedEventParams {
+  filter_type?: string;
+  action?: 'clear_single' | 'reset_all' | string;
+  source_screen?: string;
+  result_count?: number;
+  [key: string]: unknown;
+}
+
+export interface SearchSuggestionSelectedEventParams {
+  suggestion_text?: string;
+  suggestion_length?: number;
+  source_screen?: string;
+  position?: number;
+  [key: string]: unknown;
+}
+
 export interface ContentCategorySelectedEventParams {
   category_name: string;
   categoryName?: string;

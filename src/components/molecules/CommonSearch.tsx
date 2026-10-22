@@ -21,6 +21,8 @@ export interface CommonSearchProps {
   onBlur?: () => void;
   testID?: string;
   hasTVPreferredFocus?: boolean;
+  onSubmitEditing?: () => void;
+  maxLength?: number;
 }
 
 export const CommonSearch = ({
@@ -31,6 +33,8 @@ export const CommonSearch = ({
   onBlur,
   testID = 'common-search-input',
   hasTVPreferredFocus,
+  onSubmitEditing,
+  maxLength,
 }: CommonSearchProps) => {
   const [focusedTarget, setFocusedTarget] = useState<'input' | 'clear' | null>(
     null,
@@ -95,6 +99,8 @@ export const CommonSearch = ({
         accessibilityRole="search"
         accessibilityLabel={strings.search.moviesShowsGenres}
         testID={testID}
+        onSubmitEditing={onSubmitEditing}
+        maxLength={maxLength}
       />
       {value.length > 0 && (
         <TouchableOpacity

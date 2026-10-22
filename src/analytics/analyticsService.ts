@@ -64,6 +64,12 @@ import {
   ContentDetailsViewedEventParams,
   SearchPerformedEventParams,
   SearchResultSelectedEventParams,
+  SearchSubmittedEventParams,
+  SearchResultsViewedEventParams,
+  SearchNoResultsEventParams,
+  SearchFilterAppliedEventParams,
+  SearchFilterClearedEventParams,
+  SearchSuggestionSelectedEventParams,
   ContentCategorySelectedEventParams,
   RecommendationImpressionEventParams,
   RecommendationSelectedEventParams,
@@ -2423,6 +2429,148 @@ export class AnalyticsService implements IAnalyticsService {
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackSearchResultSelected error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks when the search screen is opened.
+   */
+  public async trackSearchOpened(
+    sourceScreen: string = 'Home',
+  ): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SEARCH_OPENED, {
+        source_screen: sourceScreen,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSearchOpened error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks explicit search submission by the user.
+   */
+  public async trackSearchSubmitted(
+    params: SearchSubmittedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params) return;
+      await this.track(AnalyticsEvent.SEARCH_SUBMITTED, {
+        search_term_length: params.search_term_length,
+        has_results: Boolean(params.has_results),
+        result_count: params.result_count ?? 0,
+        source_screen: params.source_screen || 'Search',
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSearchSubmitted error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks when search results are rendered for the active query.
+   */
+  public async trackSearchResultsViewed(
+    params: SearchResultsViewedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params) return;
+      await this.track(AnalyticsEvent.SEARCH_RESULTS_VIEWED, {
+        search_term_length: params.search_term_length,
+        result_count: params.result_count,
+        source_screen: params.source_screen || 'Search',
+        active_filters_count: params.active_filters_count ?? 0,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSearchResultsViewed error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks when a completed search returns no eligible results.
+   */
+  public async trackSearchNoResults(
+    params: SearchNoResultsEventParams,
+  ): Promise<void> {
+    try {
+      if (!params) return;
+      await this.track(AnalyticsEvent.SEARCH_NO_RESULTS, {
+        search_term_length: params.search_term_length,
+        active_filters_count: params.active_filters_count ?? 0,
+        source_screen: params.source_screen || 'Search',
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSearchNoResults error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks when a search discovery filter is applied.
+   */
+  public async trackSearchFilterApplied(
+    params: SearchFilterAppliedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params) return;
+      await this.track(AnalyticsEvent.SEARCH_FILTER_APPLIED, {
+        filter_type: params.filter_type,
+        filter_value: params.filter_value,
+        source_screen: params.source_screen || 'Search',
+        result_count: params.result_count ?? 0,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSearchFilterApplied error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks when a filter is removed or all filters reset.
+   */
+  public async trackSearchFilterCleared(
+    params: SearchFilterClearedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params) return;
+      await this.track(AnalyticsEvent.SEARCH_FILTER_CLEARED, {
+        filter_type: params.filter_type || 'all',
+        action: params.action || 'reset_all',
+        source_screen: params.source_screen || 'Search',
+        result_count: params.result_count ?? 0,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSearchFilterCleared error:', err);
+      }
+    }
+  }
+
+  /**
+   * Tracks when a search suggestion is selected.
+   */
+  public async trackSearchSuggestionSelected(
+    params: SearchSuggestionSelectedEventParams,
+  ): Promise<void> {
+    try {
+      if (!params) return;
+      await this.track(AnalyticsEvent.SEARCH_SUGGESTION_SELECTED, {
+        suggestion_length:
+          params.suggestion_length ?? params.suggestion_text?.length ?? 0,
+        source_screen: params.source_screen || 'Search',
+        position: params.position ?? 0,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSearchSuggestionSelected error:', err);
       }
     }
   }
