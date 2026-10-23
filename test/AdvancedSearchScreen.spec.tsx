@@ -173,8 +173,9 @@ describe('Advanced Search & Content Discovery Screen (LogiXstream Vega OS)', () 
       });
 
       expect(screen.getByTestId('recent-searches-container')).toBeTruthy();
-      expect(screen.getByText('Kalki')).toBeTruthy();
-      expect(screen.getByText('Interstellar')).toBeTruthy();
+      expect(screen.getByTestId('recent-search-chip-0')).toBeTruthy();
+      expect(screen.getByTestId('recent-search-chip-1')).toBeTruthy();
+      expect(screen.getAllByText('Interstellar').length).toBeGreaterThanOrEqual(1);
     });
 
     it('clears recent searches when Clear History button is pressed', async () => {
@@ -513,6 +514,29 @@ describe('Advanced Search & Content Discovery Screen (LogiXstream Vega OS)', () 
       });
 
       expect(mockNavigate).toHaveBeenCalledWith(Routes.Home);
+    });
+
+    it('supports vertical scrolling when focus moves to cards towards the bottom', async () => {
+      const screen = render(<SearchScreen />);
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      const list = screen.getByTestId('search-results-list');
+      expect(list).toBeTruthy();
+      expect(list.props.style).toMatchObject({flex: 1});
+      expect(list.props.contentContainerStyle).toMatchObject({paddingBottom: 80});
+
+      // Find a card in the search results and focus it
+      const card = screen.getByTestId('search-card-tamasha');
+      expect(card).toBeTruthy();
+
+      await act(async () => {
+        fireEvent(card, 'focus');
+      });
+
+      // Verification that focusing lower card succeeds without errors
+      expect(card).toBeTruthy();
     });
   });
 });

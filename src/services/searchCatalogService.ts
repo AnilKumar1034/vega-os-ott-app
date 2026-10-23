@@ -48,6 +48,7 @@ export interface SearchCatalogItem extends HomeContentItem {
   seriesTitle?: string;
   seasonNumber?: number;
   episodeNumber?: number;
+  duration?: string;
 }
 
 export interface SearchFilterState {
@@ -198,7 +199,8 @@ export const buildUnifiedCatalog = (): SearchCatalogItem[] => {
           cast: item.cast,
           director: item.director,
           language: extractLanguage(item),
-          releaseYear: year,
+          releaseYear: item.releaseYear || year,
+          duration: item.duration || (item.meta && item.meta[0]) || '2h 15m',
           rating: item.rating,
           ratingScore: ratingNum,
           maturityRating: item.maturityRating || '13_PLUS',

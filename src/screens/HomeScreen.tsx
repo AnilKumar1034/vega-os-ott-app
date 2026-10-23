@@ -424,6 +424,9 @@ export const HomeScreen = () => {
           testID="vega-logo"
           searchValue={searchQuery}
           onSearchChange={setSearchQuery}
+          onSearchSubmit={() => {
+            navigation.navigate(Routes.Search, {q: searchQuery});
+          }}
           onSearchFocus={() => {
             setIsSearchFocused(true);
             handleHeroFocus();

@@ -10,7 +10,14 @@ import {styles} from './SideMenu.styles';
 export interface MenuOptionItem {
   route: Exclude<RouteName, 'Splash'>;
   title: string;
-  name: 'Home' | 'Movies' | 'LiveTV' | 'MyList' | 'Details' | 'Settings';
+  name:
+    | 'Home'
+    | 'Movies'
+    | 'LiveTV'
+    | 'MyList'
+    | 'Details'
+    | 'Settings'
+    | 'Search';
   icon: ImageSourcePropType;
 }
 

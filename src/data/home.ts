@@ -121,6 +121,8 @@ export interface HomeContentItem {
   savedPositionSeconds?: number;
   contentType?: 'movie' | 'episode' | 'live' | 'series';
   seriesId?: string;
+  duration?: string;
+  releaseYear?: number;
 }
 
 export interface HomeContentRow {
@@ -369,6 +371,121 @@ export const homeHeroSlides: HeroSlide[] = [
 export const homeHero = homeHeroSlides[0];
 
 export const homeContentRows: HomeContentRow[] = [
+  {
+    id: 'top-reference-results',
+    title: 'Top Results',
+    layout: 'horizontal',
+    items: [
+      {
+        id: 'once-upon-two-times',
+        title: 'Once Upon Two Times',
+        maturityRating: '13_PLUS',
+        description:
+          'A heart-warming family drama exploring young love entangled in old parental romance.',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/jFt1gS4BGHlK8xt76Y81Alp4dbt.jpg',
+        },
+        badge: 'HINDI',
+        rating: '⭐ 9.8 / 10',
+        genre: 'Romance • Drama',
+        director: 'Sonakshi Mittal',
+        cast: 'Sanjay Suri, Mrinal Kulkarni, Anud Singh Dhaka',
+        duration: '2h 28m',
+        releaseYear: 2023,
+        contentType: 'movie',
+      },
+      {
+        id: 'dono',
+        title: 'Dono',
+        maturityRating: '13_PLUS',
+        description:
+          'Two strangers meet at an extravagant destination wedding and unexpectedly find each other.',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/tjpiEnZBUAA8pdNPRKa5vP2Zpqw.jpg',
+        },
+        badge: 'HINDI',
+        rating: '⭐ 9.7 / 10',
+        genre: 'Romance • Drama',
+        director: 'Avnish S. Barjatya',
+        cast: 'Rajveer Deol, Paloma Dhillon',
+        duration: '2h 29m',
+        releaseYear: 2023,
+        contentType: 'movie',
+      },
+      {
+        id: 'laila-majnu',
+        title: 'Laila Majnu',
+        maturityRating: '13_PLUS',
+        description:
+          'A contemporary retelling of the classic romantic tragedy set amidst the mountains of Kashmir.',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/w2RG8J3um9F3eggUeJVuuAI0RFk.jpg',
+        },
+        badge: 'HINDI',
+        rating: '⭐ 9.6 / 10',
+        genre: 'Romance • Drama',
+        director: 'Sajid Ali',
+        cast: 'Avinash Tiwary, Tripti Dimri',
+        duration: '2h 12m',
+        releaseYear: 2018,
+        contentType: 'movie',
+      },
+      {
+        id: 'tamasha',
+        title: 'Tamasha',
+        maturityRating: '13_PLUS',
+        description:
+          'Ved and Tara explore passion, freedom, and identity in France and back in Delhi.',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg',
+        },
+        badge: 'HINDI',
+        rating: '⭐ 9.5 / 10',
+        genre: 'Romance • Drama',
+        director: 'Imtiaz Ali',
+        cast: 'Ranbir Kapoor, Deepika Padukone',
+        duration: '2h 19m',
+        releaseYear: 2015,
+        contentType: 'movie',
+      },
+      {
+        id: 'karma-strikes',
+        title: 'Karma Strikes',
+        maturityRating: '13_PLUS',
+        description:
+          'A gripping tale of karma and retribution unfolding across interconnected destinies.',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg',
+        },
+        badge: 'HINDI',
+        rating: '⭐ 9.4 / 10',
+        genre: 'Action • Drama',
+        director: 'Vikramjit Singh',
+        cast: 'Ensemble Cast',
+        duration: '2h 14m',
+        releaseYear: 2023,
+        contentType: 'movie',
+      },
+      {
+        id: '14-phere',
+        title: '14 Phere',
+        maturityRating: '13_PLUS',
+        description:
+          'Two lovebirds hatch a clever matrimonial scheme with theatre actors acting as fake parents.',
+        image: {
+          uri: 'https://image.tmdb.org/t/p/w780/8Vt6mWEReuy4Of61Lnj5Xj704m8.jpg',
+        },
+        badge: 'HINDI',
+        rating: '⭐ 9.3 / 10',
+        genre: 'Comedy • Romance',
+        director: 'Devanshu Singh',
+        cast: 'Vikrant Massey, Kriti Kharbanda',
+        duration: '1h 51m',
+        releaseYear: 2021,
+        contentType: 'movie',
+      },
+    ],
+  },
   {
     id: 'continue-watching',
     title: 'Continue Watching',

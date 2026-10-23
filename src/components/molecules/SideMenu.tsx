@@ -16,6 +16,12 @@ const menuOptions: MenuOptionItem[] = [
     icon: require('../../assets/home.png'),
   },
   {
+    route: Routes.Search,
+    title: strings.sideMenu.search,
+    name: 'Search',
+    icon: require('../../assets/search.png'),
+  },
+  {
     route: Routes.Movies,
     title: strings.sideMenu.movies,
     name: strings.sideMenu.movies,
