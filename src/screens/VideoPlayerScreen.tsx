@@ -36,6 +36,7 @@ import {
 } from '../services/watchProgressService';
 import {recordViewingHistory} from '../services/viewingHistoryService';
 import {canProfileAccessContent} from '../utils/contentAccessPolicy';
+import {entitlementService} from '../services/entitlementService';
 import {styles} from './VideoPlayerScreen.styles';
 import type {
   ShakaPlayer,
@@ -1559,6 +1560,39 @@ export const VideoPlayerScreen = () => {
         if (!isLive && !canProfileAccessContent(activeProfile, movie)) {
           setVideoError(strings.parentalControls.contentRestrictedMessage);
           return;
+        }
+
+        if (user) {
+          const entitlementAccess = entitlementService.checkContentAccess(
+            userProfile,
+            activeProfile,
+            movie,
+            {isLive},
+          );
+
+          if (!entitlementAccess.isEntitled) {
+            analyticsService
+              .trackSubscriptionAccessDenied({
+                content_id: movie.id,
+                content_title: movie.title,
+                reason: entitlementAccess.reason,
+                required_plan: entitlementAccess.requiredPlan,
+                user_plan: userProfile?.subscription,
+                source_screen: 'VideoPlayer',
+              })
+              .catch(() => {});
+            setVideoError(entitlementAccess.message);
+            return;
+          }
+
+          analyticsService
+            .trackSubscriptionAccessGranted({
+              content_id: movie.id,
+              content_title: movie.title,
+              user_plan: userProfile?.subscription,
+              source_screen: 'VideoPlayer',
+            })
+            .catch(() => {});
         }
 
         // Step 1: Start new playback session (generates playbackSessionId & emits playback_start_requested)

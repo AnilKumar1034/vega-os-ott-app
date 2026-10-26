@@ -73,6 +73,13 @@ import {
   ContentCategorySelectedEventParams,
   RecommendationImpressionEventParams,
   RecommendationSelectedEventParams,
+  SubscriptionStatusViewedParams,
+  SubscriptionAccessDeniedParams,
+  SubscriptionAccessGrantedParams,
+  SubscriptionManagementOpenedParams,
+  SubscriptionStatusRefreshedParams,
+  SubscriptionPlanSelectedParams,
+  SubscriptionVerificationFailedParams,
 } from './analyticsTypes';
 
 const getAsyncStorage = () => {
@@ -106,6 +113,7 @@ export const SCREEN_CLASS_MAP: Record<string, string> = {
   Login: 'LoginScreen',
   Register: 'RegisterScreen',
   MyList: 'MyListScreen',
+  Subscription: 'SubscriptionScreen',
 };
 
 export class AnalyticsService implements IAnalyticsService {
@@ -2751,6 +2759,123 @@ export class AnalyticsService implements IAnalyticsService {
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackRecommendationSelected error:', err);
+      }
+    }
+  }
+
+  public async trackSubscriptionStatusViewed(
+    params: SubscriptionStatusViewedParams = {},
+  ): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SUBSCRIPTION_STATUS_VIEWED, {
+        plan_name: params.plan_name || 'unknown',
+        status: params.status || 'unknown',
+        max_quality: params.max_quality || 'HD',
+        source_screen: params.source_screen || this.currentScreenName || 'Settings',
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSubscriptionStatusViewed error:', err);
+      }
+    }
+  }
+
+  public async trackSubscriptionAccessDenied(
+    params: SubscriptionAccessDeniedParams,
+  ): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SUBSCRIPTION_ACCESS_DENIED, {
+        content_id: params.content_id || 'unknown',
+        content_title: params.content_title || 'unknown',
+        reason: params.reason || 'not_entitled',
+        required_plan: params.required_plan || 'Standard',
+        user_plan: params.user_plan || 'none',
+        source_screen: params.source_screen || this.currentScreenName || 'MovieDetail',
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSubscriptionAccessDenied error:', err);
+      }
+    }
+  }
+
+  public async trackSubscriptionAccessGranted(
+    params: SubscriptionAccessGrantedParams,
+  ): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SUBSCRIPTION_ACCESS_GRANTED, {
+        content_id: params.content_id || 'unknown',
+        content_title: params.content_title || 'unknown',
+        user_plan: params.user_plan || 'Standard',
+        source_screen: params.source_screen || this.currentScreenName || 'MovieDetail',
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSubscriptionAccessGranted error:', err);
+      }
+    }
+  }
+
+  public async trackSubscriptionManagementOpened(
+    params: SubscriptionManagementOpenedParams = {},
+  ): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SUBSCRIPTION_MANAGEMENT_OPENED, {
+        current_plan: params.current_plan || 'unknown',
+        source_screen: params.source_screen || this.currentScreenName || 'Settings',
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSubscriptionManagementOpened error:', err);
+      }
+    }
+  }
+
+  public async trackSubscriptionStatusRefreshed(
+    params: SubscriptionStatusRefreshedParams = {},
+  ): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SUBSCRIPTION_STATUS_REFRESHED, {
+        previous_plan: params.previous_plan || 'unknown',
+        new_plan: params.new_plan || 'unknown',
+        status: params.status || 'active',
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSubscriptionStatusRefreshed error:', err);
+      }
+    }
+  }
+
+  public async trackSubscriptionPlanSelected(
+    params: SubscriptionPlanSelectedParams,
+  ): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SUBSCRIPTION_PLAN_SELECTED, {
+        plan_id: params.plan_id,
+        plan_name: params.plan_name,
+        billing_cycle: params.billing_cycle || 'monthly',
+        price: params.price ?? 0,
+        source_screen: this.currentScreenName || 'Subscription',
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSubscriptionPlanSelected error:', err);
+      }
+    }
+  }
+
+  public async trackSubscriptionVerificationFailed(
+    params: SubscriptionVerificationFailedParams = {},
+  ): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SUBSCRIPTION_VERIFICATION_FAILED, {
+        reason: params.reason || 'verification_failed',
+        error_message: params.error_message || 'unknown',
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackSubscriptionVerificationFailed error:', err);
       }
     }
   }

@@ -805,6 +805,59 @@ export interface AnalyticsServiceOptions {
   measurementProtocolSecret?: string;
 }
 
+export interface SubscriptionStatusViewedParams {
+  plan_name?: string;
+  status?: string;
+  max_quality?: string;
+  source_screen?: string;
+  [key: string]: unknown;
+}
+
+export interface SubscriptionAccessDeniedParams {
+  content_id?: string;
+  content_title?: string;
+  reason?: string;
+  required_plan?: string;
+  user_plan?: string;
+  source_screen?: string;
+  [key: string]: unknown;
+}
+
+export interface SubscriptionAccessGrantedParams {
+  content_id?: string;
+  content_title?: string;
+  user_plan?: string;
+  source_screen?: string;
+  [key: string]: unknown;
+}
+
+export interface SubscriptionManagementOpenedParams {
+  current_plan?: string;
+  source_screen?: string;
+  [key: string]: unknown;
+}
+
+export interface SubscriptionStatusRefreshedParams {
+  previous_plan?: string;
+  new_plan?: string;
+  status?: string;
+  [key: string]: unknown;
+}
+
+export interface SubscriptionPlanSelectedParams {
+  plan_id: string;
+  plan_name: string;
+  billing_cycle?: string;
+  price?: number;
+  [key: string]: unknown;
+}
+
+export interface SubscriptionVerificationFailedParams {
+  reason?: string;
+  error_message?: string;
+  [key: string]: unknown;
+}
+
 export interface IAnalyticsService {
   initialize(options?: AnalyticsServiceOptions): Promise<void>;
   isInitialized(): boolean;
@@ -883,6 +936,13 @@ export interface IAnalyticsService {
   trackContentCategorySelected(params: ContentCategorySelectedEventParams): Promise<void>;
   trackRecommendationImpression(params: RecommendationImpressionEventParams): Promise<void>;
   trackRecommendationSelected(params: RecommendationSelectedEventParams): Promise<void>;
+  trackSubscriptionStatusViewed(params: SubscriptionStatusViewedParams): Promise<void>;
+  trackSubscriptionAccessDenied(params: SubscriptionAccessDeniedParams): Promise<void>;
+  trackSubscriptionAccessGranted(params: SubscriptionAccessGrantedParams): Promise<void>;
+  trackSubscriptionManagementOpened(params: SubscriptionManagementOpenedParams): Promise<void>;
+  trackSubscriptionStatusRefreshed(params: SubscriptionStatusRefreshedParams): Promise<void>;
+  trackSubscriptionPlanSelected(params: SubscriptionPlanSelectedParams): Promise<void>;
+  trackSubscriptionVerificationFailed(params: SubscriptionVerificationFailedParams): Promise<void>;
   resetRecommendationImpressions(): void;
   syncWatchlistState(profileId: string, contentIds: string[]): void;
   reset(): void;

@@ -81,6 +81,32 @@ export const styles = StyleSheet.create({
     borderRadius: borderRadius.md,
     backgroundColor: colors.heroAccent,
   },
+  planBadgeContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  planExpiry: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.caption,
+    marginTop: spacing.xxs,
+  },
+  statusBadge: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+  },
+  statusBadgeActive: {
+    backgroundColor: '#059669',
+  },
+  statusBadgeInactive: {
+    backgroundColor: '#DC2626',
+  },
+  statusBadgeText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.small,
+    fontWeight: fontWeights.bold,
+  },
   planBadgeText: {
     color: colors.textPrimary,
     fontSize: fontSizes.small,

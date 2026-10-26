@@ -18,6 +18,7 @@ import {EditProfileScreen} from '../screens/EditProfileScreen';
 import {SplashScreen} from '../screens/SplashScreen';
 import {LoginScreen} from '../screens/LoginScreen';
 import {RegisterScreen} from '../screens/RegisterScreen';
+import {SubscriptionScreen} from '../screens/SubscriptionScreen';
 import {MyListScreen} from '../screens/MyListScreen';
 import {LiveTVScreen} from '../features/live-tv/screens/LiveTVScreen';
 import {LiveChannelDrmConfig} from '../features/live-tv/models/LiveChannel';
@@ -64,6 +65,7 @@ export type RootStackParamList = {
     };
   };
   [Routes.Register]: undefined;
+  [Routes.Subscription]: {sourceScreen?: string} | undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -140,6 +142,7 @@ const linking: LinkingOptions<RootStackParamList> = {
       [Routes.CreateProfile]: 'create-profile',
       [Routes.Login]: 'login',
       [Routes.Register]: 'register',
+      [Routes.Subscription]: DeeplinkRoutes.Subscription,
     },
   },
 };
@@ -222,6 +225,10 @@ const AppNavigatorInner = () => {
         />
         <Stack.Screen name={Routes.Login} component={LoginScreen} />
         <Stack.Screen name={Routes.Register} component={RegisterScreen} />
+        <Stack.Screen
+          name={Routes.Subscription}
+          component={SubscriptionScreen}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

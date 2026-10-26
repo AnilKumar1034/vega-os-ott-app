@@ -116,6 +116,10 @@ describe('VideoPlayerScreen', () => {
     };
     jest.spyOn(authContext, 'useAuth').mockReturnValue({
       user: {uid: 'test-user'} as any,
+      userProfile: {
+        subscription: 'Standard',
+        subscriptionStatus: 'active',
+      } as any,
       loading: false,
     } as any);
     jest.spyOn(profileContext, 'useProfile').mockReturnValue({

@@ -180,6 +180,27 @@ export const ProfileScreen = () => {
               style={[
                 styles.editButton,
                 styles.switchButton,
+                focusedId === 'subscription' && styles.editButtonFocused,
+              ]}
+              onFocus={() => setFocusedId('subscription')}
+              onBlur={() => setFocusedId(null)}
+              onPress={() =>
+                navigation.navigate(Routes.Subscription, {
+                  sourceScreen: 'Profile',
+                })
+              }
+              activeOpacity={1}
+              accessibilityRole="button"
+              accessibilityLabel="Manage Subscription"
+              testID="profile-subscription-button">
+              <Text style={styles.editButtonText}>Manage Subscription</Text>
+              <Text style={styles.editButtonArrow}>{'>'}</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.editButton,
+                styles.switchButton,
                 focusedId === 'switch' && styles.editButtonFocused,
               ]}
               onFocus={() => setFocusedId('switch')}

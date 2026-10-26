@@ -1,0 +1,290 @@
+import {StyleSheet} from 'react-native';
+import {colors} from '../theme/colors';
+import {fontSizes, fontWeights} from '../theme/fonts';
+import {borderRadius, spacing} from '../theme/sizes';
+
+export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0A0A0A',
+    paddingHorizontal: spacing.huge,
+    paddingVertical: spacing.xl,
+  },
+  topBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  brandLogo: {
+    color: '#E50914',
+    fontSize: 28,
+    fontWeight: '900',
+    letterSpacing: 2.5,
+  },
+  signOutButton: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: 'transparent',
+  },
+  signOutButtonFocused: {
+    borderColor: colors.textPrimary,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  signOutText: {
+    color: '#E5E5E5',
+    fontSize: fontSizes.body,
+    fontWeight: fontWeights.medium,
+  },
+  headerSection: {
+    alignItems: 'center',
+    marginBottom: spacing.lg,
+  },
+  stepText: {
+    color: '#9CA3AF',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1.5,
+    marginBottom: spacing.xs,
+    textTransform: 'uppercase',
+  },
+  mainHeading: {
+    color: '#FFFFFF',
+    fontSize: 32,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  cycleToggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#1F1F1F',
+    borderRadius: 9999,
+    padding: 4,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  cycleToggleContainerFocused: {
+    borderColor: '#FFFFFF',
+  },
+  cycleTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+    borderRadius: 9999,
+  },
+  cycleTabActive: {
+    backgroundColor: '#374151',
+  },
+  cycleTabText: {
+    color: '#D1D5DB',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  cycleTabTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+  },
+  bestValueBadge: {
+    backgroundColor: '#22C55E',
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
+  bestValueText: {
+    color: '#052E16',
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  cardsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+    marginTop: 8,
+    paddingBottom: spacing.lg,
+  },
+  cardWrapper: {
+    width: 220,
+    alignItems: 'center',
+  },
+  recommendedBadge: {
+    backgroundColor: '#E50914',
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+    borderRadius: 4,
+    marginBottom: 6,
+  },
+  recommendedBadgePlaceholder: {
+    height: 24,
+    marginBottom: 6,
+  },
+  recommendedText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  card: {
+    width: '100%',
+    backgroundColor: '#171717',
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 2,
+    borderColor: '#262626',
+  },
+  cardFocused: {
+    borderColor: '#FFFFFF',
+    transform: [{scale: 1.04}],
+    shadowColor: '#FFFFFF',
+    shadowOffset: {width: 0, height: 4},
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+  },
+  cardSelected: {
+    borderColor: '#E50914',
+  },
+  cardBanner: {
+    padding: 14,
+    position: 'relative',
+  },
+  checkBadge: {
+    position: 'absolute',
+    top: 12,
+    right: 12,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: '#22C55E',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkBadgeText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '900',
+  },
+  planName: {
+    color: '#FFFFFF',
+    fontSize: 20,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 6,
+  },
+  priceAmount: {
+    color: '#FFFFFF',
+    fontSize: 22,
+    fontWeight: '900',
+  },
+  priceCycle: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12,
+    marginLeft: 4,
+  },
+  discountChip: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(0, 0, 0, 0.4)',
+    borderRadius: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+  },
+  discountText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  cardBody: {
+    padding: 14,
+  },
+  qualitySection: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#262626',
+    paddingBottom: 10,
+    marginBottom: 12,
+  },
+  qualityRating: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  qualitySub: {
+    color: '#9CA3AF',
+    fontSize: 11,
+  },
+  featuresList: {
+    gap: 10,
+    marginBottom: 12,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  checkmark: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+    width: 18,
+    marginRight: 6,
+  },
+  featureText: {
+    color: '#E5E7EB',
+    fontSize: 12,
+    flex: 1,
+    lineHeight: 16,
+  },
+  selectButton: {
+    width: '100%',
+    paddingVertical: 10,
+    borderRadius: 6,
+    backgroundColor: '#262626',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 4,
+  },
+  selectButtonActive: {
+    backgroundColor: '#E50914',
+  },
+  selectButtonFocused: {
+    backgroundColor: '#FFFFFF',
+  },
+  selectButtonText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  selectButtonTextFocused: {
+    color: '#000000',
+  },
+  toastContainer: {
+    position: 'absolute',
+    bottom: 24,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.9)',
+    borderColor: '#E50914',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+  },
+  toastText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  loadingIndicator: {
+    marginTop: 16,
+  },
+});

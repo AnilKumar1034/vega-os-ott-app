@@ -4,6 +4,7 @@ import {useNavigation, useRoute} from '@react-navigation/native';
 import {TVFocusGuideView, useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {CommonHeader} from '../components/molecules/CommonHeader';
 import {ContentBlockedBanner} from '../components/molecules/ContentBlockedBanner';
+import {EntitlementBlockedBanner} from '../components/molecules/EntitlementBlockedBanner';
 import {MovieDetailBody} from '../components/organisms/MovieDetailBody';
 import {SideMenu} from '../components/molecules/SideMenu';
 import {Routes} from '../constants/routes';
@@ -17,6 +18,7 @@ import {
 import {filterContentItem} from '../utils/searchUtils';
 import {useAuth} from '../context/authContext';
 import {useProfile} from '../profiles/hooks/useProfile';
+import {entitlementService} from '../services/entitlementService';
 import {strings as appStrings} from '../constants/strings';
 import {
   clearContinueWatchProgress,
@@ -35,7 +37,8 @@ export const MovieDetailScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute<any>();
   const contentGuideRef = useRef<any>(null);
-  const {user} = useAuth();
+  const isAuthorizingRef = useRef(false);
+  const {user, userProfile} = useAuth();
   const {activeProfile} = useProfile();
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearchFocused, setIsSearchFocused] = useState(false);
@@ -44,6 +47,61 @@ export const MovieDetailScreen = () => {
   const [focusedAction, setFocusedAction] = useState<
     'play' | 'list' | 'back' | 'favourites' | 'continueWatch' | null
   >(null);
+
+  const selectedMovie: HomeContentItem =
+    route.params?.movie ||
+    findContentById(route.params?.movieId) ||
+    homeContentRows[0].items[0];
+  const resolvedMovie =
+    route.params?.movie || findContentById(route.params?.movieId);
+  const isContentAllowed = canProfileAccessContent(
+    activeProfile,
+    selectedMovie,
+  );
+  const entitlementAccess = entitlementService.checkContentAccess(
+    userProfile,
+    activeProfile,
+    selectedMovie,
+  );
+
+  const handlePlayAction = () => {
+    if (isAuthorizingRef.current) return;
+    isAuthorizingRef.current = true;
+    setTimeout(() => {
+      isAuthorizingRef.current = false;
+    }, 800);
+
+    if (!isContentAllowed) {
+      return;
+    }
+
+    const isCW =
+      route?.params?.selectionSource === 'continue_watching' ||
+      (continueWatchProgress !== null && continueWatchProgress > 0);
+    const resolvedContentType =
+      selectedMovie.contentType ||
+      (selectedMovie.meta?.includes('Series') ? 'series' : 'movie');
+
+    analyticsService
+      .trackContentSelected({
+        content_id: selectedMovie.id,
+        content_type: resolvedContentType,
+        content_title: selectedMovie.title,
+        source_screen: 'MovieDetail',
+        source_component: isCW ? 'continue_watching_button' : 'play_button',
+        destination_screen: 'VideoPlayer',
+        action_name: isCW ? 'continue_watching' : 'play_content',
+      })
+      .catch(() => {});
+
+    navigation.navigate(Routes.VideoPlayer, {
+      movie: selectedMovie,
+      videoUrl: selectedMovie.videoUrl,
+      selectionSource: isCW ? 'continue_watching' : 'details',
+      source: isCW ? 'continue_watching' : 'details',
+      sourceScreen: 'MovieDetail',
+    });
+  };
 
   useTVEventHandler((evt) => {
     if (!evt) return;
@@ -62,27 +120,8 @@ export const MovieDetailScreen = () => {
     }
 
     if (isPlayPauseEvent(type)) {
-      if (!isMenuExpanded && isContentAllowed) {
-        const resolvedContentType =
-          selectedMovie.contentType ||
-          (selectedMovie.meta?.includes('Series') ? 'series' : 'movie');
-        analyticsService
-          .trackContentSelected({
-            content_id: selectedMovie.id,
-            content_type: resolvedContentType,
-            content_title: selectedMovie.title,
-            source_screen: 'MovieDetail',
-            source_component: 'dpad_play',
-            destination_screen: 'VideoPlayer',
-            action_name: 'play_content',
-          })
-          .catch(() => {});
-
-        navigation.navigate(Routes.VideoPlayer, {
-          movie: selectedMovie,
-          videoUrl: selectedMovie.videoUrl,
-          sourceScreen: 'MovieDetail',
-        });
+      if (!isMenuExpanded) {
+        handlePlayAction();
       }
     }
   });
@@ -92,17 +131,6 @@ export const MovieDetailScreen = () => {
   const [isInWatchlist, setIsInWatchlist] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [isTogglingList, setIsTogglingList] = useState(false);
-
-  const selectedMovie: HomeContentItem =
-    route.params?.movie ||
-    findContentById(route.params?.movieId) ||
-    homeContentRows[0].items[0];
-  const resolvedMovie =
-    route.params?.movie || findContentById(route.params?.movieId);
-  const isContentAllowed = canProfileAccessContent(
-    activeProfile,
-    selectedMovie,
-  );
 
   const allRecommendations =
     homeContentRows[1]?.items || homeContentRows[0].items;
@@ -330,6 +358,7 @@ export const MovieDetailScreen = () => {
         setFocusedAction(action);
       }}
       onBlurAction={() => setFocusedAction(null)}
+      onWatchPress={handlePlayAction}
       onCardFocus={() => {
         setLastFocusedArea('recommendations');
         collapseMenu();

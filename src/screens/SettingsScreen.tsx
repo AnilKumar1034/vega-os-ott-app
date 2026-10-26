@@ -10,6 +10,8 @@ import {
   getSubscriptionQuality,
   PROFILE_THEMES,
 } from '../constants/profileOptions';
+import {getSubscriptionStatus} from '../services/subscriptionService';
+import {analyticsService} from '../analytics';
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {useAuth} from '../context/authContext';
@@ -192,6 +194,7 @@ export const SettingsScreen = () => {
       id === 'edit' ||
       id === 'parental-controls' ||
       id === 'switch-profile' ||
+      id === 'manage-subscription' ||
       id === 'logout'
     ) {
       lastFocusedAccountActionRef.current = id;
@@ -544,6 +547,8 @@ export const SettingsScreen = () => {
   const email = userProfile?.email || user?.email || strings.auth.notAvailable;
   const subscription = userProfile?.subscription || strings.auth.defaultSub;
   const subscriptionQuality = getSubscriptionQuality(subscription);
+  const subscriptionStatus = getSubscriptionStatus(userProfile);
+  const subscriptionExpiresAt = userProfile?.subscriptionExpiresAt;
   const city = userProfile?.city || strings.auth.notSpecified;
   const country = userProfile?.country || strings.auth.notSpecified;
 
@@ -662,11 +667,29 @@ export const SettingsScreen = () => {
                     {strings.auth.subscriptionTierLabel}
                   </Text>
                   <Text style={styles.planValue}>{subscription}</Text>
+                  {subscriptionExpiresAt ? (
+                    <Text style={styles.planExpiry}>
+                      Expires: {new Date(subscriptionExpiresAt).toLocaleDateString()}
+                    </Text>
+                  ) : null}
                 </View>
-                <View style={styles.planBadge}>
-                  <Text style={styles.planBadgeText}>
-                    {subscriptionQuality}
-                  </Text>
+                <View style={styles.planBadgeContainer}>
+                  <View style={styles.planBadge}>
+                    <Text style={styles.planBadgeText}>
+                      {subscriptionQuality}
+                    </Text>
+                  </View>
+                  <View
+                    style={[
+                      styles.statusBadge,
+                      subscriptionStatus === 'active'
+                        ? styles.statusBadgeActive
+                        : styles.statusBadgeInactive,
+                    ]}>
+                    <Text style={styles.statusBadgeText}>
+                      {subscriptionStatus.toUpperCase()}
+                    </Text>
+                  </View>
                 </View>
               </View>
 
@@ -752,6 +775,31 @@ export const SettingsScreen = () => {
                     elementRefs.current['switch-profile'] = node;
                   }}
                   testID="settings-switch-profile-button"
+                />
+                <ActionButton
+                  id="manage-subscription"
+                  label="Subscription & Plans"
+                  hint="View plans or change subscription tier"
+                  focusedId={focusedId}
+                  onFocus={handleAccountFocus}
+                  onPress={() => {
+                    analyticsService
+                      .trackSubscriptionManagementOpened({
+                        current_plan: subscription,
+                        source_screen: 'Settings',
+                      })
+                      .catch(() => {});
+                    navigation.navigate(Routes.Subscription, {
+                      sourceScreen: 'Settings',
+                    });
+                  }}
+                  hasTVPreferredFocus={
+                    focusedId === 'manage-subscription' && !isMenuExpanded
+                  }
+                  buttonRef={(node) => {
+                    elementRefs.current['manage-subscription'] = node;
+                  }}
+                  testID="settings-subscription-button"
                 />
               </View>
 

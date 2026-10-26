@@ -8,6 +8,7 @@ import {CommonSearch} from './CommonSearch';
 import {styles} from './CommonHeader.styles';
 
 import {strings} from '../../constants/strings';
+import {useAuth} from '../../context/authContext';
 import {isKeyDown, isSelectEvent} from '../../utils/inputUtils';
 
 export interface CommonHeaderProps {
@@ -52,6 +53,11 @@ export const CommonHeader = ({
     typeof Pressable
   > | null>(null);
 
+  const auth = useAuth();
+  const currentSub =
+    auth?.userProfile?.subscription?.toUpperCase() ||
+    strings.subscriptions.premium.toUpperCase();
+
   const isFilterFocusedRef = useRef(isFilterFocused);
   isFilterFocusedRef.current = isFilterFocused;
 
@@ -79,9 +85,7 @@ export const CommonHeader = ({
       </Text>
       <View style={styles.statusBadge}>
         <View style={styles.statusDot} />
-        <Text style={styles.statusText}>
-          {strings.subscriptions.premium.toUpperCase()}
-        </Text>
+        <Text style={styles.statusText}>{currentSub}</Text>
       </View>
       <View style={styles.actions} focusable={false}>
         {showSearch && onSearchChange && (

@@ -212,7 +212,14 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
     }
   };
 
+  const isNavigatingRef = useRef(false);
   const playVideo = () => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    setTimeout(() => {
+      isNavigatingRef.current = false;
+    }, 800);
+
     if (currentSlide) {
       const resolvedContentType =
         (currentSlide as any).contentType ||
@@ -237,6 +244,12 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
   };
 
   const openMovieDetails = () => {
+    if (isNavigatingRef.current) return;
+    isNavigatingRef.current = true;
+    setTimeout(() => {
+      isNavigatingRef.current = false;
+    }, 800);
+
     if (currentSlide) {
       const resolvedContentType =
         (currentSlide as any).contentType ||

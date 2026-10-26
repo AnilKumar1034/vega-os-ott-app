@@ -22,6 +22,7 @@ export const PROTECTED_ROUTES: ReadonlySet<string> = new Set([
   Routes.EditProfile,
   Routes.VideoPlayer,
   Routes.Settings,
+  Routes.Subscription,
 ]);
 
 export interface ActiveRouteInfo {

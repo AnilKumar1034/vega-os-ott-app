@@ -65,6 +65,13 @@ export const AnalyticsEvent = {
   CONTENT_CATEGORY_SELECTED: 'content_category_selected',
   RECOMMENDATION_IMPRESSION: 'recommendation_impression',
   RECOMMENDATION_SELECTED: 'recommendation_selected',
+  SUBSCRIPTION_STATUS_VIEWED: 'subscription_status_viewed',
+  SUBSCRIPTION_ACCESS_DENIED: 'subscription_access_denied',
+  SUBSCRIPTION_VERIFICATION_FAILED: 'subscription_verification_failed',
+  SUBSCRIPTION_MANAGEMENT_OPENED: 'subscription_management_opened',
+  SUBSCRIPTION_STATUS_REFRESHED: 'subscription_status_refreshed',
+  SUBSCRIPTION_ACCESS_GRANTED: 'subscription_access_granted',
+  SUBSCRIPTION_PLAN_SELECTED: 'subscription_plan_selected',
 } as const;
 
 export type AnalyticsEventName =

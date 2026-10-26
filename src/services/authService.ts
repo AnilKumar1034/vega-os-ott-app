@@ -14,6 +14,10 @@ export interface UserProfileData {
   username: string;
   email: string;
   subscription: string;
+  subscriptionStatus?: string;
+  subscriptionExpiresAt?: string;
+  subscriptionStartedAt?: string;
+  billingCycle?: string;
   city: string;
   country: string;
   avatar?: string;
@@ -48,6 +52,10 @@ export interface UpdateProfileParams {
   city?: string;
   country?: string;
   subscription?: string;
+  subscriptionStatus?: string;
+  subscriptionExpiresAt?: string;
+  subscriptionStartedAt?: string;
+  billingCycle?: string;
   avatar?: string;
   themePreference?: string;
   notificationsEnabled?: boolean;
@@ -87,6 +95,18 @@ const encodeProfile = (profile: UserProfileData) => ({
     notificationsEnabled: {booleanValue: profile.notificationsEnabled ?? true},
     autoplayEnabled: {booleanValue: profile.autoplayEnabled ?? true},
     createdAt: encodeString(profile.createdAt || new Date().toISOString()),
+    ...(profile.subscriptionStatus
+      ? {subscriptionStatus: encodeString(profile.subscriptionStatus)}
+      : {}),
+    ...(profile.subscriptionExpiresAt
+      ? {subscriptionExpiresAt: encodeString(profile.subscriptionExpiresAt)}
+      : {}),
+    ...(profile.subscriptionStartedAt
+      ? {subscriptionStartedAt: encodeString(profile.subscriptionStartedAt)}
+      : {}),
+    ...(profile.billingCycle
+      ? {billingCycle: encodeString(profile.billingCycle)}
+      : {}),
   },
 });
 
@@ -103,6 +123,12 @@ const decodeProfile = (doc: any): UserProfileData | null => {
     username: decodeString(fields.username),
     email: decodeString(fields.email),
     subscription: decodeString(fields.subscription),
+    subscriptionStatus: decodeString(fields.subscriptionStatus) || undefined,
+    subscriptionExpiresAt:
+      decodeString(fields.subscriptionExpiresAt) || undefined,
+    subscriptionStartedAt:
+      decodeString(fields.subscriptionStartedAt) || undefined,
+    billingCycle: decodeString(fields.billingCycle) || undefined,
     city: decodeString(fields.city),
     country: decodeString(fields.country),
     avatar: decodeString(fields.avatar) || 'initial',
@@ -123,6 +149,13 @@ const mergeProfile = (
   username: updates.username ?? existing?.username ?? '',
   email: existing?.email ?? email,
   subscription: updates.subscription ?? existing?.subscription ?? 'Standard',
+  subscriptionStatus:
+    updates.subscriptionStatus ?? existing?.subscriptionStatus ?? 'active',
+  subscriptionExpiresAt:
+    updates.subscriptionExpiresAt ?? existing?.subscriptionExpiresAt,
+  subscriptionStartedAt:
+    updates.subscriptionStartedAt ?? existing?.subscriptionStartedAt,
+  billingCycle: updates.billingCycle ?? existing?.billingCycle,
   city: updates.city ?? existing?.city ?? '',
   country: updates.country ?? existing?.country ?? '',
   avatar: updates.avatar ?? existing?.avatar ?? 'initial',

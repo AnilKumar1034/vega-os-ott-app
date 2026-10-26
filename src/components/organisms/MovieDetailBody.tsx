@@ -37,6 +37,7 @@ interface MovieDetailBodyProps {
   onToggleWatchlist?: () => void;
   onRemoveContinueWatch: () => void;
   selectionSource?: string;
+  onWatchPress?: () => void;
 }
 
 export const MovieDetailBody = ({
@@ -58,6 +59,7 @@ export const MovieDetailBody = ({
   onToggleWatchlist,
   onRemoveContinueWatch,
   selectionSource,
+  onWatchPress,
 }: MovieDetailBodyProps) => {
   const navigation = useNavigation<any>();
   const inList = isInWatchlist || isFavourite;
@@ -65,6 +67,10 @@ export const MovieDetailBody = ({
     onToggleWatchlist || (inList ? onRemoveFavourite : onAddFavourite);
 
   const handleWatchPress = () => {
+    if (onWatchPress) {
+      onWatchPress();
+      return;
+    }
     const isCW =
       selectionSource === 'continue_watching' ||
       (continueWatchProgress !== null && continueWatchProgress > 0);
