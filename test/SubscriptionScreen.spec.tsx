@@ -3,28 +3,12 @@ import {act, fireEvent, render} from '@testing-library/react-native';
 import {SubscriptionScreen} from '../src/screens/SubscriptionScreen';
 import {useAuth} from '../src/context/authContext';
 import {useProfile} from '../src/profiles/hooks/useProfile';
-import {selectSubscriptionPlan} from '../src/services/subscriptionService';
-import {entitlementService} from '../src/services/entitlementService';
 import {analyticsService} from '../src/analytics';
 import {Routes} from '../src/constants/routes';
+import {mockEntitlementService, mockIapConfig, mockIapService} from '../src/iap';
 
 jest.mock('../src/context/authContext');
 jest.mock('../src/profiles/hooks/useProfile');
-jest.mock('../src/services/subscriptionService', () => {
-  const actual = jest.requireActual('../src/services/subscriptionService');
-  return {
-    ...actual,
-    selectSubscriptionPlan: jest.fn(),
-  };
-});
-jest.mock('../src/services/entitlementService', () => ({
-  entitlementService: {
-    refreshEntitlement: jest.fn().mockResolvedValue({
-      status: 'active',
-      tier: 'premium',
-    }),
-  },
-}));
 jest.mock('../src/analytics', () => ({
   analyticsService: {
     trackSubscriptionStatusViewed: jest.fn().mockResolvedValue(undefined),
@@ -49,7 +33,7 @@ jest.mock('@react-navigation/native', () => ({
   }),
 }));
 
-describe('SubscriptionScreen UI & Vega OS Navigation', () => {
+describe('SubscriptionScreen UI & Vega OS Navigation with Mock IAP', () => {
   const mockLogout = jest.fn();
   const mockUpdateProfile = jest.fn();
   const mockClearActiveProfile = jest.fn();
@@ -60,15 +44,27 @@ describe('SubscriptionScreen UI & Vega OS Navigation', () => {
   };
 
   const mockUserProfile: any = {
+    uid: 'u123',
     username: 'Subscriber User',
     email: 'subscriber@logixstream.com',
-    subscription: 'Basic',
-    subscriptionStatus: 'active',
+    subscription: 'Free',
+    subscriptionStatus: 'none',
   };
 
-  beforeEach(() => {
+  beforeEach(async () => {
     jest.useFakeTimers();
     jest.clearAllMocks();
+    mockIapConfig.reset();
+    mockIapConfig.setEnabled(true);
+    mockIapConfig.setSimulatedDelayMs(200);
+    mockIapService.resetState();
+    mockEntitlementService.clearMemoryCache();
+
+    const storage = require('@amazon-devices/react-native-async-storage__async-storage/lib/commonjs/AsyncStorage.native').default;
+    if (storage?.clear) {
+      await storage.clear();
+    }
+
     const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
     useTVEventHandler.mockClear();
 
@@ -87,12 +83,12 @@ describe('SubscriptionScreen UI & Vega OS Navigation', () => {
 
   afterEach(() => {
     act(() => {
-      jest.runAllTimers();
+      jest.runOnlyPendingTimers();
     });
     jest.useRealTimers();
   });
 
-  it('renders header, step counter, and billing cycle toggle with "Best value" badge', () => {
+  it('renders header, step counter, dev scenario toggle, and billing cycle toggle with "Best value" badge', () => {
     const {getByText, getByTestId} = render(<SubscriptionScreen />);
 
     expect(getByText('STEP 1 OF 2')).toBeTruthy();
@@ -102,9 +98,39 @@ describe('SubscriptionScreen UI & Vega OS Navigation', () => {
     expect(getByText('Monthly')).toBeTruthy();
     expect(getByTestId('cycle-toggle-button')).toBeTruthy();
     expect(getByTestId('subscription-sign-out-button')).toBeTruthy();
+    expect(getByTestId('dev-scenario-toggle')).toBeTruthy();
+    expect(getByText('SUCCESS')).toBeTruthy();
   });
 
-  it('renders all 4 subscription plan cards matching the design screenshot', () => {
+  it('cycles through dev test scenarios (SUCCESS -> CANCEL -> FAILURE) on toggle press', () => {
+    const {getByTestId, getByText} = render(<SubscriptionScreen />);
+    const devToggle = getByTestId('dev-scenario-toggle');
+
+    expect(mockIapConfig.getScenario()).toBe('success');
+
+    // Toggle 1: success -> cancel
+    act(() => {
+      fireEvent.press(devToggle);
+    });
+    expect(mockIapConfig.getScenario()).toBe('cancel');
+    expect(getByText('CANCEL')).toBeTruthy();
+
+    // Toggle 2: cancel -> failure
+    act(() => {
+      fireEvent.press(devToggle);
+    });
+    expect(mockIapConfig.getScenario()).toBe('failure');
+    expect(getByText('FAILURE')).toBeTruthy();
+
+    // Toggle 3: failure -> success
+    act(() => {
+      fireEvent.press(devToggle);
+    });
+    expect(mockIapConfig.getScenario()).toBe('success');
+    expect(getByText('SUCCESS')).toBeTruthy();
+  });
+
+  it('renders all 4 subscription plan cards matching design specs', () => {
     const {getByTestId, getByText} = render(<SubscriptionScreen />);
 
     expect(getByTestId('plan-card-premium')).toBeTruthy();
@@ -140,21 +166,32 @@ describe('SubscriptionScreen UI & Vega OS Navigation', () => {
     expect(getByText('₹649')).toBeTruthy();
   });
 
-  it('handles selecting a plan, calling selectSubscriptionPlan and refreshing entitlement', async () => {
-    (selectSubscriptionPlan as jest.Mock).mockResolvedValue({
-      subscription: 'Premium',
-      subscriptionStatus: 'active',
-    });
+  it('handles selecting a plan, granting mock entitlement, and displaying active entitlement banner', async () => {
+    mockIapConfig.setScenario('success');
+    const purchaseSpy = jest.spyOn(mockIapService, 'purchase');
+    const grantSpy = jest.spyOn(mockEntitlementService, 'grantEntitlement');
 
     const {getByTestId, getByText} = render(<SubscriptionScreen />);
-
     const premiumCard = getByTestId('plan-card-premium');
+
     await act(async () => {
       fireEvent.press(premiumCard);
     });
 
-    expect(selectSubscriptionPlan).toHaveBeenCalledWith('premium', 'monthly');
-    expect(entitlementService.refreshEntitlement).toHaveBeenCalledWith('u123');
+    expect(purchaseSpy).toHaveBeenCalledWith('premium_monthly');
+
+    // Advance timer to finish simulated payment delay
+    await act(async () => {
+      jest.advanceTimersByTime(250);
+    });
+
+    expect(grantSpy).toHaveBeenCalledWith(
+      'u123',
+      expect.objectContaining({id: 'premium'}),
+      'monthly',
+      expect.stringMatching(/^mock_dev_txn_/),
+    );
+
     expect(analyticsService.trackSubscriptionPlanSelected).toHaveBeenCalledWith(
       expect.objectContaining({
         plan_id: 'premium',
@@ -163,33 +200,114 @@ describe('SubscriptionScreen UI & Vega OS Navigation', () => {
         price: 649,
       }),
     );
-    expect(getByText('Successfully subscribed to Premium!')).toBeTruthy();
 
-    act(() => {
-      jest.advanceTimersByTime(1500);
-    });
-    expect(mockGoBack).toHaveBeenCalled();
+    expect(getByText(/\[SIMULATED\] Purchase successful for Premium/)).toBeTruthy();
+    expect(getByTestId('dev-entitlement-banner')).toBeTruthy();
+    expect(getByTestId('dev-reset-button')).toBeTruthy();
   });
 
-  it('prevents re-selecting current active plan', async () => {
-    (useAuth as jest.Mock).mockReturnValue({
-      user: mockUser,
-      userProfile: {
-        subscription: 'Premium',
-        subscriptionStatus: 'active',
-      },
-      logout: mockLogout,
-      updateProfile: mockUpdateProfile,
-      loading: false,
+  it('resets test entitlement when RESET TEST SUB button is pressed', async () => {
+    mockIapConfig.setScenario('success');
+    const {getByTestId, getByText, queryByTestId} = render(<SubscriptionScreen />);
+    const premiumCard = getByTestId('plan-card-premium');
+
+    // Purchase
+    await act(async () => {
+      fireEvent.press(premiumCard);
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(250);
     });
 
-    const {getByTestId, getByText} = render(<SubscriptionScreen />);
+    expect(getByTestId('dev-reset-button')).toBeTruthy();
+
+    // Press reset
+    const resetBtn = getByTestId('dev-reset-button');
+    await act(async () => {
+      fireEvent.press(resetBtn);
+    });
+
+    expect(getByText('Mock entitlement reset to Free tier.')).toBeTruthy();
+    expect(queryByTestId('dev-reset-button')).toBeNull();
+  });
+
+  it('handles user cancellation scenario gracefully without granting entitlement', async () => {
+    mockIapConfig.setScenario('cancel');
+    const purchaseSpy = jest.spyOn(mockIapService, 'purchase');
+
+    const {getByTestId, getByText, queryByTestId} = render(<SubscriptionScreen />);
     const premiumCard = getByTestId('plan-card-premium');
+
     await act(async () => {
       fireEvent.press(premiumCard);
     });
 
-    expect(selectSubscriptionPlan).not.toHaveBeenCalled();
+    expect(purchaseSpy).toHaveBeenCalledWith('premium_monthly');
+
+    await act(async () => {
+      jest.advanceTimersByTime(250);
+    });
+
+    expect(analyticsService.trackSubscriptionPlanSelected).not.toHaveBeenCalled();
+    expect(getByText('Purchase cancelled by user.')).toBeTruthy();
+    expect(queryByTestId('dev-entitlement-banner')).toBeNull();
+  });
+
+  it('handles payment failure scenario gracefully without granting entitlement', async () => {
+    mockIapConfig.setScenario('failure');
+    const purchaseSpy = jest.spyOn(mockIapService, 'purchase');
+
+    const {getByTestId, getByText, queryByTestId} = render(<SubscriptionScreen />);
+    const premiumCard = getByTestId('plan-card-premium');
+
+    await act(async () => {
+      fireEvent.press(premiumCard);
+    });
+
+    expect(purchaseSpy).toHaveBeenCalledWith('premium_monthly');
+
+    await act(async () => {
+      jest.advanceTimersByTime(250);
+    });
+
+    expect(analyticsService.trackSubscriptionPlanSelected).not.toHaveBeenCalled();
+    expect(getByText(/Simulated payment was declined/)).toBeTruthy();
+    expect(queryByTestId('dev-entitlement-banner')).toBeNull();
+  });
+
+  it('prevents re-selecting current active plan', async () => {
+    // Give user an active Premium subscription
+    await mockEntitlementService.grantEntitlement(
+      mockUser.uid,
+      {
+        id: 'premium',
+        name: 'Premium',
+        tier: 'premium',
+        monthlyPrice: 649,
+        annualPrice: 5841,
+        monthlyPriceFormatted: '₹649',
+        annualPriceFormatted: '₹5,841',
+        savePercent: 25,
+        qualityLabel: 'Great Video & sound quality',
+        resolution: '4K',
+        maxQuality: '4K',
+        features: [],
+        accentColor: '#E50914',
+        badgeColor: '#E50914',
+      },
+      'monthly',
+    );
+
+    const purchaseSpy = jest.spyOn(mockIapService, 'purchase');
+
+    const {getByTestId, getByText} = render(<SubscriptionScreen />);
+    const premiumCard = getByTestId('plan-card-premium');
+
+    await act(async () => {
+      fireEvent.press(premiumCard);
+    });
+
+    expect(purchaseSpy).not.toHaveBeenCalled();
     expect(getByText('You are already subscribed to Premium.')).toBeTruthy();
   });
 
@@ -219,7 +337,7 @@ describe('SubscriptionScreen UI & Vega OS Navigation', () => {
     expect(mockGoBack).toHaveBeenCalledTimes(1);
   });
 
-  it('handles TV remote D-pad navigation: up to cycle-toggle then select', () => {
+  it('handles TV remote D-pad navigation to dev scenario toggle and cycling it', () => {
     const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
     const {getByText} = render(<SubscriptionScreen />);
 
@@ -230,14 +348,20 @@ describe('SubscriptionScreen UI & Vega OS Navigation', () => {
       handler({eventType: 'up', eventKeyAction: 0});
     });
 
-    // Select to toggle billing cycle
+    // Navigate 'up' from cycle-toggle to dev-scenario
+    act(() => {
+      const handler =
+        useTVEventHandler.mock.calls[useTVEventHandler.mock.calls.length - 1][0];
+      handler({eventType: 'up', eventKeyAction: 0});
+    });
+
+    // Press 'select' on dev-scenario toggle
     act(() => {
       const handler =
         useTVEventHandler.mock.calls[useTVEventHandler.mock.calls.length - 1][0];
       handler({eventType: 'select', eventKeyAction: 0});
     });
 
-    // Should switch to annually
-    expect(getByText('₹5,841')).toBeTruthy();
+    expect(getByText('CANCEL')).toBeTruthy();
   });
 });

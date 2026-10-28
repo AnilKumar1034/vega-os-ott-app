@@ -7,25 +7,28 @@ import {
   SubscriptionEntitlement,
 } from '../types/subscription';
 import {HomeContentItem} from '../data/home';
+import {
+  mockEntitlementService,
+  mockEntitlementToSubscriptionEntitlement,
+} from '../iap';
 
 export const useEntitlement = () => {
   const {user, userProfile, loading: authLoading} = useAuth();
   const {activeProfile} = useProfile();
   const [entitlement, setEntitlement] = useState<SubscriptionEntitlement>(() =>
-    entitlementService.resolveEntitlementFromProfile(userProfile),
+    entitlementService.resolveEntitlement(userProfile),
   );
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (!user) {
       entitlementService.clearCache();
-      setEntitlement(entitlementService.resolveEntitlementFromProfile(null));
+      setEntitlement(entitlementService.resolveEntitlement(null));
       return;
     }
 
     let isCurrent = true;
-    const resolved =
-      entitlementService.resolveEntitlementFromProfile(userProfile);
+    const resolved = entitlementService.resolveEntitlement(userProfile);
     setEntitlement(resolved);
 
     // Warm cache in background
@@ -38,14 +41,25 @@ export const useEntitlement = () => {
       })
       .catch(() => {});
 
+    // Listen to local mock entitlement updates in development mode
+    const unsubscribe = mockEntitlementService.addListener((updatedMock) => {
+      if (!isCurrent) return;
+      if (updatedMock && updatedMock.userId === user.uid) {
+        setEntitlement(mockEntitlementToSubscriptionEntitlement(updatedMock));
+      } else if (!updatedMock) {
+        setEntitlement(entitlementService.resolveEntitlementFromProfile(userProfile));
+      }
+    });
+
     return () => {
       isCurrent = false;
+      unsubscribe();
     };
   }, [user, userProfile]);
 
   const refresh = useCallback(async () => {
     if (!user) {
-      return entitlementService.resolveEntitlementFromProfile(null);
+      return entitlementService.resolveEntitlement(null);
     }
     setLoading(true);
     try {

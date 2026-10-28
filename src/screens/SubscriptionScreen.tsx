@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useState} from 'react';
+import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   ActivityIndicator,
   ScrollView,
@@ -14,16 +14,17 @@ import {
 import {Routes} from '../constants/routes';
 import {useAuth} from '../context/authContext';
 import {useProfile} from '../profiles/hooks/useProfile';
-import {
-  getAvailablePlans,
-  getSubscriptionStatus,
-  normalizeTier,
-  selectSubscriptionPlan,
-} from '../services/subscriptionService';
-import {entitlementService} from '../services/entitlementService';
+import {useEntitlement} from '../hooks/useEntitlement';
+import {getAvailablePlans, normalizeTier} from '../services/subscriptionService';
 import {analyticsService} from '../analytics';
 import {BillingCycle, SubscriptionPlan} from '../types/subscription';
 import {isBackEvent, isKeyDown, isSelectEvent} from '../utils/inputUtils';
+import {
+  mockEntitlementService,
+  mockIapConfig,
+  mockIapService,
+  MockPurchaseScenario,
+} from '../iap';
 import {styles} from './SubscriptionScreen.styles';
 
 export const SubscriptionScreen = () => {
@@ -31,6 +32,9 @@ export const SubscriptionScreen = () => {
   const route = useRoute<any>();
   const {user, userProfile, logout} = useAuth();
   const {clearActiveProfile} = useProfile();
+  const {entitlement: currentEntitlement, refresh: refreshEntitlement} =
+    useEntitlement();
+  const isMountedRef = useRef(true);
 
   const plans = getAvailablePlans();
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
@@ -43,27 +47,73 @@ export const SubscriptionScreen = () => {
   const [updating, setUpdating] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
-  const currentStatus = getSubscriptionStatus(userProfile);
-  const currentPlanTier = normalizeTier(userProfile?.subscription);
+  // Development-only test scenario state
+  const isDevMode = typeof __DEV__ !== 'undefined' && Boolean(__DEV__);
+  const [devScenario, setDevScenario] = useState<MockPurchaseScenario>(() =>
+    mockIapConfig.getScenario(),
+  );
 
-  const showToast = (msg: string) => {
+  const currentStatus = currentEntitlement.status;
+  const currentPlanTier = currentEntitlement.tier;
+  const hasActiveMockEntitlement =
+    isDevMode &&
+    currentEntitlement.status !== 'none' &&
+    currentEntitlement.tier !== 'free';
+
+  const showToast = useCallback((msg: string) => {
+    if (!isMountedRef.current) return;
     setToastMsg(msg);
-    setTimeout(() => setToastMsg(null), 3000);
-  };
+    setTimeout(() => {
+      if (isMountedRef.current) {
+        setToastMsg(null);
+      }
+    }, 3200);
+  }, []);
+
+  const cycleDevScenario = useCallback(() => {
+    const current = mockIapConfig.getScenario();
+    const next: MockPurchaseScenario =
+      current === 'success'
+        ? 'cancel'
+        : current === 'cancel'
+        ? 'failure'
+        : 'success';
+    mockIapConfig.setScenario(next);
+    setDevScenario(next);
+    showToast(`Dev IAP Scenario: ${next.toUpperCase()}`);
+  }, [showToast]);
+
+  const handleResetTestEntitlement = useCallback(async () => {
+    if (!user?.uid) return;
+    try {
+      await mockEntitlementService.clearEntitlement(user.uid);
+      await refreshEntitlement();
+      showToast('Mock entitlement reset to Free tier.');
+    } catch {
+      showToast('Failed to reset test entitlement.');
+    }
+  }, [refreshEntitlement, showToast, user?.uid]);
+
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     analyticsService
       .trackSubscriptionStatusViewed({
-        plan_name: userProfile?.subscription || 'none',
+        plan_name: currentEntitlement.planName || userProfile?.subscription || 'none',
         status: currentStatus,
         source_screen: route.params?.sourceScreen || 'Settings',
       })
       .catch(() => {});
-  }, [currentStatus, route.params?.sourceScreen, userProfile?.subscription]);
+  }, [currentEntitlement.planName, currentStatus, route.params?.sourceScreen, userProfile?.subscription]);
 
   const handlePlanSelect = useCallback(
     async (plan: SubscriptionPlan) => {
-      if (updating) return;
+      if (updating || mockIapService.isPurchasing()) return;
 
       if (currentPlanTier === plan.tier && currentStatus === 'active') {
         showToast(`You are already subscribed to ${plan.name}.`);
@@ -71,58 +121,71 @@ export const SubscriptionScreen = () => {
       }
 
       setUpdating(true);
+      setSelectedPlanId(plan.id);
+
       try {
-        await selectSubscriptionPlan(plan.id, billingCycle);
-        setSelectedPlanId(plan.id);
+        // Resolve mock product SKU (e.g. 'premium_monthly' or 'basic_annually')
+        const productId = `${plan.id}_${billingCycle}`;
+        const result = await mockIapService.purchase(productId);
 
-        if (user?.uid) {
-          await entitlementService.refreshEntitlement(user.uid);
-        }
+        if (!isMountedRef.current) return;
 
-        await analyticsService.trackSubscriptionPlanSelected({
-          plan_id: plan.id,
-          plan_name: plan.name,
-          billing_cycle: billingCycle,
-          price:
-            billingCycle === 'annually'
-              ? plan.annualPrice
-              : plan.monthlyPrice,
-        });
-
-        await analyticsService.trackSubscriptionStatusRefreshed({
-          previous_plan: userProfile?.subscription || 'none',
-          new_plan: plan.name,
-          status: 'active',
-        });
-
-        showToast(`Successfully subscribed to ${plan.name}!`);
-
-        setTimeout(() => {
-          if (navigation.canGoBack()) {
-            navigation.goBack();
-          } else {
-            navigation.navigate(Routes.Home);
+        if (result.status === 'success') {
+          // Day 3: Grant local development entitlement upon confirmed mock purchase
+          if (user?.uid) {
+            await mockEntitlementService.grantEntitlement(
+              user.uid,
+              plan,
+              billingCycle,
+              result.transactionId,
+            );
+            await refreshEntitlement();
           }
-        }, 1200);
+
+          await analyticsService.trackSubscriptionPlanSelected({
+            plan_id: plan.id,
+            plan_name: plan.name,
+            billing_cycle: billingCycle,
+            price:
+              billingCycle === 'annually'
+                ? plan.annualPrice
+                : plan.monthlyPrice,
+          });
+
+          showToast(
+            `[SIMULATED] Purchase successful for ${plan.name} (${billingCycle})!\nMock Entitlement Active. Txn: ${result.transactionId}`,
+          );
+        } else if (result.status === 'cancelled') {
+          showToast('Purchase cancelled by user.');
+        } else {
+          showToast(
+            result.message || 'Simulated purchase failed. Please try again.',
+          );
+        }
       } catch (err: any) {
-        showToast(err.message || 'Failed to update subscription. Try again.');
+        if (isMountedRef.current) {
+          showToast(err.message || 'Purchase error occurred. Try again.');
+        }
       } finally {
-        setUpdating(false);
+        if (isMountedRef.current) {
+          setUpdating(false);
+        }
       }
     },
     [
       billingCycle,
       currentPlanTier,
       currentStatus,
-      navigation,
+      refreshEntitlement,
+      showToast,
       updating,
       user?.uid,
-      userProfile?.subscription,
     ],
   );
 
   const handleSignOut = async () => {
     try {
+      mockEntitlementService.clearMemoryCache();
       await clearActiveProfile();
       await logout();
       navigation.navigate(Routes.Login);
@@ -152,11 +215,31 @@ export const SubscriptionScreen = () => {
       } else if (type === 'down') {
         setFocusedId(`card-${selectedPlanId || 'premium'}`);
       } else if (type === 'up') {
+        setFocusedId(isDevMode ? 'dev-scenario' : 'sign-out');
+      }
+    } else if (focusedId === 'dev-scenario') {
+      if (isSelectEvent(type)) {
+        cycleDevScenario();
+      } else if (type === 'right') {
+        setFocusedId(hasActiveMockEntitlement ? 'dev-reset' : 'sign-out');
+      } else if (type === 'down') {
+        setFocusedId('cycle-toggle');
+      }
+    } else if (focusedId === 'dev-reset') {
+      if (isSelectEvent(type)) {
+        handleResetTestEntitlement();
+      } else if (type === 'left') {
+        setFocusedId('dev-scenario');
+      } else if (type === 'right') {
         setFocusedId('sign-out');
+      } else if (type === 'down') {
+        setFocusedId('cycle-toggle');
       }
     } else if (focusedId === 'sign-out') {
       if (isSelectEvent(type)) {
         handleSignOut();
+      } else if (type === 'left') {
+        setFocusedId(hasActiveMockEntitlement ? 'dev-reset' : isDevMode ? 'dev-scenario' : 'sign-out');
       } else if (type === 'down') {
         setFocusedId('cycle-toggle');
       }
@@ -184,19 +267,53 @@ export const SubscriptionScreen = () => {
       {/* Top Header */}
       <View style={styles.topBar}>
         <Text style={styles.brandLogo}>LOGIXSTREAM</Text>
-        <TouchableOpacity
-          style={[
-            styles.signOutButton,
-            focusedId === 'sign-out' && styles.signOutButtonFocused,
-          ]}
-          onFocus={() => setFocusedId('sign-out')}
-          onPress={handleSignOut}
-          activeOpacity={0.8}
-          accessibilityRole="button"
-          accessibilityLabel="Sign out"
-          testID="subscription-sign-out-button">
-          <Text style={styles.signOutText}>Sign out</Text>
-        </TouchableOpacity>
+        <View style={styles.topBarRight}>
+          {isDevMode && (
+            <TouchableOpacity accessibilityHint="TODO"
+              style={[
+                styles.devScenarioButton,
+                focusedId === 'dev-scenario' && styles.devScenarioButtonFocused,
+              ]}
+              onFocus={() => setFocusedId('dev-scenario')}
+              onPress={cycleDevScenario}
+              activeOpacity={0.8}
+              role="button"
+              aria-label={`Dev IAP scenario currently ${devScenario}`}
+              testID="dev-scenario-toggle">
+              <Text style={styles.devScenarioText}>
+                DEV IAP: <Text style={styles.devScenarioBold}>{devScenario.toUpperCase()}</Text>
+              </Text>
+            </TouchableOpacity>
+          )}
+          {hasActiveMockEntitlement && (
+            <TouchableOpacity accessibilityHint="TODO"
+              style={[
+                styles.devResetButton,
+                focusedId === 'dev-reset' && styles.devResetButtonFocused,
+              ]}
+              onFocus={() => setFocusedId('dev-reset')}
+              onPress={handleResetTestEntitlement}
+              activeOpacity={0.8}
+              role="button"
+              aria-label="Reset test entitlement"
+              testID="dev-reset-button">
+              <Text style={styles.devResetButtonText}>RESET TEST SUB</Text>
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity accessibilityHint="TODO"
+            style={[
+              styles.signOutButton,
+              focusedId === 'sign-out' && styles.signOutButtonFocused,
+            ]}
+            onFocus={() => setFocusedId('sign-out')}
+            onPress={handleSignOut}
+            activeOpacity={0.8}
+            role="button"
+            aria-label="Sign out"
+            testID="subscription-sign-out-button">
+            <Text style={styles.signOutText}>Sign out</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* Main Header & Toggle */}
@@ -206,7 +323,26 @@ export const SubscriptionScreen = () => {
           Choose the plan that's right for you
         </Text>
 
-        <TouchableOpacity
+        {/* Development Mock Entitlement Status Banner */}
+        {hasActiveMockEntitlement && (
+          <View style={styles.devEntitlementBanner} testID="dev-entitlement-banner">
+            <View style={styles.devEntitlementDot} />
+            <Text style={styles.devEntitlementBannerText}>
+              DEV MOCK ENTITLEMENT:{' '}
+              <Text style={styles.devEntitlementHighlight}>
+                {currentEntitlement.planName.toUpperCase()} (
+                {currentEntitlement.status.toUpperCase()})
+              </Text>
+              {currentEntitlement.expiresAt ? (
+                <Text style={styles.devEntitlementExpiryText}>
+                  {' '}• Valid until: {new Date(currentEntitlement.expiresAt).toLocaleDateString()}
+                </Text>
+              ) : null}
+            </Text>
+          </View>
+        )}
+
+        <TouchableOpacity accessibilityHint="TODO"
           style={[
             styles.cycleToggleContainer,
             focusedId === 'cycle-toggle' && styles.cycleToggleContainerFocused,
@@ -218,8 +354,8 @@ export const SubscriptionScreen = () => {
             )
           }
           activeOpacity={0.9}
-          accessibilityRole="button"
-          accessibilityLabel={`Billing cycle toggle, currently ${billingCycle}`}
+          role="button"
+          aria-label={`Billing cycle toggle, currently ${billingCycle}`}
           testID="cycle-toggle-button">
           <View
             style={[
@@ -278,6 +414,7 @@ export const SubscriptionScreen = () => {
               )}
 
               <TouchableOpacity
+                accessibilityHint="Select subscription plan"
                 style={[
                   styles.card,
                   isFocused && styles.cardFocused,
@@ -286,8 +423,8 @@ export const SubscriptionScreen = () => {
                 onFocus={() => setFocusedId(`card-${plan.id}`)}
                 onPress={() => handlePlanSelect(plan)}
                 activeOpacity={0.85}
-                accessibilityRole="button"
-                accessibilityLabel={`${plan.name} plan, ${price} ${cycleLabel}`}
+                role="button"
+                aria-label={`${plan.name} plan, ${price} ${cycleLabel}`}
                 testID={`plan-card-${plan.id}`}>
                 {/* Colored Header Banner */}
                 <View
@@ -343,7 +480,9 @@ export const SubscriptionScreen = () => {
                         styles.selectButtonText,
                         isFocused && styles.selectButtonTextFocused,
                       ]}>
-                      {isCurrentActive
+                      {updating && isSelected
+                        ? 'PURCHASING...'
+                        : isCurrentActive
                         ? 'CURRENT PLAN'
                         : isSelected
                         ? 'SELECTED'

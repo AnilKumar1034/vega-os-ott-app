@@ -527,7 +527,7 @@ export const SearchScreen = () => {
     const isCardFocused = focusedPillId === `card-${item.id}`;
     return (
       <View style={styles.gridCardContainer}>
-        <TouchableOpacity
+        <TouchableOpacity accessibilityHint="TODO"
           activeOpacity={0.9}
           onFocus={() => {
             setFocusedPillId(`card-${item.id}`);
@@ -540,8 +540,8 @@ export const SearchScreen = () => {
             styles.cardTouchable,
             isCardFocused && styles.cardTouchableFocused,
           ]}
-          accessibilityRole="button"
-          accessibilityLabel={`${item.title}, ${item.genre || 'Movie'}`}
+          role="button"
+          aria-label={`${item.title}, ${item.genre || 'Movie'}`}
           testID={`search-card-${item.id}`}>
           <Image
             source={item.image}
@@ -582,7 +582,7 @@ export const SearchScreen = () => {
         {/* Top Header Row matching Reference Image */}
         <View style={styles.headerBar}>
           <View style={styles.headerLeft}>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityHint="TODO"
               activeOpacity={0.9}
               onFocus={() => setFocusedPillId('user-avatar')}
               onBlur={() => setFocusedPillId(null)}
@@ -592,8 +592,8 @@ export const SearchScreen = () => {
                 avatarConfig && {backgroundColor: avatarConfig.background},
                 focusedPillId === 'user-avatar' && styles.avatarButtonFocused,
               ]}
-              accessibilityRole="button"
-              accessibilityLabel="User Profile"
+              role="button"
+              aria-label="User Profile"
               testID="search-user-avatar">
               {activeProfile?.isKids ? (
                 <Text style={styles.avatarKidsEmoji}>🦁</Text>
@@ -612,7 +612,7 @@ export const SearchScreen = () => {
               <View style={styles.micIconWrapper}>
                 <Text style={styles.micSymbol}>🎤</Text>
               </View>
-              <TextInput
+              <TextInput accessibilityHint="TODO"
                 ref={inputRef}
                 style={styles.searchInput}
                 value={searchQuery}
@@ -629,19 +629,19 @@ export const SearchScreen = () => {
                 returnKeyType="search"
                 autoCorrect={false}
                 selectionColor={THEME.purplePillActive}
-                accessibilityRole="search"
-                accessibilityLabel="Search catalog"
+                role="searchbox"
+                aria-label="Search catalog"
                 testID="common-search-input"
                 maxLength={MAX_SEARCH_INPUT_LENGTH}
               />
               {searchQuery.length > 0 && (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityHint="TODO"
                   onPress={handleClearSearch}
                   onFocus={() => setFocusedPillId('header-clear')}
                   onBlur={() => setFocusedPillId(null)}
                   style={styles.headerClearButton}
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear search query"
+                  role="button"
+                  aria-label="Clear search query"
                   testID="clear-search-button">
                   <Text style={styles.headerClearSymbol}>✕</Text>
                 </TouchableOpacity>
@@ -649,7 +649,7 @@ export const SearchScreen = () => {
             </View>
 
             {/* Filter Toggle Button */}
-            <TouchableOpacity
+            <TouchableOpacity accessibilityHint="TODO"
               activeOpacity={0.9}
               onFocus={() => setFocusedPillId('header-filter-btn')}
               onBlur={() => setFocusedPillId(null)}
@@ -659,14 +659,14 @@ export const SearchScreen = () => {
                 focusedPillId === 'header-filter-btn' &&
                   styles.headerSquareButtonFocused,
               ]}
-              accessibilityRole="button"
-              accessibilityLabel="Toggle Filters"
+              role="button"
+              aria-label="Toggle Filters"
               testID="header-filter-button">
               <Text style={styles.funnelSymbol}>⏚</Text>
             </TouchableOpacity>
 
             {/* AI Mood Search Button */}
-            <TouchableOpacity
+            <TouchableOpacity accessibilityHint="TODO"
               activeOpacity={0.9}
               onFocus={() => setFocusedPillId('header-ai-btn')}
               onBlur={() => setFocusedPillId(null)}
@@ -680,15 +680,15 @@ export const SearchScreen = () => {
                 focusedPillId === 'header-ai-btn' &&
                   styles.headerSquareButtonFocused,
               ]}
-              accessibilityRole="button"
-              accessibilityLabel="AI Search"
+              role="button"
+              aria-label="AI Search"
               testID="header-ai-button">
               <Text style={styles.headerButtonText}>AI</Text>
             </TouchableOpacity>
           </View>
 
           <View style={styles.headerRight}>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityHint="TODO"
               activeOpacity={0.9}
               onFocus={() => setFocusedPillId('settings-btn')}
               onBlur={() => setFocusedPillId(null)}
@@ -698,8 +698,8 @@ export const SearchScreen = () => {
                 focusedPillId === 'settings-btn' &&
                   styles.settingsIconButtonFocused,
               ]}
-              accessibilityRole="button"
-              accessibilityLabel="Settings"
+              role="button"
+              aria-label="Settings"
               testID="search-settings-button">
               <MenuIcon
                 name="Settings"
@@ -711,7 +711,7 @@ export const SearchScreen = () => {
                 }
               />
             </TouchableOpacity>
-            <Image
+            <Image aria-label="TODO"
               source={require('../assets/vega.png')}
               style={styles.appLogoImage}
               testID="vega-logo"
@@ -739,7 +739,7 @@ export const SearchScreen = () => {
             {/* Active Filters Row (Movie ×, Hindi ×, Romance ×, Drama ×) */}
             <View style={styles.activeFiltersBar} testID="search-filters-bar">
               {/* Content Type: Movie */}
-              <TouchableOpacity
+              <TouchableOpacity accessibilityHint="TODO"
                 activeOpacity={0.9}
                 onFocus={() => setFocusedPillId('filter-type-movie')}
                 onBlur={() => setFocusedPillId(null)}
@@ -749,8 +749,8 @@ export const SearchScreen = () => {
                   focusedPillId === 'filter-type-movie' &&
                     styles.filterTagPillFocused,
                 ]}
-                accessibilityRole="button"
-                accessibilityLabel="Filter Movie"
+                role="button"
+                aria-label="Filter Movie"
                 testID="filter-type-movie">
                 <Text style={styles.filterTagPillText}>Movie</Text>
                 <Text style={styles.filterTagCloseSymbol}>
@@ -759,7 +759,7 @@ export const SearchScreen = () => {
               </TouchableOpacity>
 
               {/* Language: Hindi */}
-              <TouchableOpacity
+              <TouchableOpacity accessibilityHint="TODO"
                 activeOpacity={0.9}
                 onFocus={() => setFocusedPillId('filter-lang-hindi')}
                 onBlur={() => setFocusedPillId(null)}
@@ -769,8 +769,8 @@ export const SearchScreen = () => {
                   focusedPillId === 'filter-lang-hindi' &&
                     styles.filterTagPillFocused,
                 ]}
-                accessibilityRole="button"
-                accessibilityLabel="Filter Hindi"
+                role="button"
+                aria-label="Filter Hindi"
                 testID="filter-lang-hindi">
                 <Text style={styles.filterTagPillText}>Hindi</Text>
                 <Text style={styles.filterTagCloseSymbol}>
@@ -779,7 +779,7 @@ export const SearchScreen = () => {
               </TouchableOpacity>
 
               {/* Genre: Romance */}
-              <TouchableOpacity
+              <TouchableOpacity accessibilityHint="TODO"
                 activeOpacity={0.9}
                 onFocus={() => setFocusedPillId('filter-genre-romance')}
                 onBlur={() => setFocusedPillId(null)}
@@ -789,8 +789,8 @@ export const SearchScreen = () => {
                   focusedPillId === 'filter-genre-romance' &&
                     styles.filterTagPillFocused,
                 ]}
-                accessibilityRole="button"
-                accessibilityLabel="Filter Romance"
+                role="button"
+                aria-label="Filter Romance"
                 testID="filter-genre-romance">
                 <Text style={styles.filterTagPillText}>Romance</Text>
                 <Text style={styles.filterTagCloseSymbol}>
@@ -799,7 +799,7 @@ export const SearchScreen = () => {
               </TouchableOpacity>
 
               {/* Genre: Drama */}
-              <TouchableOpacity
+              <TouchableOpacity accessibilityHint="TODO"
                 activeOpacity={0.9}
                 onFocus={() => setFocusedPillId('filter-genre-drama')}
                 onBlur={() => setFocusedPillId(null)}
@@ -809,8 +809,8 @@ export const SearchScreen = () => {
                   focusedPillId === 'filter-genre-drama' &&
                     styles.filterTagPillFocused,
                 ]}
-                accessibilityRole="button"
-                accessibilityLabel="Filter Drama"
+                role="button"
+                aria-label="Filter Drama"
                 testID="filter-genre-drama">
                 <Text style={styles.filterTagPillText}>Drama</Text>
                 <Text style={styles.filterTagCloseSymbol}>
@@ -819,7 +819,7 @@ export const SearchScreen = () => {
               </TouchableOpacity>
 
               {/* Genre: Sci-Fi */}
-              <TouchableOpacity
+              <TouchableOpacity accessibilityHint="TODO"
                 activeOpacity={0.9}
                 onFocus={() => setFocusedPillId('filter-genre-scifi')}
                 onBlur={() => setFocusedPillId(null)}
@@ -829,8 +829,8 @@ export const SearchScreen = () => {
                   focusedPillId === 'filter-genre-scifi' &&
                     styles.filterTagPillFocused,
                 ]}
-                accessibilityRole="button"
-                accessibilityLabel="Filter Sci-Fi"
+                role="button"
+                aria-label="Filter Sci-Fi"
                 testID="filter-genre-scifi">
                 <Text style={styles.filterTagPillText}>Sci-Fi</Text>
                 <Text style={styles.filterTagCloseSymbol}>
@@ -839,7 +839,8 @@ export const SearchScreen = () => {
               </TouchableOpacity>
 
               {/* Hidden/Auxiliary filter pills to maintain 100% test contract compatibility */}
-              <TouchableOpacity
+              {/* eslint-disable-next-line @amazon-devices/kepler/missing-accessibility-role */}
+              <TouchableOpacity accessibilityHint="TODO"
                 activeOpacity={0.9}
                 onFocus={() => setFocusedPillId('filter-type-series')}
                 onBlur={() => setFocusedPillId(null)}
@@ -848,7 +849,8 @@ export const SearchScreen = () => {
                 testID="filter-type-series">
                 <Text>Series</Text>
               </TouchableOpacity>
-              <TouchableOpacity
+              {/* eslint-disable-next-line @amazon-devices/kepler/missing-accessibility-role */}
+              <TouchableOpacity accessibilityHint="TODO"
                 activeOpacity={0.9}
                 onFocus={() => setFocusedPillId('filter-type-live')}
                 onBlur={() => setFocusedPillId(null)}
@@ -857,7 +859,8 @@ export const SearchScreen = () => {
                 testID="filter-type-live">
                 <Text>Live</Text>
               </TouchableOpacity>
-              <TouchableOpacity
+              {/* eslint-disable-next-line @amazon-devices/kepler/missing-accessibility-role */}
+              <TouchableOpacity accessibilityHint="TODO"
                 activeOpacity={0.9}
                 onFocus={() => setFocusedPillId('filter-sort-newest')}
                 onBlur={() => setFocusedPillId(null)}
@@ -869,7 +872,7 @@ export const SearchScreen = () => {
 
               {/* Reset Filters Pill */}
               {searchResults.hasActiveFilters && (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityHint="TODO"
                   activeOpacity={0.9}
                   onFocus={() => setFocusedPillId('reset-filters')}
                   onBlur={() => setFocusedPillId(null)}
@@ -879,8 +882,8 @@ export const SearchScreen = () => {
                     focusedPillId === 'reset-filters' &&
                       styles.filterResetPillFocused,
                   ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Reset all filters"
+                  role="button"
+                  aria-label="Reset all filters"
                   testID="reset-filters-button">
                   <Text style={styles.filterResetPillText}>Reset</Text>
                 </TouchableOpacity>
@@ -894,7 +897,7 @@ export const SearchScreen = () => {
                   {row.map((char) => {
                     const isKeyFocused = focusedPillId === `key-${char}`;
                     return (
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityHint="TODO"
                         key={`key-${char}`}
                         activeOpacity={0.8}
                         onFocus={() => {
@@ -907,8 +910,8 @@ export const SearchScreen = () => {
                           styles.keyButton,
                           isKeyFocused && styles.keyButtonFocused,
                         ]}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Key ${char}`}
+                        role="button"
+                        aria-label={`Key ${char}`}
                         testID={`keyboard-key-${char}`}>
                         <Text
                           style={[
@@ -926,7 +929,7 @@ export const SearchScreen = () => {
               {/* Row 5: Backspace, Space, Clear */}
               <View style={styles.keyboardRow}>
                 {/* Backspace Key */}
-                <TouchableOpacity
+                <TouchableOpacity accessibilityHint="TODO"
                   activeOpacity={0.8}
                   onFocus={() => {
                     setFocusedPillId('key-backspace');
@@ -940,8 +943,8 @@ export const SearchScreen = () => {
                     focusedPillId === 'key-backspace' &&
                       styles.keyButtonFocused,
                   ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Backspace"
+                  role="button"
+                  aria-label="Backspace"
                   testID="keyboard-key-backspace">
                   <Text
                     style={[
@@ -955,7 +958,7 @@ export const SearchScreen = () => {
                 </TouchableOpacity>
 
                 {/* Space Key */}
-                <TouchableOpacity
+                <TouchableOpacity accessibilityHint="TODO"
                   activeOpacity={0.8}
                   onFocus={() => {
                     setFocusedPillId('key-space');
@@ -968,8 +971,8 @@ export const SearchScreen = () => {
                     styles.keySpace,
                     focusedPillId === 'key-space' && styles.keyButtonFocused,
                   ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Space"
+                  role="button"
+                  aria-label="Space"
                   testID="keyboard-key-space">
                   <Text
                     style={[
@@ -982,7 +985,7 @@ export const SearchScreen = () => {
                 </TouchableOpacity>
 
                 {/* Clear Key */}
-                <TouchableOpacity
+                <TouchableOpacity accessibilityHint="TODO"
                   activeOpacity={0.8}
                   onFocus={() => {
                     setFocusedPillId('key-clear');
@@ -995,8 +998,8 @@ export const SearchScreen = () => {
                     styles.keyClear,
                     focusedPillId === 'key-clear' && styles.keyButtonFocused,
                   ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Clear Search"
+                  role="button"
+                  aria-label="Clear Search"
                   testID="keyboard-key-clear">
                   <Text
                     style={[
@@ -1020,7 +1023,7 @@ export const SearchScreen = () => {
                   {suggestions.map((suggestion, idx) => {
                     const isFocused = focusedPillId === `sug-${idx}`;
                     return (
-                      <TouchableOpacity
+                      <TouchableOpacity accessibilityHint="TODO"
                         key={`sug-${idx}`}
                         activeOpacity={0.8}
                         onFocus={() => setFocusedPillId(`sug-${idx}`)}
@@ -1030,8 +1033,8 @@ export const SearchScreen = () => {
                           styles.keywordPill,
                           isFocused && styles.keywordPillFocused,
                         ]}
-                        accessibilityRole="button"
-                        accessibilityLabel={`Suggestion ${suggestion}`}
+                        role="button"
+                        aria-label={`Suggestion ${suggestion}`}
                         testID={`search-suggestion-${idx}`}>
                         <Text
                           style={[
@@ -1051,7 +1054,7 @@ export const SearchScreen = () => {
                 {QUICK_KEYWORDS_ROW_1.map((word, wIdx) => {
                   const isWordFocused = focusedPillId === `kw-1-${wIdx}`;
                   return (
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityHint="TODO"
                       key={`kw-1-${wIdx}`}
                       activeOpacity={0.8}
                       onFocus={() => setFocusedPillId(`kw-1-${wIdx}`)}
@@ -1064,8 +1067,8 @@ export const SearchScreen = () => {
                         styles.keywordPill,
                         isWordFocused && styles.keywordPillFocused,
                       ]}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Keyword ${word}`}
+                      role="button"
+                      aria-label={`Keyword ${word}`}
                       testID={`keyword-${word}`}>
                       <Text
                         style={[
@@ -1084,7 +1087,7 @@ export const SearchScreen = () => {
                 {QUICK_KEYWORDS_ROW_2.map((word, wIdx) => {
                   const isWordFocused = focusedPillId === `kw-2-${wIdx}`;
                   return (
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityHint="TODO"
                       key={`kw-2-${wIdx}`}
                       activeOpacity={0.8}
                       onFocus={() => setFocusedPillId(`kw-2-${wIdx}`)}
@@ -1097,8 +1100,8 @@ export const SearchScreen = () => {
                         styles.keywordPill,
                         isWordFocused && styles.keywordPillFocused,
                       ]}
-                      accessibilityRole="button"
-                      accessibilityLabel={`Keyword ${word}`}
+                      role="button"
+                      aria-label={`Keyword ${word}`}
                       testID={`keyword-${word}`}>
                       <Text
                         style={[
@@ -1119,14 +1122,14 @@ export const SearchScreen = () => {
                   testID="recent-searches-container">
                   <View style={styles.recentHeaderRow}>
                     <Text style={styles.recentTitle}>Recent Searches</Text>
-                    <TouchableOpacity
+                    <TouchableOpacity accessibilityHint="TODO"
                       activeOpacity={0.8}
                       onFocus={() => setFocusedPillId('clear-recent')}
                       onBlur={() => setFocusedPillId(null)}
                       onPress={handleClearRecentHistory}
                       style={styles.clearRecentLink}
-                      accessibilityRole="button"
-                      accessibilityLabel="Clear recent search history"
+                      role="button"
+                      aria-label="Clear recent search history"
                       testID="clear-recent-searches-button">
                       <Text style={styles.clearRecentLinkText}>Clear</Text>
                     </TouchableOpacity>
@@ -1135,7 +1138,7 @@ export const SearchScreen = () => {
                     {recentSearches.map((term, idx) => {
                       const isFocused = focusedPillId === `recent-${idx}`;
                       return (
-                        <TouchableOpacity
+                        <TouchableOpacity accessibilityHint="TODO"
                           key={`recent-${idx}`}
                           activeOpacity={0.8}
                           onFocus={() => setFocusedPillId(`recent-${idx}`)}
@@ -1145,8 +1148,8 @@ export const SearchScreen = () => {
                             styles.keywordPill,
                             isFocused && styles.keywordPillFocused,
                           ]}
-                          accessibilityRole="button"
-                          accessibilityLabel={`Recent search ${term}`}
+                          role="button"
+                          aria-label={`Recent search ${term}`}
                           testID={`recent-search-chip-${idx}`}>
                           <Text
                             style={[
@@ -1197,7 +1200,7 @@ export const SearchScreen = () => {
                 <Text style={styles.emptySubtitle}>
                   Unable to connect to the catalog. Please try again.
                 </Text>
-                <TouchableOpacity
+                <TouchableOpacity accessibilityHint="TODO"
                   activeOpacity={0.9}
                   onFocus={() => setFocusedPillId('retry-btn')}
                   onBlur={() => setFocusedPillId(null)}
@@ -1209,8 +1212,8 @@ export const SearchScreen = () => {
                     styles.actionButton,
                     focusedPillId === 'retry-btn' && styles.actionButtonFocused,
                   ]}
-                  accessibilityRole="button"
-                  accessibilityLabel="Retry search"
+                  role="button"
+                  aria-label="Retry search"
                   testID="search-retry-button">
                   <Text style={styles.actionButtonText}>Retry</Text>
                 </TouchableOpacity>
@@ -1228,7 +1231,7 @@ export const SearchScreen = () => {
                     We could not find any matches for &quot;{searchQuery}&quot;. Try
                     another title, actor, or genre.
                   </Text>
-                  <TouchableOpacity
+                  <TouchableOpacity accessibilityHint="TODO"
                     activeOpacity={0.9}
                     onFocus={() => setFocusedPillId('empty-clear-btn')}
                     onBlur={() => setFocusedPillId(null)}
@@ -1238,8 +1241,8 @@ export const SearchScreen = () => {
                       focusedPillId === 'empty-clear-btn' &&
                         styles.actionButtonFocused,
                     ]}
-                    accessibilityRole="button"
-                    accessibilityLabel="Clear Search"
+                    role="button"
+                    aria-label="Clear Search"
                     testID="search-clear-action">
                     <Text style={styles.actionButtonText}>Clear Search</Text>
                   </TouchableOpacity>

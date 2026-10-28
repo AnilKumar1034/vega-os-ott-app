@@ -16,6 +16,10 @@ import {
   normalizeTier,
 } from './subscriptionService';
 import {strings} from '../constants/strings';
+import {
+  mockEntitlementService,
+  mockEntitlementToSubscriptionEntitlement,
+} from '../iap';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache TTL
 
@@ -42,6 +46,9 @@ export class EntitlementService {
     this.cache.clear();
     this.pendingRequests.clear();
     this.requestSequenceMap.clear();
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      mockEntitlementService.clearMemoryCache();
+    }
   }
 
   /**
@@ -51,6 +58,27 @@ export class EntitlementService {
     if (userId) {
       this.cache.delete(userId);
     }
+  }
+
+  /**
+   * Resolves entitlement with development-only mock entitlement priority.
+   * If a valid mock entitlement exists for the user, it is honored without touching Firestore.
+   */
+  public resolveEntitlement(
+    profile: UserProfileData | null,
+  ): SubscriptionEntitlement {
+    if (!profile) {
+      return this.resolveEntitlementFromProfile(null);
+    }
+
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      const mock = mockEntitlementService.getActiveEntitlementSync(profile.uid);
+      if (mock) {
+        return mockEntitlementToSubscriptionEntitlement(mock);
+      }
+    }
+
+    return this.resolveEntitlementFromProfile(profile);
   }
 
   /**
@@ -106,6 +134,16 @@ export class EntitlementService {
   ): Promise<SubscriptionEntitlement> {
     if (!userId) {
       return this.resolveEntitlementFromProfile(null);
+    }
+
+    // Dev check: Load mock entitlement from local development storage
+    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+      const mock = await mockEntitlementService.getEntitlement(userId);
+      if (mock) {
+        const subEntitlement = mockEntitlementToSubscriptionEntitlement(mock);
+        this.cache.set(userId, {entitlement: subEntitlement, cachedAt: Date.now()});
+        return subEntitlement;
+      }
     }
 
     const cached = this.cache.get(userId);
@@ -277,7 +315,7 @@ export class EntitlementService {
       };
     }
 
-    const entitlement = this.resolveEntitlementFromProfile(userProfile);
+    const entitlement = this.resolveEntitlement(userProfile);
 
     // Step 4: Handle Expired Subscription
     if (entitlement.status === 'expired') {
