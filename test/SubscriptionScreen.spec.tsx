@@ -364,4 +364,71 @@ describe('SubscriptionScreen UI & Vega OS Navigation with Mock IAP', () => {
 
     expect(getByText('CANCEL')).toBeTruthy();
   });
+
+  it('renders Restore Purchases button and restores previous mock entitlement', async () => {
+    // 1. Persist mock entitlement in storage
+    const {SUBSCRIPTION_PLANS} = require('../src/types/subscription');
+    const premiumPlan = SUBSCRIPTION_PLANS.find((p: any) => p.id === 'premium')!;
+    await mockEntitlementService.grantEntitlement(
+      mockUser.uid,
+      premiumPlan,
+      'monthly',
+      'mock_restore_ui_txn',
+    );
+    mockEntitlementService.clearMemoryCache();
+
+    const {getByTestId, getByText} = render(<SubscriptionScreen />);
+    const restoreBtn = getByTestId('restore-purchases-button');
+    expect(restoreBtn).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(restoreBtn);
+      jest.advanceTimersByTime(200);
+    });
+
+    expect(getByText(/Successfully restored Premium subscription/)).toBeTruthy();
+  });
+
+  it('displays Cancel Sub button when active, and canceling updates banner to CANCELED', async () => {
+    const {SUBSCRIPTION_PLANS} = require('../src/types/subscription');
+    const premiumPlan = SUBSCRIPTION_PLANS.find((p: any) => p.id === 'premium')!;
+    await mockEntitlementService.grantEntitlement(
+      mockUser.uid,
+      premiumPlan,
+      'monthly',
+      'mock_cancel_ui_txn',
+    );
+
+    const {getByTestId, getByText, getAllByText} = render(<SubscriptionScreen />);
+    const cancelBtn = getByTestId('dev-cancel-button');
+    expect(cancelBtn).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(cancelBtn);
+    });
+
+    expect(getByText(/Auto-renew canceled/)).toBeTruthy();
+    expect(getAllByText(/CANCELED/).length).toBeGreaterThan(0);
+  });
+
+  it('displays Expire Now button and expiring updates banner', async () => {
+    const {SUBSCRIPTION_PLANS} = require('../src/types/subscription');
+    const premiumPlan = SUBSCRIPTION_PLANS.find((p: any) => p.id === 'premium')!;
+    await mockEntitlementService.grantEntitlement(
+      mockUser.uid,
+      premiumPlan,
+      'monthly',
+      'mock_expire_ui_txn',
+    );
+
+    const {getByTestId, getByText} = render(<SubscriptionScreen />);
+    const expireBtn = getByTestId('dev-expire-button');
+    expect(expireBtn).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(expireBtn);
+    });
+
+    expect(getByText(/Subscription expired immediately/)).toBeTruthy();
+  });
 });

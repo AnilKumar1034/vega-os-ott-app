@@ -1,4 +1,5 @@
 import {BillingCycle, SubscriptionTier} from '../types/subscription';
+import {MockEntitlement} from './mockEntitlementModel';
 
 /**
  * Transient states of the purchase transaction flow.
@@ -10,7 +11,26 @@ export type PurchaseFlowState =
   | 'purchasing'
   | 'purchase_successful'
   | 'user_cancelled'
-  | 'purchase_failed';
+  | 'purchase_failed'
+  | 'restoring';
+
+/**
+ * Status of a restore purchases operation.
+ */
+export type RestoreStatus =
+  | 'restored'
+  | 'no_entitlement_found'
+  | 'expired'
+  | 'failed';
+
+/**
+ * Result returned by a restore purchases operation.
+ */
+export interface RestoreResult {
+  status: RestoreStatus;
+  entitlement?: MockEntitlement;
+  message: string;
+}
 
 /**
  * Supported mock simulation outcomes for development testing.

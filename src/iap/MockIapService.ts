@@ -1,16 +1,19 @@
 import {SUBSCRIPTION_PLANS, SubscriptionPlan} from '../types/subscription';
 import {IIapService} from './IapService';
 import {mockIapConfig} from './mockIapConfig';
+import {mockEntitlementService} from './MockEntitlementService';
 import {
   IapProduct,
   PurchaseFlowState,
   PurchaseResult,
+  RestoreResult,
 } from './types';
 
 export class MockIapService implements IIapService {
   private static instance: MockIapService;
 
   private _isPurchasing: boolean = false;
+  private _isRestoring: boolean = false;
   private _state: PurchaseFlowState = 'idle';
   private _products: IapProduct[] = [];
   private _listeners: Set<(state: PurchaseFlowState) => void> = new Set();
@@ -121,6 +124,10 @@ export class MockIapService implements IIapService {
 
   public isPurchasing(): boolean {
     return this._isPurchasing;
+  }
+
+  public isRestoring(): boolean {
+    return this._isRestoring;
   }
 
   public getState(): PurchaseFlowState {
@@ -249,10 +256,71 @@ export class MockIapService implements IIapService {
   }
 
   /**
+   * Restores previously purchased mock subscriptions for the account.
+   * Reads from local development persistence, re-evaluates active/expired status,
+   * and updates UI state.
+   */
+  public async restorePurchases(userId?: string): Promise<RestoreResult> {
+    // Safety check: Dev only
+    if (!mockIapConfig.isEnabled()) {
+      return {
+        status: 'failed',
+        message: 'Mock IAP is disabled in production builds.',
+      };
+    }
+
+    if (!userId || !userId.trim()) {
+      return {
+        status: 'failed',
+        message: 'Account userId is required to restore purchases.',
+      };
+    }
+
+    if (this._isRestoring) {
+      return {
+        status: 'failed',
+        message: 'A restore operation is already in progress.',
+      };
+    }
+
+    if (this._isPurchasing) {
+      return {
+        status: 'failed',
+        message: 'Cannot restore while a purchase is in progress.',
+      };
+    }
+
+    this._isRestoring = true;
+    this._setState('restoring');
+
+    try {
+      const delay = mockIapConfig.getSimulatedDelayMs();
+      if (delay > 0) {
+        await new Promise<void>(resolve => {
+          setTimeout(() => resolve(), delay);
+        });
+      }
+
+      const result = await mockEntitlementService.restoreEntitlement(userId.trim());
+      this._setState('idle');
+      return result;
+    } catch (err: any) {
+      this._setState('idle');
+      return {
+        status: 'failed',
+        message: err?.message || 'An unexpected error occurred during mock restore.',
+      };
+    } finally {
+      this._isRestoring = false;
+    }
+  }
+
+  /**
    * Resets internal state to idle (used in tests and teardowns).
    */
   public resetState(): void {
     this._isPurchasing = false;
+    this._isRestoring = false;
     this._setState('idle');
   }
 }

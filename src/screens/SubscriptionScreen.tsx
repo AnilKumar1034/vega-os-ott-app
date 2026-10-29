@@ -45,6 +45,7 @@ export const SubscriptionScreen = () => {
     return tier === 'free' ? 'premium' : tier;
   });
   const [updating, setUpdating] = useState(false);
+  const [restoring, setRestoring] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
 
   // Development-only test scenario state
@@ -93,6 +94,74 @@ export const SubscriptionScreen = () => {
       showToast('Failed to reset test entitlement.');
     }
   }, [refreshEntitlement, showToast, user?.uid]);
+
+  const handleCancelSubscription = useCallback(async () => {
+    if (!user?.uid) return;
+    try {
+      const canceled = await mockEntitlementService.cancelEntitlement(user.uid);
+      if (canceled) {
+        await refreshEntitlement();
+        showToast(
+          `[SIMULATED] Auto-renew canceled for ${canceled.planName}.\nAccess remains active until ${new Date(
+            canceled.expiresAt,
+          ).toLocaleDateString()}.`,
+        );
+      } else {
+        showToast('No active subscription to cancel.');
+      }
+    } catch {
+      showToast('Failed to cancel test subscription.');
+    }
+  }, [refreshEntitlement, showToast, user?.uid]);
+
+  const handleExpireSubscription = useCallback(async () => {
+    if (!user?.uid) return;
+    try {
+      const expired = await mockEntitlementService.expireEntitlement(user.uid);
+      if (expired) {
+        await refreshEntitlement();
+        showToast('[SIMULATED] Subscription expired immediately. Premium access revoked.');
+      }
+    } catch {
+      showToast('Failed to expire test subscription.');
+    }
+  }, [refreshEntitlement, showToast, user?.uid]);
+
+  const handleRestorePurchases = useCallback(async () => {
+    if (restoring || updating || mockIapService.isRestoring() || mockIapService.isPurchasing()) {
+      return;
+    }
+    if (!user?.uid) {
+      showToast('Please sign in to restore purchases.');
+      return;
+    }
+
+    setRestoring(true);
+    try {
+      const result = await mockIapService.restorePurchases(user.uid);
+      await refreshEntitlement();
+
+      if (result.status === 'restored') {
+        showToast(
+          `[SIMULATED] Successfully restored ${result.entitlement?.planName || 'active'} subscription!`,
+        );
+      } else if (result.status === 'expired') {
+        showToast(
+          `[SIMULATED] Restored subscription for ${result.entitlement?.planName || 'previous plan'}, but it has expired.`,
+        );
+      } else if (result.status === 'no_entitlement_found') {
+        showToast('No previous mock subscription found for this account.');
+      } else {
+        showToast(result.message || 'Failed to restore subscription from local storage.');
+      }
+    } catch (err: any) {
+      showToast(err?.message || 'Restore error occurred.');
+    } finally {
+      if (isMountedRef.current) {
+        setRestoring(false);
+      }
+    }
+  }, [refreshEntitlement, restoring, showToast, updating, user?.uid]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -194,6 +263,25 @@ export const SubscriptionScreen = () => {
     }
   };
 
+  const getTopBarItems = useCallback(() => {
+    const items: string[] = [];
+    if (isDevMode) {
+      items.push('dev-scenario');
+      if (hasActiveMockEntitlement && currentStatus === 'active') {
+        items.push('dev-cancel');
+      }
+      if (hasActiveMockEntitlement && currentStatus !== 'expired') {
+        items.push('dev-expire');
+      }
+      if (hasActiveMockEntitlement) {
+        items.push('dev-reset');
+      }
+    }
+    items.push('restore-purchases');
+    items.push('sign-out');
+    return items;
+  }, [currentStatus, hasActiveMockEntitlement, isDevMode]);
+
   useTVEventHandler((evt) => {
     if (!evt || !isKeyDown(evt.eventKeyAction)) return;
     const type = evt.eventType?.toLowerCase();
@@ -207,6 +295,34 @@ export const SubscriptionScreen = () => {
       return;
     }
 
+    const topBarItems = getTopBarItems();
+    const topBarIndex = topBarItems.indexOf(focusedId);
+
+    if (topBarIndex !== -1) {
+      if (isSelectEvent(type)) {
+        if (focusedId === 'dev-scenario') {
+          cycleDevScenario();
+        } else if (focusedId === 'dev-cancel') {
+          handleCancelSubscription();
+        } else if (focusedId === 'dev-expire') {
+          handleExpireSubscription();
+        } else if (focusedId === 'dev-reset') {
+          handleResetTestEntitlement();
+        } else if (focusedId === 'restore-purchases') {
+          handleRestorePurchases();
+        } else if (focusedId === 'sign-out') {
+          handleSignOut();
+        }
+      } else if (type === 'left' && topBarIndex > 0) {
+        setFocusedId(topBarItems[topBarIndex - 1]);
+      } else if (type === 'right' && topBarIndex < topBarItems.length - 1) {
+        setFocusedId(topBarItems[topBarIndex + 1]);
+      } else if (type === 'down') {
+        setFocusedId('cycle-toggle');
+      }
+      return;
+    }
+
     if (focusedId === 'cycle-toggle') {
       if (type === 'left' || type === 'right' || isSelectEvent(type)) {
         setBillingCycle((prev) =>
@@ -215,35 +331,13 @@ export const SubscriptionScreen = () => {
       } else if (type === 'down') {
         setFocusedId(`card-${selectedPlanId || 'premium'}`);
       } else if (type === 'up') {
-        setFocusedId(isDevMode ? 'dev-scenario' : 'sign-out');
+        const items = getTopBarItems();
+        setFocusedId(items[0] || 'restore-purchases');
       }
-    } else if (focusedId === 'dev-scenario') {
-      if (isSelectEvent(type)) {
-        cycleDevScenario();
-      } else if (type === 'right') {
-        setFocusedId(hasActiveMockEntitlement ? 'dev-reset' : 'sign-out');
-      } else if (type === 'down') {
-        setFocusedId('cycle-toggle');
-      }
-    } else if (focusedId === 'dev-reset') {
-      if (isSelectEvent(type)) {
-        handleResetTestEntitlement();
-      } else if (type === 'left') {
-        setFocusedId('dev-scenario');
-      } else if (type === 'right') {
-        setFocusedId('sign-out');
-      } else if (type === 'down') {
-        setFocusedId('cycle-toggle');
-      }
-    } else if (focusedId === 'sign-out') {
-      if (isSelectEvent(type)) {
-        handleSignOut();
-      } else if (type === 'left') {
-        setFocusedId(hasActiveMockEntitlement ? 'dev-reset' : isDevMode ? 'dev-scenario' : 'sign-out');
-      } else if (type === 'down') {
-        setFocusedId('cycle-toggle');
-      }
-    } else if (focusedId.startsWith('card-')) {
+      return;
+    }
+
+    if (focusedId.startsWith('card-')) {
       const currentPlanIndex = plans.findIndex(
         (p) => `card-${p.id}` === focusedId,
       );
@@ -269,7 +363,8 @@ export const SubscriptionScreen = () => {
         <Text style={styles.brandLogo}>LOGIXSTREAM</Text>
         <View style={styles.topBarRight}>
           {isDevMode && (
-            <TouchableOpacity accessibilityHint="TODO"
+            <TouchableOpacity
+              accessibilityHint="Cycle dev mock IAP scenario"
               style={[
                 styles.devScenarioButton,
                 focusedId === 'dev-scenario' && styles.devScenarioButtonFocused,
@@ -285,8 +380,41 @@ export const SubscriptionScreen = () => {
               </Text>
             </TouchableOpacity>
           )}
+          {isDevMode && hasActiveMockEntitlement && currentStatus === 'active' && (
+            <TouchableOpacity
+              accessibilityHint="Simulate subscription cancellation"
+              style={[
+                styles.devCancelButton,
+                focusedId === 'dev-cancel' && styles.devCancelButtonFocused,
+              ]}
+              onFocus={() => setFocusedId('dev-cancel')}
+              onPress={handleCancelSubscription}
+              activeOpacity={0.8}
+              role="button"
+              aria-label="Simulate subscription cancellation"
+              testID="dev-cancel-button">
+              <Text style={styles.devCancelButtonText}>CANCEL SUB</Text>
+            </TouchableOpacity>
+          )}
+          {isDevMode && hasActiveMockEntitlement && currentStatus !== 'expired' && (
+            <TouchableOpacity
+              accessibilityHint="Simulate immediate expiration"
+              style={[
+                styles.devExpireButton,
+                focusedId === 'dev-expire' && styles.devExpireButtonFocused,
+              ]}
+              onFocus={() => setFocusedId('dev-expire')}
+              onPress={handleExpireSubscription}
+              activeOpacity={0.8}
+              role="button"
+              aria-label="Simulate immediate expiration"
+              testID="dev-expire-button">
+              <Text style={styles.devExpireButtonText}>EXPIRE NOW</Text>
+            </TouchableOpacity>
+          )}
           {hasActiveMockEntitlement && (
-            <TouchableOpacity accessibilityHint="TODO"
+            <TouchableOpacity
+              accessibilityHint="Reset test entitlement to Free tier"
               style={[
                 styles.devResetButton,
                 focusedId === 'dev-reset' && styles.devResetButtonFocused,
@@ -300,7 +428,24 @@ export const SubscriptionScreen = () => {
               <Text style={styles.devResetButtonText}>RESET TEST SUB</Text>
             </TouchableOpacity>
           )}
-          <TouchableOpacity accessibilityHint="TODO"
+          <TouchableOpacity
+            accessibilityHint="Restore purchases from local storage"
+            style={[
+              styles.restoreButton,
+              focusedId === 'restore-purchases' && styles.restoreButtonFocused,
+            ]}
+            onFocus={() => setFocusedId('restore-purchases')}
+            onPress={handleRestorePurchases}
+            activeOpacity={0.8}
+            role="button"
+            aria-label="Restore purchases"
+            testID="restore-purchases-button">
+            <Text style={styles.restoreButtonText}>
+              {restoring ? 'RESTORING...' : 'RESTORE PURCHASES'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            accessibilityHint="Sign out of account"
             style={[
               styles.signOutButton,
               focusedId === 'sign-out' && styles.signOutButtonFocused,
@@ -325,8 +470,20 @@ export const SubscriptionScreen = () => {
 
         {/* Development Mock Entitlement Status Banner */}
         {hasActiveMockEntitlement && (
-          <View style={styles.devEntitlementBanner} testID="dev-entitlement-banner">
-            <View style={styles.devEntitlementDot} />
+          <View
+            style={[
+              styles.devEntitlementBanner,
+              currentStatus === 'canceled' && styles.devEntitlementBannerCanceled,
+              currentStatus === 'expired' && styles.devEntitlementBannerExpired,
+            ]}
+            testID="dev-entitlement-banner">
+            <View
+              style={[
+                styles.devEntitlementDot,
+                currentStatus === 'canceled' && styles.devEntitlementDotCanceled,
+                currentStatus === 'expired' && styles.devEntitlementDotExpired,
+              ]}
+            />
             <Text style={styles.devEntitlementBannerText}>
               DEV MOCK ENTITLEMENT:{' '}
               <Text style={styles.devEntitlementHighlight}>
@@ -335,7 +492,11 @@ export const SubscriptionScreen = () => {
               </Text>
               {currentEntitlement.expiresAt ? (
                 <Text style={styles.devEntitlementExpiryText}>
-                  {' '}• Valid until: {new Date(currentEntitlement.expiresAt).toLocaleDateString()}
+                  {currentStatus === 'canceled'
+                    ? ` • Access remains valid until: ${new Date(currentEntitlement.expiresAt).toLocaleDateString()}`
+                    : currentStatus === 'expired'
+                    ? ` • Expired on: ${new Date(currentEntitlement.expiresAt).toLocaleDateString()}`
+                    : ` • Valid until: ${new Date(currentEntitlement.expiresAt).toLocaleDateString()}`}
                 </Text>
               ) : null}
             </Text>
@@ -496,7 +657,7 @@ export const SubscriptionScreen = () => {
         })}
       </TVFocusGuideView>
 
-      {updating && (
+      {(updating || restoring) && (
         <ActivityIndicator
           size="large"
           color="#E50914"

@@ -66,6 +66,60 @@ export const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  devCancelButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: '#F97316',
+    backgroundColor: 'rgba(249, 115, 22, 0.15)',
+    marginRight: spacing.md,
+  },
+  devCancelButtonFocused: {
+    borderColor: '#FDBA74',
+    backgroundColor: 'rgba(249, 115, 22, 0.35)',
+  },
+  devCancelButtonText: {
+    color: '#FDBA74',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  devExpireButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: '#A855F7',
+    backgroundColor: 'rgba(168, 85, 247, 0.15)',
+    marginRight: spacing.md,
+  },
+  devExpireButtonFocused: {
+    borderColor: '#D8B4FE',
+    backgroundColor: 'rgba(168, 85, 247, 0.35)',
+  },
+  devExpireButtonText: {
+    color: '#D8B4FE',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  restoreButton: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    borderWidth: 1,
+    borderColor: '#0284C7',
+    backgroundColor: 'rgba(2, 132, 199, 0.15)',
+    marginRight: spacing.md,
+  },
+  restoreButtonFocused: {
+    borderColor: '#38BDF8',
+    backgroundColor: 'rgba(2, 132, 199, 0.35)',
+  },
+  restoreButtonText: {
+    color: '#38BDF8',
+    fontSize: 12,
+    fontWeight: '700',
+  },
   devEntitlementBanner: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -77,12 +131,26 @@ export const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     marginBottom: spacing.md,
   },
+  devEntitlementBannerCanceled: {
+    backgroundColor: 'rgba(249, 115, 22, 0.12)',
+    borderColor: '#F97316',
+  },
+  devEntitlementBannerExpired: {
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
+    borderColor: '#EF4444',
+  },
   devEntitlementDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
     backgroundColor: '#22C55E',
     marginRight: spacing.sm,
+  },
+  devEntitlementDotCanceled: {
+    backgroundColor: '#F97316',
+  },
+  devEntitlementDotExpired: {
+    backgroundColor: '#EF4444',
   },
   devEntitlementBannerText: {
     color: '#86EFAC',

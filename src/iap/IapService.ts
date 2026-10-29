@@ -1,4 +1,9 @@
-import {IapProduct, PurchaseFlowState, PurchaseResult} from './types';
+import {
+  IapProduct,
+  PurchaseFlowState,
+  PurchaseResult,
+  RestoreResult,
+} from './types';
 
 /**
  * Universal In-App Purchasing Service interface.
@@ -28,9 +33,19 @@ export interface IIapService {
   purchase(productId: string): Promise<PurchaseResult>;
 
   /**
+   * Restores previously purchased subscriptions for the current account.
+   */
+  restorePurchases(userId?: string): Promise<RestoreResult>;
+
+  /**
    * Indicates if a purchase transaction is currently in flight.
    */
   isPurchasing(): boolean;
+
+  /**
+   * Indicates if a restore transaction is currently in flight.
+   */
+  isRestoring(): boolean;
 
   /**
    * Returns current state in the purchase lifecycle state machine.

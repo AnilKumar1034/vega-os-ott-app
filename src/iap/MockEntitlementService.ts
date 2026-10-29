@@ -1,5 +1,6 @@
 import {BillingCycle, SubscriptionPlan, SubscriptionTier, TIER_RANK} from '../types/subscription';
 import {MockEntitlement, MockEntitlementStatus} from './mockEntitlementModel';
+import {RestoreResult} from './types';
 
 const STORAGE_KEY_PREFIX = '@vegaott/mock_entitlement_v1_';
 
@@ -240,10 +241,11 @@ export class MockEntitlementService {
   /**
    * Evaluates if the user currently holds an active, unexpired entitlement
    * meeting or exceeding the required tier.
+   * Canceled subscriptions remain entitled until their original expiry date.
    */
   public isEntitledSync(userId: string, requiredTier?: SubscriptionTier): boolean {
     const entitlement = this.getActiveEntitlementSync(userId);
-    if (!entitlement || entitlement.status !== 'active') {
+    if (!entitlement || (entitlement.status !== 'active' && entitlement.status !== 'canceled')) {
       return false;
     }
 
@@ -252,6 +254,131 @@ export class MockEntitlementService {
     }
 
     return entitlement.tier !== 'free';
+  }
+
+  /**
+   * Restores previously persisted mock entitlement for the specified account.
+   * Validates integrity, recalculates active/expired status dynamically,
+   * updates in-memory cache, and notifies listeners without extending expiry.
+   */
+  public async restoreEntitlement(userId: string): Promise<RestoreResult> {
+    if (!userId || !userId.trim()) {
+      return {
+        status: 'failed',
+        message: 'Account userId is required to restore purchases.',
+      };
+    }
+
+    try {
+      const storage = getAsyncStorage();
+      if (!storage) {
+        return {
+          status: 'failed',
+          message: 'Local storage is unavailable.',
+        };
+      }
+
+      const raw = await storage.getItem(this._getStorageKey(userId));
+      if (!raw) {
+        return {
+          status: 'no_entitlement_found',
+          message: 'No previous mock subscription found for this account.',
+        };
+      }
+
+      let parsed: any;
+      try {
+        parsed = JSON.parse(raw);
+      } catch {
+        return {
+          status: 'failed',
+          message: 'Unable to restore: local subscription data is corrupt.',
+        };
+      }
+
+      // Guard against malformed or non-mock records
+      if (
+        !parsed ||
+        parsed.isMock !== true ||
+        parsed.source !== 'local_mock' ||
+        parsed.userId !== userId ||
+        !parsed.planId ||
+        !parsed.tier ||
+        typeof parsed.expiresAt !== 'number' ||
+        isNaN(parsed.expiresAt) ||
+        typeof parsed.purchasedAt !== 'number'
+      ) {
+        return {
+          status: 'failed',
+          message: 'Unable to restore: local subscription data is invalid or malformed.',
+        };
+      }
+
+      // Recalculate dynamic status based on current clock without extending expiry
+      const evaluated = this._evaluateDynamicStatus(parsed as MockEntitlement);
+
+      // Update in-memory cache with restored record
+      this._memoryCache.set(userId, evaluated);
+
+      // Notify listeners so UI updates reactively
+      this._notifyListeners(evaluated);
+
+      if (evaluated.status === 'expired') {
+        return {
+          status: 'expired',
+          entitlement: evaluated,
+          message: `Previous subscription to ${evaluated.planName} was found, but it has expired.`,
+        };
+      }
+
+      return {
+        status: 'restored',
+        entitlement: evaluated,
+        message: `Successfully restored ${evaluated.planName} subscription.`,
+      };
+    } catch (err: any) {
+      return {
+        status: 'failed',
+        message: err?.message || 'Failed to restore subscription from local storage.',
+      };
+    }
+  }
+
+  /**
+   * Development utility to simulate subscription cancellation (disabling auto-renew).
+   * Preserves the original expiry date so access remains valid until expiresAt.
+   */
+  public async cancelEntitlement(userId: string): Promise<MockEntitlement | null> {
+    if (!userId || !userId.trim()) {
+      return null;
+    }
+
+    const entitlement = await this.getEntitlement(userId);
+    if (!entitlement || entitlement.status === 'expired' || entitlement.status === 'none') {
+      return null;
+    }
+
+    const canceled: MockEntitlement = {
+      ...entitlement,
+      status: 'canceled',
+      lastVerifiedAt: this.now(),
+    };
+
+    this._memoryCache.set(userId, canceled);
+
+    try {
+      const storage = getAsyncStorage();
+      if (storage) {
+        await storage.setItem(this._getStorageKey(userId), JSON.stringify(canceled));
+      }
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[MockEntitlementService] Persistence failed during cancellation:', err);
+      }
+    }
+
+    this._notifyListeners(canceled);
+    return canceled;
   }
 
   /**
