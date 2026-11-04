@@ -20,9 +20,10 @@ import {analyticsService} from '../analytics';
 import {BillingCycle, SubscriptionPlan} from '../types/subscription';
 import {isBackEvent, isKeyDown, isSelectEvent} from '../utils/inputUtils';
 import {
+  amazonVegaIapService,
+  getIapService,
   mockEntitlementService,
   mockIapConfig,
-  mockIapService,
   MockPurchaseScenario,
 } from '../iap';
 import {styles} from './SubscriptionScreen.styles';
@@ -128,7 +129,8 @@ export const SubscriptionScreen = () => {
   }, [refreshEntitlement, showToast, user?.uid]);
 
   const handleRestorePurchases = useCallback(async () => {
-    if (restoring || updating || mockIapService.isRestoring() || mockIapService.isPurchasing()) {
+    const iapService = getIapService();
+    if (restoring || updating || iapService.isRestoring() || iapService.isPurchasing()) {
       return;
     }
     if (!user?.uid) {
@@ -138,21 +140,25 @@ export const SubscriptionScreen = () => {
 
     setRestoring(true);
     try {
-      const result = await mockIapService.restorePurchases(user.uid);
-      await refreshEntitlement();
+      const result = await iapService.restorePurchases(user.uid);
+      if (mockIapConfig.isEnabled()) {
+        await refreshEntitlement();
 
-      if (result.status === 'restored') {
-        showToast(
-          `[SIMULATED] Successfully restored ${result.entitlement?.planName || 'active'} subscription!`,
-        );
-      } else if (result.status === 'expired') {
-        showToast(
-          `[SIMULATED] Restored subscription for ${result.entitlement?.planName || 'previous plan'}, but it has expired.`,
-        );
-      } else if (result.status === 'no_entitlement_found') {
-        showToast('No previous mock subscription found for this account.');
+        if (result.status === 'restored') {
+          showToast(
+            `[SIMULATED] Successfully restored ${result.entitlement?.planName || 'active'} subscription!`,
+          );
+        } else if (result.status === 'expired') {
+          showToast(
+            `[SIMULATED] Restored subscription for ${result.entitlement?.planName || 'previous plan'}, but it has expired.`,
+          );
+        } else if (result.status === 'no_entitlement_found') {
+          showToast('No previous mock subscription found for this account.');
+        } else {
+          showToast(result.message || 'Failed to restore subscription from local storage.');
+        }
       } else {
-        showToast(result.message || 'Failed to restore subscription from local storage.');
+        showToast(result.message || 'Purchase restore check completed.');
       }
     } catch (err: any) {
       showToast(err?.message || 'Restore error occurred.');
@@ -165,10 +171,11 @@ export const SubscriptionScreen = () => {
 
   useEffect(() => {
     isMountedRef.current = true;
+    amazonVegaIapService.setActiveAppUserId(user?.uid || null);
     return () => {
       isMountedRef.current = false;
     };
-  }, []);
+  }, [user?.uid]);
 
   useEffect(() => {
     analyticsService
@@ -182,7 +189,8 @@ export const SubscriptionScreen = () => {
 
   const handlePlanSelect = useCallback(
     async (plan: SubscriptionPlan) => {
-      if (updating || mockIapService.isPurchasing()) return;
+      const iapService = getIapService();
+      if (updating || iapService.isPurchasing()) return;
 
       if (currentPlanTier === plan.tier && currentStatus === 'active') {
         showToast(`You are already subscribed to ${plan.name}.`);
@@ -193,42 +201,70 @@ export const SubscriptionScreen = () => {
       setSelectedPlanId(plan.id);
 
       try {
-        // Resolve mock product SKU (e.g. 'premium_monthly' or 'basic_annually')
+        // Resolve product SKU (e.g. 'premium_monthly' or 'basic_annually')
         const productId = `${plan.id}_${billingCycle}`;
-        const result = await mockIapService.purchase(productId);
+        const result = await iapService.purchase(productId);
 
         if (!isMountedRef.current) return;
 
         if (result.status === 'success') {
-          // Day 3: Grant local development entitlement upon confirmed mock purchase
-          if (user?.uid) {
-            await mockEntitlementService.grantEntitlement(
-              user.uid,
-              plan,
-              billingCycle,
-              result.transactionId,
+          if (mockIapConfig.isEnabled()) {
+            // Development Mock IAP: Grant local entitlement immediately for testing
+            if (user?.uid) {
+              await mockEntitlementService.grantEntitlement(
+                user.uid,
+                plan,
+                billingCycle,
+                result.transactionId,
+              );
+              await refreshEntitlement();
+            }
+
+            await analyticsService.trackSubscriptionPlanSelected({
+              plan_id: plan.id,
+              plan_name: plan.name,
+              billing_cycle: billingCycle,
+              price:
+                billingCycle === 'annually'
+                  ? plan.annualPrice
+                  : plan.monthlyPrice,
+            });
+
+            showToast(
+              `[SIMULATED] Purchase successful for ${plan.name} (${billingCycle})!\nMock Entitlement Active. Txn: ${result.transactionId}`,
             );
-            await refreshEntitlement();
+          } else {
+            // Real Amazon Vega IAP:
+            // Purchase was submitted to Amazon Appstore.
+            // Entitlements will be validated via backend RVS in Day 5/6.
+            await analyticsService.trackSubscriptionPlanSelected({
+              plan_id: plan.id,
+              plan_name: plan.name,
+              billing_cycle: billingCycle,
+              price:
+                billingCycle === 'annually'
+                  ? plan.annualPrice
+                  : plan.monthlyPrice,
+            });
+
+            const shortTxn =
+              result.transactionId.length > 16
+                ? `${result.transactionId.substring(0, 16)}...`
+                : result.transactionId;
+
+            showToast(
+              `Amazon purchase submitted successfully!\nReceipt: ${shortTxn}\nAwaiting receipt verification.`,
+            );
           }
-
-          await analyticsService.trackSubscriptionPlanSelected({
-            plan_id: plan.id,
-            plan_name: plan.name,
-            billing_cycle: billingCycle,
-            price:
-              billingCycle === 'annually'
-                ? plan.annualPrice
-                : plan.monthlyPrice,
-          });
-
+        } else if (result.status === 'already_purchased') {
           showToast(
-            `[SIMULATED] Purchase successful for ${plan.name} (${billingCycle})!\nMock Entitlement Active. Txn: ${result.transactionId}`,
+            result.message || 'You already own this subscription. Try restoring purchases.',
           );
         } else if (result.status === 'cancelled') {
           showToast('Purchase cancelled by user.');
         } else {
           showToast(
-            result.message || 'Simulated purchase failed. Please try again.',
+            result.message || 'Purchase failed. Please try again.',
           );
         }
       } catch (err: any) {

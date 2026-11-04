@@ -4,3 +4,7 @@ export * from './mockIapConfig';
 export * from './MockIapService';
 export * from './mockEntitlementModel';
 export * from './MockEntitlementService';
+export * from './amazonProductConfig';
+export * from './AmazonTransactionManager';
+export * from './AmazonVegaIapService';
+export * from './IapServiceFactory';

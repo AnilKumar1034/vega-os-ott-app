@@ -32,6 +32,7 @@
     "<rootDir>/test/",
     "<rootDir>/node_modules/"
   ],
+  "forceExit": true,
   "collectCoverage": false,
   "coverageReporters": ["json", "json-summary", "lcov", "text"],
   "collectCoverageFrom": [

@@ -254,4 +254,25 @@ if (typeof jest !== 'undefined') {
       }),
     );
   }
+
+  // Mock Amazon Vega AppstoreIAPRequestHandlerModule TurboModule
+  const mockAppstoreIAPRequestHandlerModule = {
+    performIAPRequest: jest.fn().mockImplementation((requestId, payloadStr, isAsync) => {
+      return Promise.resolve(
+        JSON.stringify({
+          responseCode: 1,
+          productData: {},
+          unavailableSkus: [],
+        }),
+      );
+    }),
+  };
+
+  const originalTurboModuleProxy = global.__turboModuleProxy;
+  global.__turboModuleProxy = name => {
+    if (name === 'AppstoreIAPRequestHandlerModule') {
+      return mockAppstoreIAPRequestHandlerModule;
+    }
+    return originalTurboModuleProxy ? originalTurboModuleProxy(name) : null;
+  };
 }

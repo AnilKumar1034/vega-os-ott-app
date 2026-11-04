@@ -1,0 +1,73 @@
+{
+  "logixstream_premium_monthly": {
+    "itemType": "SUBSCRIPTION",
+    "title": "LogiXstream Premium (Monthly)",
+    "description": "4K Ultra HD + (UHD) streaming on up to 4 devices simultaneously",
+    "price": 649.0,
+    "smallIconUrl": "https://m.media-amazon.com/images/I/premium_icon.png",
+    "subscriptionParent": "logixstream_subscription_group"
+  },
+  "logixstream_premium_annually": {
+    "itemType": "SUBSCRIPTION",
+    "title": "LogiXstream Premium (Annually)",
+    "description": "4K Ultra HD + (UHD) streaming with 25% annual savings",
+    "price": 5841.0,
+    "smallIconUrl": "https://m.media-amazon.com/images/I/premium_icon.png",
+    "subscriptionParent": "logixstream_subscription_group"
+  },
+  "logixstream_standard_monthly": {
+    "itemType": "SUBSCRIPTION",
+    "title": "LogiXstream Standard (Monthly)",
+    "description": "1080p Full HD streaming on up to 2 devices simultaneously",
+    "price": 499.0,
+    "smallIconUrl": "https://m.media-amazon.com/images/I/standard_icon.png",
+    "subscriptionParent": "logixstream_subscription_group"
+  },
+  "logixstream_standard_annually": {
+    "itemType": "SUBSCRIPTION",
+    "title": "LogiXstream Standard (Annually)",
+    "description": "1080p Full HD streaming with 15% annual savings",
+    "price": 5089.0,
+    "smallIconUrl": "https://m.media-amazon.com/images/I/standard_icon.png",
+    "subscriptionParent": "logixstream_subscription_group"
+  },
+  "logixstream_basic_monthly": {
+    "itemType": "SUBSCRIPTION",
+    "title": "LogiXstream Basic (Monthly)",
+    "description": "1080p Full HD streaming on 1 device",
+    "price": 299.0,
+    "smallIconUrl": "https://m.media-amazon.com/images/I/basic_icon.png",
+    "subscriptionParent": "logixstream_subscription_group"
+  },
+  "logixstream_basic_annually": {
+    "itemType": "SUBSCRIPTION",
+    "title": "LogiXstream Basic (Annually)",
+    "description": "1080p Full HD streaming with 10% annual savings",
+    "price": 3229.0,
+    "smallIconUrl": "https://m.media-amazon.com/images/I/basic_icon.png",
+    "subscriptionParent": "logixstream_subscription_group"
+  },
+  "logixstream_mobile_monthly": {
+    "itemType": "SUBSCRIPTION",
+    "title": "LogiXstream Mobile (Monthly)",
+    "description": "480p SD streaming on mobile and tablet devices",
+    "price": 149.0,
+    "smallIconUrl": "https://m.media-amazon.com/images/I/mobile_icon.png",
+    "subscriptionParent": "logixstream_subscription_group"
+  },
+  "logixstream_mobile_annually": {
+    "itemType": "SUBSCRIPTION",
+    "title": "LogiXstream Mobile (Annually)",
+    "description": "480p SD streaming with 5% annual savings",
+    "price": 1699.0,
+    "smallIconUrl": "https://m.media-amazon.com/images/I/mobile_icon.png",
+    "subscriptionParent": "logixstream_subscription_group"
+  }
+}
+
+// Additional information
+ 
+// App ID
+// amzn1.devportal.mobileapp.ac9c9d13f3ef470890978a1bc7249acb
+// Release ID
+// amzn1.devportal.apprelease.fb24bfed26424a0cb884e037d57179c3

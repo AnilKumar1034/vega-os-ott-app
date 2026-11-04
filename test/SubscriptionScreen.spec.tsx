@@ -5,7 +5,12 @@ import {useAuth} from '../src/context/authContext';
 import {useProfile} from '../src/profiles/hooks/useProfile';
 import {analyticsService} from '../src/analytics';
 import {Routes} from '../src/constants/routes';
-import {mockEntitlementService, mockIapConfig, mockIapService} from '../src/iap';
+import {
+  amazonVegaIapService,
+  mockEntitlementService,
+  mockIapConfig,
+  mockIapService,
+} from '../src/iap';
 
 jest.mock('../src/context/authContext');
 jest.mock('../src/profiles/hooks/useProfile');
@@ -430,5 +435,96 @@ describe('SubscriptionScreen UI & Vega OS Navigation with Mock IAP', () => {
     });
 
     expect(getByText(/Subscription expired immediately/)).toBeTruthy();
+  });
+
+  describe('Real Amazon Vega OS IAP Purchase Initiation via SubscriptionScreen (Day 4)', () => {
+    beforeEach(() => {
+      mockIapConfig.setEnabled(false);
+      amazonVegaIapService.dispose();
+    });
+
+    afterEach(() => {
+      amazonVegaIapService.dispose();
+      amazonVegaIapService.resetPurchasingProvider();
+    });
+
+    it('submits purchase to AmazonVegaIapService and shows submission toast without granting mock entitlement', async () => {
+      const grantSpy = jest.spyOn(mockEntitlementService, 'grantEntitlement');
+
+      const mockProvider = {
+        getProductData: jest.fn(),
+        purchase: jest.fn().mockResolvedValue({
+          receipt: {
+            receiptId: 'amzn_rcpt_sub_123',
+            sku: 'logixstream_premium_monthly',
+            termSku: 'logixstream_premium_term_1',
+            purchaseDate: new Date('2026-11-02T12:00:00Z'),
+            cancelDate: null,
+          },
+          requestId: {requestIdStr: 'req_sub_1'},
+          responseCode: 0, // SUCCESSFUL
+          userData: {userId: 'amzn_user_1', marketplace: 'US'},
+        }),
+      };
+
+      amazonVegaIapService.setPurchasingProvider(mockProvider as any);
+
+      const {getByTestId, getByText} = render(<SubscriptionScreen />);
+      const selectBtn = getByTestId('plan-card-premium');
+
+      await act(async () => {
+        fireEvent.press(selectBtn);
+      });
+
+      expect(mockProvider.purchase).toHaveBeenCalledWith({
+        sku: 'logixstream_premium_monthly',
+      });
+      // Crucial: Production/Real Amazon purchase does NOT grant unverified mock entitlement!
+      expect(grantSpy).not.toHaveBeenCalled();
+      expect(getByText(/Amazon purchase submitted successfully/)).toBeTruthy();
+
+      grantSpy.mockRestore();
+    });
+
+    it('shows already owned message when Amazon returns ALREADY_PURCHASED', async () => {
+      const mockProvider = {
+        getProductData: jest.fn(),
+        purchase: jest.fn().mockResolvedValue({
+          receipt: null,
+          requestId: {requestIdStr: 'req_sub_2'},
+          responseCode: 1, // ALREADY_PURCHASED
+          userData: {userId: 'amzn_user_1', marketplace: 'US'},
+        }),
+      };
+
+      amazonVegaIapService.setPurchasingProvider(mockProvider as any);
+
+      const {getByTestId, getByText} = render(<SubscriptionScreen />);
+      const selectBtn = getByTestId('plan-card-premium');
+
+      await act(async () => {
+        fireEvent.press(selectBtn);
+      });
+
+      expect(getByText(/You already own/)).toBeTruthy();
+    });
+
+    it('shows cancelled message when user cancels purchase dialog', async () => {
+      const mockProvider = {
+        getProductData: jest.fn(),
+        purchase: jest.fn().mockRejectedValue(new Error('User cancelled purchase flow')),
+      };
+
+      amazonVegaIapService.setPurchasingProvider(mockProvider as any);
+
+      const {getByTestId, getByText} = render(<SubscriptionScreen />);
+      const selectBtn = getByTestId('plan-card-premium');
+
+      await act(async () => {
+        fireEvent.press(selectBtn);
+      });
+
+      expect(getByText(/Purchase cancelled by user/)).toBeTruthy();
+    });
   });
 });

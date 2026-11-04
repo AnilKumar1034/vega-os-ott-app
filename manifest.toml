@@ -3,6 +3,7 @@ schema-version = 1
 [package]
 title = "LogiXstream"
 version = "0.1.0"
+build-number = 1
 id = "com.anil.vegaott"
 icon = "@image/vega.png"
 
@@ -119,6 +120,13 @@ id = "com.amazon.inputmethod.service"
 [[wants.service]]
 id = "com.amazon.inputd.service"
 
+# Required for Amazon Vega OS In-App Purchasing (IAP)
+[[wants.service]]
+id = "com.amazon.iap.core.service"
+
+[[wants.module]]
+id = "/com.amazon.iap.core@IIAPCoreUI"
+
 [[wants.privilege]]
 id = "com.amazon.devconf.privilege.accessibility"
 
@@ -205,3 +213,9 @@ id = "/com.amazon.kepler.screens_3@IScreens_0"
 
 [[needs.module]]
 id = "/com.amazon.kepler.w3cmedia_2@IW3cmedia_3"
+
+[[needs.module]]
+id = "/com.amazon.kepler.appstore.iap.purchase.core@IAppstoreIAPPurchaseCoreService"
+
+[[needs.module]]
+id = "/com.amazon.kepler.appstore_iap_lib_2@IAppstoreIapLib_12"
