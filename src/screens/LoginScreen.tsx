@@ -1,182 +1,20 @@
 import React, {useState} from 'react';
 import {
   ActivityIndicator,
-  Platform,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import {StackActions, useRoute} from '@react-navigation/native';
+import {useRoute} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {useAuth} from '../context/authContext';
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {colors} from '../theme/colors';
 import {sanitizeEmailInput} from '../utils/inputUtils';
+import {formatAuthErrorMessage} from '../services/authService';
 import {styles} from './LoginScreen.styles';
-
-type NetInfoState = {
-  isConnected?: boolean | null;
-  isInternetReachable?: boolean | null;
-};
-
-type RuntimeNetworkCheckResult =
-  | {
-      ok: true;
-      reason: 'online';
-      details: {
-        networkState: NetInfoState | null;
-        internetProbe: {ok: true; status?: number};
-        googleProbe: {ok: true; status?: number};
-      };
-    }
-  | {
-      ok: false;
-      reason:
-        | 'no_network'
-        | 'no_internet'
-        | 'google_blocked'
-        | 'probe_timed_out';
-      details: {
-        networkState: NetInfoState | null;
-        internetProbe?: {ok: boolean; status?: number; error?: string};
-        googleProbe?: {ok: boolean; status?: number; error?: string};
-      };
-    };
-
-const INTERNET_PROBE_URL = 'https://example.com/';
-const INTERNET_PROBE_TIMEOUT_MS = 4000;
-const GOOGLE_PROBE_TIMEOUT_MS = 4000;
-
-const getNetworkState = async (): Promise<NetInfoState | null> => {
-  try {
-    const {fetch} = require('@amazon-devices/keplerscript-netmgr-lib');
-    if (typeof fetch === 'function') {
-      return await fetch();
-    }
-  } catch (error) {
-    console.log('Network preflight unavailable:', error);
-  }
-
-  return null;
-};
-
-const probeUrl = async (url: string, timeoutMs: number) => {
-  const startedAt = Date.now();
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-  try {
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {Accept: 'text/plain'},
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
-
-    return {ok: response.ok, status: response.status};
-  } catch (error: any) {
-    clearTimeout(timeoutId);
-
-    if (error?.name === 'AbortError') {
-      return {ok: false, error: 'PROBE_TIMED_OUT'};
-    }
-
-    const message =
-      error instanceof TypeError &&
-      /Network request failed/i.test(error.message)
-        ? 'NETWORK_REQUEST_FAILED'
-        : error?.message || 'REQUEST_FAILED';
-
-    return {ok: false, error: message};
-  }
-};
-
-const checkRuntimeNetwork = async (): Promise<RuntimeNetworkCheckResult> => {
-  const networkState = await getNetworkState();
-  const isConnected = networkState?.isConnected === true;
-
-  if (!isConnected) {
-    return {
-      ok: false,
-      reason: 'no_network' as const,
-      details: {
-        networkState,
-      },
-    };
-  }
-
-  const internetProbe = await probeUrl(
-    INTERNET_PROBE_URL,
-    INTERNET_PROBE_TIMEOUT_MS,
-  );
-  if (!internetProbe.ok) {
-    if (internetProbe.error === 'PROBE_TIMED_OUT') {
-      return {
-        ok: false,
-        reason: 'probe_timed_out' as const,
-        details: {
-          networkState,
-          internetProbe,
-        },
-      };
-    }
-
-    return {
-      ok: false,
-      reason: 'no_internet' as const,
-      details: {
-        networkState,
-        internetProbe,
-      },
-    };
-  }
-
-  const googleProbe = await probeUrl(
-    'https://www.google.com/generate_204',
-    GOOGLE_PROBE_TIMEOUT_MS,
-  );
-  if (!googleProbe.ok) {
-    if (googleProbe.error === 'PROBE_TIMED_OUT') {
-      return {
-        ok: false,
-        reason: 'probe_timed_out' as const,
-        details: {
-          networkState,
-          internetProbe,
-          googleProbe,
-        },
-      };
-    }
-
-    return {
-      ok: false,
-      reason: 'google_blocked' as const,
-      details: {
-        networkState,
-        internetProbe,
-        googleProbe,
-      },
-    };
-  }
-
-  return {
-    ok: true,
-    reason: 'online',
-    details: {
-      networkState,
-      internetProbe: {
-        ok: true,
-        status: internetProbe.status,
-      },
-      googleProbe: {
-        ok: true,
-        status: googleProbe.status,
-      },
-    },
-  };
-};
 
 type Props = {
   navigation: {
@@ -224,20 +62,6 @@ export const LoginScreen = ({navigation}: Props) => {
     setLoading(true);
 
     try {
-      const runtimeNetwork = await checkRuntimeNetwork();
-      if (!runtimeNetwork.ok) {
-        if (runtimeNetwork.reason === 'no_network') {
-          setErrorMsg(strings.errors.networkUnavailable);
-        } else if (runtimeNetwork.reason === 'no_internet') {
-          showToast(strings.errors.noInternetToast);
-        } else if (runtimeNetwork.reason === 'probe_timed_out') {
-          setErrorMsg(strings.errors.networkProbeTimeout);
-        } else {
-          setErrorMsg(strings.errors.googleBlocked);
-        }
-        return;
-      }
-
       await login({
         email: cleanEmail,
         password,
@@ -246,11 +70,11 @@ export const LoginScreen = ({navigation}: Props) => {
       if (redirectTo?.routeName) {
         navigation.replace(redirectTo.routeName, redirectTo.params);
       } else {
-        navigation.replace(Routes.Settings);
+        navigation.replace(Routes.Home);
       }
     } catch (err: any) {
       console.log('Login error:', err);
-      setErrorMsg(err.message || strings.errors.invalidLogin);
+      setErrorMsg(formatAuthErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -344,7 +168,11 @@ export const LoginScreen = ({navigation}: Props) => {
           ]}
           onFocus={() => setFocusedField('switch')}
           onBlur={() => setFocusedField(null)}
-          onPress={() => navigation.navigate(Routes.Register)}
+          onPress={() =>
+            navigation.navigate(Routes.Register, {
+              redirectTo: route.params?.redirectTo,
+            })
+          }
           activeOpacity={0.85}
           accessibilityRole="button"
           testID="switch-to-register-button">

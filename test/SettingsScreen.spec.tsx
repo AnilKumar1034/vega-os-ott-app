@@ -112,7 +112,7 @@ describe('SettingsScreen TV Remote Navigation', () => {
     expect(screen.getByTestId('side-menu-label-Home')).toBeTruthy();
   });
 
-  it('3. Navigates D-pad down from switch-profile to logout across the footer gap', () => {
+  it('3. Navigates D-pad down from switch-profile to subscription and then to logout', () => {
     const screen = render(<SettingsScreen />);
 
     const switchBtn = screen.getByTestId('settings-switch-profile-button');
@@ -124,17 +124,31 @@ describe('SettingsScreen TV Remote Navigation', () => {
       sendRemoteEvent('down');
     });
 
+    const subBtn = screen.getByTestId('settings-subscription-button');
+    expect(subBtn.props.hasTVPreferredFocus).toBe(true);
+
+    act(() => {
+      sendRemoteEvent('down');
+    });
+
     const logoutBtn = screen.getByTestId('logout-button');
     expect(logoutBtn.props.hasTVPreferredFocus).toBe(true);
   });
 
-  it('4. Navigates D-pad up from logout to switch-profile', () => {
+  it('4. Navigates D-pad up from logout to subscription and then to switch-profile', () => {
     const screen = render(<SettingsScreen />);
 
     const logoutBtn = screen.getByTestId('logout-button');
     act(() => {
       fireEvent(logoutBtn, 'focus');
     });
+
+    act(() => {
+      sendRemoteEvent('up');
+    });
+
+    const subBtn = screen.getByTestId('settings-subscription-button');
+    expect(subBtn.props.hasTVPreferredFocus).toBe(true);
 
     act(() => {
       sendRemoteEvent('up');
@@ -341,6 +355,57 @@ describe('SettingsScreen TV Remote Navigation', () => {
     });
 
     expect(mockNavigate).toHaveBeenCalledWith(Routes.EditProfile);
+  });
+
+  it('15. Renders logout button in header and supports D-pad navigation with View Profile and Theme', () => {
+    const screen = render(<SettingsScreen />);
+
+    const logoutBtn = screen.getByTestId('logout-button');
+    expect(logoutBtn).toBeTruthy();
+    expect(screen.getByText('Log Out')).toBeTruthy();
+
+    // From profile, pressing UP focuses logout in the header
+    const profileBtn = screen.getByTestId('settings-profile-button');
+    act(() => {
+      fireEvent(profileBtn, 'focus');
+    });
+    act(() => {
+      sendRemoteEvent('up');
+    });
+    expect(logoutBtn.props.hasTVPreferredFocus).toBe(true);
+
+    // From logout in header, pressing DOWN focuses profile
+    act(() => {
+      sendRemoteEvent('down');
+    });
+    expect(profileBtn.props.hasTVPreferredFocus).toBe(true);
+
+    // From logout in header, pressing RIGHT focuses theme card
+    act(() => {
+      fireEvent(logoutBtn, 'focus');
+    });
+    act(() => {
+      sendRemoteEvent('right');
+    });
+    const cinematicTheme = screen.getByTestId('settings-theme-cinematic');
+    expect(cinematicTheme.props.hasTVPreferredFocus).toBe(true);
+  });
+
+  it('16. Handles Select remote key on Subscription & Plans button to navigate to Subscription', () => {
+    const screen = render(<SettingsScreen />);
+
+    const subBtn = screen.getByTestId('settings-subscription-button');
+    act(() => {
+      fireEvent(subBtn, 'focus');
+    });
+
+    act(() => {
+      sendRemoteEvent('select');
+    });
+
+    expect(mockNavigate).toHaveBeenCalledWith(Routes.Subscription, {
+      sourceScreen: 'Settings',
+    });
   });
 });
 

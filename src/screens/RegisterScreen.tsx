@@ -7,12 +7,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useRoute} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {useAuth} from '../context/authContext';
 import {Routes} from '../constants/routes';
 import {strings} from '../constants/strings';
 import {colors} from '../theme/colors';
 import {sanitizeEmailInput} from '../utils/inputUtils';
+import {formatAuthErrorMessage} from '../services/authService';
 import {styles} from './RegisterScreen.styles';
 
 const SUBSCRIPTION_OPTIONS = [
@@ -33,6 +35,7 @@ type Props = {
 
 export const RegisterScreen = ({navigation}: Props) => {
   const {register} = useAuth();
+  const route = useRoute<any>();
 
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -88,10 +91,15 @@ export const RegisterScreen = ({navigation}: Props) => {
         city: city.trim(),
         country: country.trim(),
       });
-      navigation.navigate(Routes.Home);
+      const redirectTo = route.params?.redirectTo;
+      if (redirectTo?.routeName) {
+        navigation.navigate(redirectTo.routeName, redirectTo.params);
+      } else {
+        navigation.navigate(Routes.Home);
+      }
     } catch (err: any) {
       console.log('Registration error:', err);
-      setErrorMsg(err.message || strings.errors.failedRegister);
+      setErrorMsg(formatAuthErrorMessage(err) || strings.errors.failedRegister);
     } finally {
       setLoading(false);
     }
@@ -274,7 +282,11 @@ export const RegisterScreen = ({navigation}: Props) => {
             ]}
             onFocus={() => setFocusedField('switch')}
             onBlur={() => setFocusedField(null)}
-            onPress={() => navigation.navigate(Routes.Login)}
+            onPress={() =>
+              navigation.navigate(Routes.Login, {
+                redirectTo: route.params?.redirectTo,
+              })
+            }
             activeOpacity={0.85}
             accessibilityRole="button"
             testID="switch-to-login-button">

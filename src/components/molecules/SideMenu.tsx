@@ -12,7 +12,7 @@ const menuOptions: MenuOptionItem[] = [
   {
     route: Routes.Home,
     title: strings.sideMenu.home,
-    name: strings.sideMenu.home,
+    name: 'Home',
     icon: require('../../assets/home.png'),
   },
   {
@@ -24,32 +24,32 @@ const menuOptions: MenuOptionItem[] = [
   {
     route: Routes.Movies,
     title: strings.sideMenu.movies,
-    name: strings.sideMenu.movies,
-    icon: require('../../assets/get-started.png'),
+    name: 'Movies',
+    icon: require('../../assets/movies.png'),
   },
   {
     route: Routes.LiveTV,
     title: strings.sideMenu.liveTV,
     name: 'LiveTV',
-    icon: require('../../assets/get-started.png'),
+    icon: require('../../assets/livetv.png'),
   },
   {
     route: Routes.MyList,
     title: strings.sideMenu.myList,
     name: 'MyList',
-    icon: require('../../assets/learn-more.png'),
+    icon: require('../../assets/mylist.png'),
   },
   {
     route: Routes.Details,
     title: strings.sideMenu.details,
     name: 'Details',
-    icon: require('../../assets/learn-more.png'),
+    icon: require('../../assets/details.png'),
   },
   {
     route: Routes.Settings,
     title: strings.sideMenu.settings,
-    name: strings.sideMenu.settings,
-    icon: require('../../assets/debug.png'),
+    name: 'Settings',
+    icon: require('../../assets/settings.png'),
   },
 ];
 

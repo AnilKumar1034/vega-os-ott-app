@@ -32,8 +32,11 @@ export const AuthProvider = ({children}: {children: ReactNode}) => {
 
         if (session?.user) {
           setUser(session.user);
+          if (session.profile) {
+            setUserProfile(session.profile);
+          }
           const profile = await getUserProfile(session.user.uid);
-          if (isMounted) {
+          if (isMounted && profile) {
             setUserProfile(profile);
           }
         } else if (isMounted) {

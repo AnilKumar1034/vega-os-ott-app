@@ -22,20 +22,20 @@ export const tiles: TileData[] = [
     label: 'Movies',
     accessibilityLabel: 'Movies',
     description: 'Browse blockbuster and trending movies.',
-    icon: require('../assets/get-started.png'),
+    icon: require('../assets/movies.png'),
   },
   {
     id: 'series',
     label: 'Series',
     accessibilityLabel: 'Series',
     description: 'Discover popular TV series and originals.',
-    icon: require('../assets/debug.png'),
+    icon: require('../assets/livetv.png'),
   },
   {
     id: 'my-list',
     label: 'Favourites',
     accessibilityLabel: 'Favourites',
     description: 'Your saved favorites will appear here.',
-    icon: require('../assets/learn-more.png'),
+    icon: require('../assets/mylist.png'),
   },
 ];

@@ -30,13 +30,23 @@ export interface MenuIconProps {
 
 const iconSources: Record<string, ImageSourcePropType> = {
   Home: require('../../assets/home.png'),
-  Movies: require('../../assets/get-started.png'),
-  LiveTV: require('../../assets/get-started.png'),
-  MyList: require('../../assets/learn-more.png'),
-  Details: require('../../assets/learn-more.png'),
-  Settings: require('../../assets/debug.png'),
+  home: require('../../assets/home.png'),
+  Movies: require('../../assets/movies.png'),
+  movies: require('../../assets/movies.png'),
+  LiveTV: require('../../assets/livetv.png'),
+  livetv: require('../../assets/livetv.png'),
+  'Live TV': require('../../assets/livetv.png'),
+  MyList: require('../../assets/mylist.png'),
+  mylist: require('../../assets/mylist.png'),
+  'My List': require('../../assets/mylist.png'),
+  Details: require('../../assets/details.png'),
+  details: require('../../assets/details.png'),
+  Settings: require('../../assets/settings.png'),
+  settings: require('../../assets/settings.png'),
   Search: require('../../assets/search.png'),
+  search: require('../../assets/search.png'),
   Close: require('../../assets/close.png'),
+  close: require('../../assets/close.png'),
 };
 
 const styles = StyleSheet.create({

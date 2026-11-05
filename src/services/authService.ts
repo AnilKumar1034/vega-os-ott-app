@@ -71,6 +71,53 @@ type StoredSession = {
   user: AuthUser;
   idToken: string;
   refreshToken: string;
+  profile?: UserProfileData | null;
+};
+
+export const createFallbackProfile = (
+  user: AuthUser,
+  subscription: string = 'Premium',
+): UserProfileData => ({
+  uid: user.uid,
+  username: user.displayName || user.email.split('@')[0] || 'User',
+  email: user.email,
+  subscription,
+  subscriptionStatus: 'active',
+  city: '',
+  country: '',
+  avatar: 'initial',
+  themePreference: 'cinematic',
+  notificationsEnabled: true,
+  autoplayEnabled: true,
+  createdAt: new Date().toISOString(),
+});
+
+export const formatAuthErrorMessage = (error: any): string => {
+  const rawMessage =
+    typeof error === 'string'
+      ? error
+      : error?.message || '';
+
+  if (
+    /EMAIL_NOT_FOUND|INVALID_PASSWORD|INVALID_LOGIN_CREDENTIALS/i.test(
+      rawMessage,
+    )
+  ) {
+    return 'Invalid email or password. Please try again.';
+  }
+  if (/EMAIL_EXISTS/i.test(rawMessage)) {
+    return 'An account with this email address already exists. Please sign in.';
+  }
+  if (/TOO_MANY_ATTEMPTS/i.test(rawMessage)) {
+    return 'Too many attempts. Please wait a moment and try again.';
+  }
+  if (/WEAK_PASSWORD/i.test(rawMessage)) {
+    return 'Password must be at least 6 characters.';
+  }
+  if (/NETWORK_REQUEST_FAILED|Failed to fetch/i.test(rawMessage)) {
+    return 'Network connection error. Please check your connection and try again.';
+  }
+  return rawMessage || 'Authentication failed. Please try again.';
 };
 
 type AuthResponse = {
@@ -171,6 +218,7 @@ const saveSession = async (session: {
   user: AuthUser;
   idToken: string;
   refreshToken: string;
+  profile?: UserProfileData | null;
 }) => {
   try {
     const storage = getAsyncStorage();
@@ -273,6 +321,7 @@ export const getStoredSession = async (): Promise<{
   user: AuthUser;
   idToken: string;
   refreshToken: string;
+  profile?: UserProfileData | null;
 } | null> => {
   try {
     const storage = getAsyncStorage();
@@ -477,17 +526,24 @@ export const registerUser = async (
     uid: authResult.localId,
     username: params.username,
     email: authResult.email,
-    subscription: params.subscription,
+    subscription: params.subscription || 'Premium',
+    subscriptionStatus: 'active',
     city: params.city,
     country: params.country,
     createdAt: new Date().toISOString(),
   };
 
-  await firestoreWriteProfile(authResult.idToken, profileData);
-  saveSession({
+  try {
+    await firestoreWriteProfile(authResult.idToken, profileData);
+  } catch (err) {
+    console.log('Non-fatal firestoreWriteProfile warning on register:', err);
+  }
+
+  await saveSession({
     user,
     idToken: authResult.idToken,
     refreshToken: authResult.refreshToken,
+    profile: profileData,
   }).catch(() => {});
 
   return {user, profile: profileData};
@@ -506,14 +562,30 @@ export const loginUser = async (
     email: authResult.email,
   };
 
-  const profile = await firestoreReadProfile(
-    authResult.idToken,
-    authResult.localId,
-  );
-  saveSession({
+  let profile: UserProfileData | null = null;
+  try {
+    profile = await firestoreReadProfile(
+      authResult.idToken,
+      authResult.localId,
+    );
+  } catch (err) {
+    console.log('Non-fatal firestoreReadProfile warning on login:', err);
+  }
+
+  if (!profile) {
+    const existingSession = await getStoredSession().catch(() => null);
+    if (existingSession?.profile && existingSession.profile.uid === user.uid) {
+      profile = existingSession.profile;
+    } else {
+      profile = createFallbackProfile(user, 'Premium');
+    }
+  }
+
+  await saveSession({
     user,
     idToken: authResult.idToken,
     refreshToken: authResult.refreshToken,
+    profile,
   }).catch(() => {});
 
   return {user, profile};
@@ -526,7 +598,16 @@ export const getUserProfile = async (
   if (!session) {
     return null;
   }
-  return firestoreReadProfile(session.idToken, uid);
+  try {
+    const profile = await firestoreReadProfile(session.idToken, uid);
+    if (profile) {
+      saveSession({...session, profile}).catch(() => {});
+      return profile;
+    }
+  } catch (err) {
+    console.log('Non-fatal firestoreReadProfile in getUserProfile:', err);
+  }
+  return session.profile || createFallbackProfile(session.user);
 };
 
 export const logoutUser = async (): Promise<void> => {

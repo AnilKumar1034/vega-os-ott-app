@@ -37,6 +37,7 @@ import {
 import {recordViewingHistory} from '../services/viewingHistoryService';
 import {canProfileAccessContent} from '../utils/contentAccessPolicy';
 import {entitlementService} from '../services/entitlementService';
+import {createFallbackProfile} from '../services/authService';
 import {styles} from './VideoPlayerScreen.styles';
 import type {
   ShakaPlayer,
@@ -1563,8 +1564,10 @@ export const VideoPlayerScreen = () => {
         }
 
         if (user) {
+          const effectiveProfile =
+            userProfile || createFallbackProfile(user, 'Premium');
           const entitlementAccess = entitlementService.checkContentAccess(
-            userProfile,
+            effectiveProfile,
             activeProfile,
             movie,
             {isLive},
@@ -1577,7 +1580,7 @@ export const VideoPlayerScreen = () => {
                 content_title: movie.title,
                 reason: entitlementAccess.reason,
                 required_plan: entitlementAccess.requiredPlan,
-                user_plan: userProfile?.subscription,
+                user_plan: effectiveProfile?.subscription,
                 source_screen: 'VideoPlayer',
               })
               .catch(() => {});
@@ -1589,7 +1592,7 @@ export const VideoPlayerScreen = () => {
             .trackSubscriptionAccessGranted({
               content_id: movie.id,
               content_title: movie.title,
-              user_plan: userProfile?.subscription,
+              user_plan: effectiveProfile?.subscription,
               source_screen: 'VideoPlayer',
             })
             .catch(() => {});
@@ -2538,26 +2541,69 @@ export const VideoPlayerScreen = () => {
             </Text>
             <Text style={styles.errorBody}>{videoError}</Text>
 
-            <TouchableOpacity
-              style={styles.retryButton}
-              onPress={() => {
-                setVideoError(null);
-                if (useShakaPlayer) {
-                  navigation.replace(Routes.VideoPlayer, route.params);
-                  return;
-                }
-                if (player) {
-                  player.src = videoUrl;
-                  Promise.resolve(player.play?.()).catch(() => {});
-                }
-              }}
-              accessibilityRole="button"
-              accessibilityLabel={strings.accessibility.retryVideoPlayback}
-              testID="video-retry-button">
-              <Text style={styles.retryButtonText}>
-                {strings.actions.retry}
-              </Text>
-            </TouchableOpacity>
+            <View style={{flexDirection: 'row', gap: 16, marginTop: 12}}>
+              {(!user ||
+                videoError.toLowerCase().includes('sign in') ||
+                videoError.toLowerCase().includes('account')) && (
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={() => {
+                    navigation.replace(Routes.Login, {
+                      redirectTo: {
+                        routeName: Routes.VideoPlayer,
+                        params: route.params,
+                      },
+                    });
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel={strings.actions.signIn}
+                  testID="video-login-button">
+                  <Text style={styles.retryButtonText}>
+                    {strings.actions.signIn}
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              {(videoError.toLowerCase().includes('subscription') ||
+                videoError.toLowerCase().includes('plan') ||
+                videoError.toLowerCase().includes('renew')) && (
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={() => {
+                    navigation.navigate(Routes.Subscription, {
+                      sourceScreen: 'VideoPlayer',
+                    });
+                  }}
+                  accessibilityRole="button"
+                  accessibilityLabel="Choose a Plan"
+                  testID="video-subscribe-button">
+                  <Text style={styles.retryButtonText}>
+                    Choose a Plan
+                  </Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={styles.retryButton}
+                onPress={() => {
+                  setVideoError(null);
+                  if (useShakaPlayer) {
+                    navigation.replace(Routes.VideoPlayer, route.params);
+                    return;
+                  }
+                  if (player) {
+                    player.src = videoUrl;
+                    Promise.resolve(player.play?.()).catch(() => {});
+                  }
+                }}
+                accessibilityRole="button"
+                accessibilityLabel={strings.accessibility.retryVideoPlayback}
+                testID="video-retry-button">
+                <Text style={styles.retryButtonText}>
+                  {strings.actions.retry}
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       )}

@@ -37,6 +37,10 @@ export const SubscriptionScreen = () => {
     useEntitlement();
   const isMountedRef = useRef(true);
 
+  const cycleToggleRef = useRef<any>(null);
+  const planRefs = useRef<Record<string, any>>({});
+  const topBarRefs = useRef<Record<string, any>>({});
+
   const plans = getAvailablePlans();
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
   const [focusedId, setFocusedId] = useState<string>('card-premium');
@@ -192,13 +196,14 @@ export const SubscriptionScreen = () => {
       const iapService = getIapService();
       if (updating || iapService.isPurchasing()) return;
 
+      setSelectedPlanId(plan.id);
+
       if (currentPlanTier === plan.tier && currentStatus === 'active') {
         showToast(`You are already subscribed to ${plan.name}.`);
         return;
       }
 
       setUpdating(true);
-      setSelectedPlanId(plan.id);
 
       try {
         // Resolve product SKU (e.g. 'premium_monthly' or 'basic_annually')
@@ -234,9 +239,6 @@ export const SubscriptionScreen = () => {
               `[SIMULATED] Purchase successful for ${plan.name} (${billingCycle})!\nMock Entitlement Active. Txn: ${result.transactionId}`,
             );
           } else {
-            // Real Amazon Vega IAP:
-            // Purchase was submitted to Amazon Appstore.
-            // Entitlements will be validated via backend RVS in Day 5/6.
             await analyticsService.trackSubscriptionPlanSelected({
               plan_id: plan.id,
               plan_name: plan.name,
@@ -350,11 +352,16 @@ export const SubscriptionScreen = () => {
           handleSignOut();
         }
       } else if (type === 'left' && topBarIndex > 0) {
-        setFocusedId(topBarItems[topBarIndex - 1]);
+        const nextId = topBarItems[topBarIndex - 1];
+        setFocusedId(nextId);
+        topBarRefs.current[nextId]?.requestTVFocus?.();
       } else if (type === 'right' && topBarIndex < topBarItems.length - 1) {
-        setFocusedId(topBarItems[topBarIndex + 1]);
+        const nextId = topBarItems[topBarIndex + 1];
+        setFocusedId(nextId);
+        topBarRefs.current[nextId]?.requestTVFocus?.();
       } else if (type === 'down') {
         setFocusedId('cycle-toggle');
+        cycleToggleRef.current?.requestTVFocus?.();
       }
       return;
     }
@@ -365,10 +372,14 @@ export const SubscriptionScreen = () => {
           prev === 'annually' ? 'monthly' : 'annually',
         );
       } else if (type === 'down') {
-        setFocusedId(`card-${selectedPlanId || 'premium'}`);
+        const targetId = selectedPlanId || 'premium';
+        setFocusedId(`card-${targetId}`);
+        planRefs.current[targetId]?.requestTVFocus?.();
       } else if (type === 'up') {
         const items = getTopBarItems();
-        setFocusedId(items[0] || 'restore-purchases');
+        const targetId = items[0] || 'restore-purchases';
+        setFocusedId(targetId);
+        topBarRefs.current[targetId]?.requestTVFocus?.();
       }
       return;
     }
@@ -378,11 +389,18 @@ export const SubscriptionScreen = () => {
         (p) => `card-${p.id}` === focusedId,
       );
       if (type === 'left' && currentPlanIndex > 0) {
-        setFocusedId(`card-${plans[currentPlanIndex - 1].id}`);
+        const nextPlan = plans[currentPlanIndex - 1];
+        setFocusedId(`card-${nextPlan.id}`);
+        setSelectedPlanId(nextPlan.id);
+        planRefs.current[nextPlan.id]?.requestTVFocus?.();
       } else if (type === 'right' && currentPlanIndex < plans.length - 1) {
-        setFocusedId(`card-${plans[currentPlanIndex + 1].id}`);
+        const nextPlan = plans[currentPlanIndex + 1];
+        setFocusedId(`card-${nextPlan.id}`);
+        setSelectedPlanId(nextPlan.id);
+        planRefs.current[nextPlan.id]?.requestTVFocus?.();
       } else if (type === 'up') {
         setFocusedId('cycle-toggle');
+        cycleToggleRef.current?.requestTVFocus?.();
       } else if (isSelectEvent(type) && currentPlanIndex >= 0) {
         handlePlanSelect(plans[currentPlanIndex]);
       }
@@ -390,322 +408,359 @@ export const SubscriptionScreen = () => {
   });
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.scrollContent}
-      testID="subscription-screen">
-      {/* Top Header */}
-      <View style={styles.topBar}>
-        <Text style={styles.brandLogo}>LOGIXSTREAM</Text>
-        <View style={styles.topBarRight}>
-          {isDevMode && (
+    <TVFocusGuideView style={styles.container} autoFocus destinations={[planRefs.current[selectedPlanId || 'premium'], cycleToggleRef.current]}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        testID="subscription-screen">
+        {/* Top Header */}
+        <View style={styles.topBar}>
+          <Text style={styles.brandLogo}>LOGIXSTREAM</Text>
+          <View style={styles.topBarRight}>
+            {isDevMode && (
+              <TouchableOpacity
+                ref={(el) => {
+                  topBarRefs.current['dev-scenario'] = el;
+                }}
+                accessibilityHint="Cycle dev mock IAP scenario"
+                style={[
+                  styles.devScenarioButton,
+                  focusedId === 'dev-scenario' && styles.devScenarioButtonFocused,
+                ]}
+                onFocus={() => setFocusedId('dev-scenario')}
+                onPress={cycleDevScenario}
+                activeOpacity={0.8}
+                role="button"
+                aria-label={`Dev IAP scenario currently ${devScenario}`}
+                testID="dev-scenario-toggle">
+                <Text style={styles.devScenarioText}>
+                  DEV IAP: <Text style={styles.devScenarioBold}>{devScenario.toUpperCase()}</Text>
+                </Text>
+              </TouchableOpacity>
+            )}
+            {isDevMode && hasActiveMockEntitlement && currentStatus === 'active' && (
+              <TouchableOpacity
+                ref={(el) => {
+                  topBarRefs.current['dev-cancel'] = el;
+                }}
+                accessibilityHint="Simulate subscription cancellation"
+                style={[
+                  styles.devCancelButton,
+                  focusedId === 'dev-cancel' && styles.devCancelButtonFocused,
+                ]}
+                onFocus={() => setFocusedId('dev-cancel')}
+                onPress={handleCancelSubscription}
+                activeOpacity={0.8}
+                role="button"
+                aria-label="Simulate subscription cancellation"
+                testID="dev-cancel-button">
+                <Text style={styles.devCancelButtonText}>CANCEL SUB</Text>
+              </TouchableOpacity>
+            )}
+            {isDevMode && hasActiveMockEntitlement && currentStatus !== 'expired' && (
+              <TouchableOpacity
+                ref={(el) => {
+                  topBarRefs.current['dev-expire'] = el;
+                }}
+                accessibilityHint="Simulate immediate expiration"
+                style={[
+                  styles.devExpireButton,
+                  focusedId === 'dev-expire' && styles.devExpireButtonFocused,
+                ]}
+                onFocus={() => setFocusedId('dev-expire')}
+                onPress={handleExpireSubscription}
+                activeOpacity={0.8}
+                role="button"
+                aria-label="Simulate immediate expiration"
+                testID="dev-expire-button">
+                <Text style={styles.devExpireButtonText}>EXPIRE NOW</Text>
+              </TouchableOpacity>
+            )}
+            {hasActiveMockEntitlement && (
+              <TouchableOpacity
+                ref={(el) => {
+                  topBarRefs.current['dev-reset'] = el;
+                }}
+                accessibilityHint="Reset test entitlement to Free tier"
+                style={[
+                  styles.devResetButton,
+                  focusedId === 'dev-reset' && styles.devResetButtonFocused,
+                ]}
+                onFocus={() => setFocusedId('dev-reset')}
+                onPress={handleResetTestEntitlement}
+                activeOpacity={0.8}
+                role="button"
+                aria-label="Reset test entitlement"
+                testID="dev-reset-button">
+                <Text style={styles.devResetButtonText}>RESET TEST SUB</Text>
+              </TouchableOpacity>
+            )}
             <TouchableOpacity
-              accessibilityHint="Cycle dev mock IAP scenario"
+              ref={(el) => {
+                topBarRefs.current['restore-purchases'] = el;
+              }}
+              accessibilityHint="Restore purchases from local storage"
               style={[
-                styles.devScenarioButton,
-                focusedId === 'dev-scenario' && styles.devScenarioButtonFocused,
+                styles.restoreButton,
+                focusedId === 'restore-purchases' && styles.restoreButtonFocused,
               ]}
-              onFocus={() => setFocusedId('dev-scenario')}
-              onPress={cycleDevScenario}
+              onFocus={() => setFocusedId('restore-purchases')}
+              onPress={handleRestorePurchases}
               activeOpacity={0.8}
               role="button"
-              aria-label={`Dev IAP scenario currently ${devScenario}`}
-              testID="dev-scenario-toggle">
-              <Text style={styles.devScenarioText}>
-                DEV IAP: <Text style={styles.devScenarioBold}>{devScenario.toUpperCase()}</Text>
+              aria-label="Restore purchases"
+              testID="restore-purchases-button">
+              <Text style={styles.restoreButtonText}>
+                {restoring ? 'RESTORING...' : 'RESTORE PURCHASES'}
               </Text>
             </TouchableOpacity>
-          )}
-          {isDevMode && hasActiveMockEntitlement && currentStatus === 'active' && (
             <TouchableOpacity
-              accessibilityHint="Simulate subscription cancellation"
+              ref={(el) => {
+                topBarRefs.current['sign-out'] = el;
+              }}
+              accessibilityHint="Sign out of account"
               style={[
-                styles.devCancelButton,
-                focusedId === 'dev-cancel' && styles.devCancelButtonFocused,
+                styles.signOutButton,
+                focusedId === 'sign-out' && styles.signOutButtonFocused,
               ]}
-              onFocus={() => setFocusedId('dev-cancel')}
-              onPress={handleCancelSubscription}
+              onFocus={() => setFocusedId('sign-out')}
+              onPress={handleSignOut}
               activeOpacity={0.8}
               role="button"
-              aria-label="Simulate subscription cancellation"
-              testID="dev-cancel-button">
-              <Text style={styles.devCancelButtonText}>CANCEL SUB</Text>
+              aria-label="Sign out"
+              testID="subscription-sign-out-button">
+              <Text style={styles.signOutText}>Sign out</Text>
             </TouchableOpacity>
-          )}
-          {isDevMode && hasActiveMockEntitlement && currentStatus !== 'expired' && (
-            <TouchableOpacity
-              accessibilityHint="Simulate immediate expiration"
-              style={[
-                styles.devExpireButton,
-                focusedId === 'dev-expire' && styles.devExpireButtonFocused,
-              ]}
-              onFocus={() => setFocusedId('dev-expire')}
-              onPress={handleExpireSubscription}
-              activeOpacity={0.8}
-              role="button"
-              aria-label="Simulate immediate expiration"
-              testID="dev-expire-button">
-              <Text style={styles.devExpireButtonText}>EXPIRE NOW</Text>
-            </TouchableOpacity>
-          )}
-          {hasActiveMockEntitlement && (
-            <TouchableOpacity
-              accessibilityHint="Reset test entitlement to Free tier"
-              style={[
-                styles.devResetButton,
-                focusedId === 'dev-reset' && styles.devResetButtonFocused,
-              ]}
-              onFocus={() => setFocusedId('dev-reset')}
-              onPress={handleResetTestEntitlement}
-              activeOpacity={0.8}
-              role="button"
-              aria-label="Reset test entitlement"
-              testID="dev-reset-button">
-              <Text style={styles.devResetButtonText}>RESET TEST SUB</Text>
-            </TouchableOpacity>
-          )}
-          <TouchableOpacity
-            accessibilityHint="Restore purchases from local storage"
-            style={[
-              styles.restoreButton,
-              focusedId === 'restore-purchases' && styles.restoreButtonFocused,
-            ]}
-            onFocus={() => setFocusedId('restore-purchases')}
-            onPress={handleRestorePurchases}
-            activeOpacity={0.8}
-            role="button"
-            aria-label="Restore purchases"
-            testID="restore-purchases-button">
-            <Text style={styles.restoreButtonText}>
-              {restoring ? 'RESTORING...' : 'RESTORE PURCHASES'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            accessibilityHint="Sign out of account"
-            style={[
-              styles.signOutButton,
-              focusedId === 'sign-out' && styles.signOutButtonFocused,
-            ]}
-            onFocus={() => setFocusedId('sign-out')}
-            onPress={handleSignOut}
-            activeOpacity={0.8}
-            role="button"
-            aria-label="Sign out"
-            testID="subscription-sign-out-button">
-            <Text style={styles.signOutText}>Sign out</Text>
-          </TouchableOpacity>
+          </View>
         </View>
-      </View>
 
-      {/* Main Header & Toggle */}
-      <View style={styles.headerSection}>
-        <Text style={styles.stepText}>STEP 1 OF 2</Text>
-        <Text style={styles.mainHeading}>
-          Choose the plan that's right for you
-        </Text>
+        {/* Main Header & Toggle */}
+        <View style={styles.headerSection}>
+          <Text style={styles.stepText}>STEP 1 OF 2</Text>
+          <Text style={styles.mainHeading}>
+            Choose the plan that's right for you
+          </Text>
 
-        {/* Development Mock Entitlement Status Banner */}
-        {hasActiveMockEntitlement && (
-          <View
-            style={[
-              styles.devEntitlementBanner,
-              currentStatus === 'canceled' && styles.devEntitlementBannerCanceled,
-              currentStatus === 'expired' && styles.devEntitlementBannerExpired,
-            ]}
-            testID="dev-entitlement-banner">
+          {/* Development Mock Entitlement Status Banner */}
+          {hasActiveMockEntitlement && (
             <View
               style={[
-                styles.devEntitlementDot,
-                currentStatus === 'canceled' && styles.devEntitlementDotCanceled,
-                currentStatus === 'expired' && styles.devEntitlementDotExpired,
+                styles.devEntitlementBanner,
+                currentStatus === 'canceled' && styles.devEntitlementBannerCanceled,
+                currentStatus === 'expired' && styles.devEntitlementBannerExpired,
               ]}
-            />
-            <Text style={styles.devEntitlementBannerText}>
-              DEV MOCK ENTITLEMENT:{' '}
-              <Text style={styles.devEntitlementHighlight}>
-                {currentEntitlement.planName.toUpperCase()} (
-                {currentEntitlement.status.toUpperCase()})
-              </Text>
-              {currentEntitlement.expiresAt ? (
-                <Text style={styles.devEntitlementExpiryText}>
-                  {currentStatus === 'canceled'
-                    ? ` • Access remains valid until: ${new Date(currentEntitlement.expiresAt).toLocaleDateString()}`
-                    : currentStatus === 'expired'
-                    ? ` • Expired on: ${new Date(currentEntitlement.expiresAt).toLocaleDateString()}`
-                    : ` • Valid until: ${new Date(currentEntitlement.expiresAt).toLocaleDateString()}`}
-                </Text>
-              ) : null}
-            </Text>
-          </View>
-        )}
-
-        <TouchableOpacity accessibilityHint="TODO"
-          style={[
-            styles.cycleToggleContainer,
-            focusedId === 'cycle-toggle' && styles.cycleToggleContainerFocused,
-          ]}
-          onFocus={() => setFocusedId('cycle-toggle')}
-          onPress={() =>
-            setBillingCycle((prev) =>
-              prev === 'annually' ? 'monthly' : 'annually',
-            )
-          }
-          activeOpacity={0.9}
-          role="button"
-          aria-label={`Billing cycle toggle, currently ${billingCycle}`}
-          testID="cycle-toggle-button">
-          <View
-            style={[
-              styles.cycleTab,
-              billingCycle === 'annually' && styles.cycleTabActive,
-            ]}>
-            <Text
-              style={[
-                styles.cycleTabText,
-                billingCycle === 'annually' && styles.cycleTabTextActive,
-              ]}>
-              Annually
-            </Text>
-            <View style={styles.bestValueBadge}>
-              <Text style={styles.bestValueText}>Best value</Text>
-            </View>
-          </View>
-          <View
-            style={[
-              styles.cycleTab,
-              billingCycle === 'monthly' && styles.cycleTabActive,
-            ]}>
-            <Text
-              style={[
-                styles.cycleTabText,
-                billingCycle === 'monthly' && styles.cycleTabTextActive,
-              ]}>
-              Monthly
-            </Text>
-          </View>
-        </TouchableOpacity>
-      </View>
-
-      {/* Plans Horizontal Row */}
-      <TVFocusGuideView style={styles.cardsRow} autoFocus>
-        {plans.map((plan) => {
-          const isFocused = focusedId === `card-${plan.id}`;
-          const isCurrentActive =
-            currentPlanTier === plan.tier && currentStatus === 'active';
-          const isSelected = selectedPlanId === plan.id;
-          const price =
-            billingCycle === 'annually'
-              ? plan.annualPriceFormatted
-              : plan.monthlyPriceFormatted;
-          const cycleLabel =
-            billingCycle === 'annually' ? '/ annually' : '/ monthly';
-
-          return (
-            <View key={plan.id} style={styles.cardWrapper}>
-              {plan.isMostRecommended ? (
-                <View style={styles.recommendedBadge}>
-                  <Text style={styles.recommendedText}>Most recommended</Text>
-                </View>
-              ) : (
-                <View style={styles.recommendedBadgePlaceholder} />
-              )}
-
-              <TouchableOpacity
-                accessibilityHint="Select subscription plan"
+              testID="dev-entitlement-banner">
+              <View
                 style={[
-                  styles.card,
-                  isFocused && styles.cardFocused,
-                  isSelected && styles.cardSelected,
+                  styles.devEntitlementDot,
+                  currentStatus === 'canceled' && styles.devEntitlementDotCanceled,
+                  currentStatus === 'expired' && styles.devEntitlementDotExpired,
                 ]}
-                onFocus={() => setFocusedId(`card-${plan.id}`)}
-                onPress={() => handlePlanSelect(plan)}
-                activeOpacity={0.85}
-                role="button"
-                aria-label={`${plan.name} plan, ${price} ${cycleLabel}`}
-                testID={`plan-card-${plan.id}`}>
-                {/* Colored Header Banner */}
-                <View
+              />
+              <Text style={styles.devEntitlementBannerText}>
+                DEV MOCK ENTITLEMENT:{' '}
+                <Text style={styles.devEntitlementHighlight}>
+                  {currentEntitlement.planName.toUpperCase()} (
+                  {currentEntitlement.status.toUpperCase()})
+                </Text>
+                {currentEntitlement.expiresAt ? (
+                  <Text style={styles.devEntitlementExpiryText}>
+                    {currentStatus === 'canceled'
+                      ? ` • Access remains valid until: ${new Date(currentEntitlement.expiresAt).toLocaleDateString()}`
+                      : currentStatus === 'expired'
+                      ? ` • Expired on: ${new Date(currentEntitlement.expiresAt).toLocaleDateString()}`
+                      : ` • Valid until: ${new Date(currentEntitlement.expiresAt).toLocaleDateString()}`}
+                  </Text>
+                ) : null}
+              </Text>
+            </View>
+          )}
+
+          <TouchableOpacity
+            ref={cycleToggleRef}
+            accessibilityHint="Toggle between monthly and annual billing"
+            style={[
+              styles.cycleToggleContainer,
+              focusedId === 'cycle-toggle' && styles.cycleToggleContainerFocused,
+            ]}
+            onFocus={() => setFocusedId('cycle-toggle')}
+            onPress={() =>
+              setBillingCycle((prev) =>
+                prev === 'annually' ? 'monthly' : 'annually',
+              )
+            }
+            activeOpacity={0.9}
+            role="button"
+            aria-label={`Billing cycle toggle, currently ${billingCycle}`}
+            testID="cycle-toggle-button">
+            <View
+              style={[
+                styles.cycleTab,
+                billingCycle === 'annually' && styles.cycleTabActive,
+              ]}>
+              <Text
+                style={[
+                  styles.cycleTabText,
+                  billingCycle === 'annually' && styles.cycleTabTextActive,
+                ]}>
+                Annually
+              </Text>
+              <View style={styles.bestValueBadge}>
+                <Text style={styles.bestValueText}>Best value</Text>
+              </View>
+            </View>
+            <View
+              style={[
+                styles.cycleTab,
+                billingCycle === 'monthly' && styles.cycleTabActive,
+              ]}>
+              <Text
+                style={[
+                  styles.cycleTabText,
+                  billingCycle === 'monthly' && styles.cycleTabTextActive,
+                ]}>
+                Monthly
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Plans Horizontal Row */}
+        <TVFocusGuideView
+          style={styles.cardsRow}
+          autoFocus
+          destinations={plans.map((p) => planRefs.current[p.id]).filter(Boolean)}>
+          {plans.map((plan, idx) => {
+            const isFocused = focusedId === `card-${plan.id}`;
+            const isCurrentActive =
+              currentPlanTier === plan.tier && currentStatus === 'active';
+            const isSelected = selectedPlanId === plan.id;
+            const price =
+              billingCycle === 'annually'
+                ? plan.annualPriceFormatted
+                : plan.monthlyPriceFormatted;
+            const cycleLabel =
+              billingCycle === 'annually' ? '/ annually' : '/ monthly';
+
+            return (
+              <View key={plan.id} style={styles.cardWrapper}>
+                {plan.isMostRecommended ? (
+                  <View style={styles.recommendedBadge}>
+                    <Text style={styles.recommendedText}>Most recommended</Text>
+                  </View>
+                ) : (
+                  <View style={styles.recommendedBadgePlaceholder} />
+                )}
+
+                <TouchableOpacity
+                  ref={(el) => {
+                    planRefs.current[plan.id] = el;
+                  }}
+                  accessibilityHint="Select subscription plan"
                   style={[
-                    styles.cardBanner,
-                    {backgroundColor: plan.accentColor},
-                  ]}>
-                  {isSelected && (
-                    <View style={styles.checkBadge}>
-                      <Text style={styles.checkBadgeText}>✓</Text>
-                    </View>
-                  )}
-
-                  <Text style={styles.planName}>{plan.name}</Text>
-                  <View style={styles.priceRow}>
-                    <Text style={styles.priceAmount}>{price}</Text>
-                    <Text style={styles.priceCycle}>{cycleLabel}</Text>
-                  </View>
-
-                  <View style={styles.discountChip}>
-                    <Text style={styles.discountText}>
-                      Save {plan.savePercent}%
-                    </Text>
-                  </View>
-                </View>
-
-                {/* Card Body */}
-                <View style={styles.cardBody}>
-                  <View style={styles.qualitySection}>
-                    <Text style={styles.qualityRating}>
-                      {plan.qualityLabel.split(' ')[0]}
-                    </Text>
-                    <Text style={styles.qualitySub}>Video & sound quality</Text>
-                  </View>
-
-                  <View style={styles.featuresList}>
-                    {plan.features.map((feature, idx) => (
-                      <View key={idx} style={styles.featureItem}>
-                        <Text style={styles.checkmark}>✓</Text>
-                        <Text style={styles.featureText}>{feature}</Text>
-                      </View>
-                    ))}
-                  </View>
-
+                    styles.card,
+                    isFocused && styles.cardFocused,
+                    isSelected && styles.cardSelected,
+                  ]}
+                  hasTVPreferredFocus={
+                    selectedPlanId === plan.id || (!selectedPlanId && idx === 0)
+                  }
+                  onFocus={() => {
+                    setFocusedId(`card-${plan.id}`);
+                    setSelectedPlanId(plan.id);
+                  }}
+                  onPress={() => {
+                    setSelectedPlanId(plan.id);
+                    handlePlanSelect(plan);
+                  }}
+                  activeOpacity={0.85}
+                  role="button"
+                  aria-label={`${plan.name} plan, ${price} ${cycleLabel}`}
+                  testID={`plan-card-${plan.id}`}>
+                  {/* Colored Header Banner */}
                   <View
                     style={[
-                      styles.selectButton,
-                      isCurrentActive && styles.selectButtonActive,
-                      isFocused && styles.selectButtonFocused,
+                      styles.cardBanner,
+                      {backgroundColor: plan.accentColor},
                     ]}>
-                    <Text
-                      style={[
-                        styles.selectButtonText,
-                        isFocused && styles.selectButtonTextFocused,
-                      ]}>
-                      {updating && isSelected
-                        ? 'PURCHASING...'
-                        : isCurrentActive
-                        ? 'CURRENT PLAN'
-                        : isSelected
-                        ? 'SELECTED'
-                        : 'SELECT PLAN'}
-                    </Text>
+                    {isSelected && (
+                      <View style={styles.checkBadge}>
+                        <Text style={styles.checkBadgeText}>✓</Text>
+                      </View>
+                    )}
+
+                    <Text style={styles.planName}>{plan.name}</Text>
+                    <View style={styles.priceRow}>
+                      <Text style={styles.priceAmount}>{price}</Text>
+                      <Text style={styles.priceCycle}>{cycleLabel}</Text>
+                    </View>
+
+                    <View style={styles.discountChip}>
+                      <Text style={styles.discountText}>
+                        Save {plan.savePercent}%
+                      </Text>
+                    </View>
                   </View>
-                </View>
-              </TouchableOpacity>
-            </View>
-          );
-        })}
-      </TVFocusGuideView>
 
-      {(updating || restoring) && (
-        <ActivityIndicator
-          size="large"
-          color="#E50914"
-          style={styles.loadingIndicator}
-        />
-      )}
+                  {/* Card Body */}
+                  <View style={styles.cardBody}>
+                    <View style={styles.qualitySection}>
+                      <Text style={styles.qualityRating}>
+                        {plan.qualityLabel.split(' ')[0]}
+                      </Text>
+                      <Text style={styles.qualitySub}>Video & sound quality</Text>
+                    </View>
 
-      {toastMsg && (
-        <View style={styles.toastContainer}>
-          <Text style={styles.toastText}>{toastMsg}</Text>
-        </View>
-      )}
-    </ScrollView>
+                    <View style={styles.featuresList}>
+                      {plan.features.map((feature, featureIdx) => (
+                        <View key={featureIdx} style={styles.featureItem}>
+                          <Text style={styles.checkmark}>✓</Text>
+                          <Text style={styles.featureText}>{feature}</Text>
+                        </View>
+                      ))}
+                    </View>
+
+                    <View
+                      style={[
+                        styles.selectButton,
+                        isCurrentActive && styles.selectButtonActive,
+                        isFocused && styles.selectButtonFocused,
+                      ]}>
+                      <Text
+                        style={[
+                          styles.selectButtonText,
+                          isFocused && styles.selectButtonTextFocused,
+                        ]}>
+                        {updating && isSelected
+                          ? 'PURCHASING...'
+                          : isCurrentActive
+                          ? 'CURRENT PLAN'
+                          : isSelected
+                          ? 'SELECTED'
+                          : 'SELECT PLAN'}
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </View>
+            );
+          })}
+        </TVFocusGuideView>
+
+        {(updating || restoring) && (
+          <ActivityIndicator
+            size="large"
+            color="#E50914"
+            style={styles.loadingIndicator}
+          />
+        )}
+
+        {toastMsg && (
+          <View style={styles.toastContainer}>
+            <Text style={styles.toastText}>{toastMsg}</Text>
+          </View>
+        )}
+      </ScrollView>
+    </TVFocusGuideView>
   );
 };

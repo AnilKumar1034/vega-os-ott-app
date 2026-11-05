@@ -381,7 +381,7 @@ export const SettingsScreen = () => {
         return;
       }
 
-      if (current === 'profile' || current === 'edit') {
+      if (current === 'logout' || current === 'profile' || current === 'edit') {
         const targetTheme = `theme-${themePreferenceRef.current || PROFILE_THEMES[0].id}`;
         focusElement(targetTheme);
         return;
@@ -390,7 +390,7 @@ export const SettingsScreen = () => {
       if (
         current === 'parental-controls' ||
         current === 'switch-profile' ||
-        current === 'logout'
+        current === 'manage-subscription'
       ) {
         focusElement('notifications');
         return;
@@ -415,6 +415,10 @@ export const SettingsScreen = () => {
     // 4. Down button handling
     if (type === 'down') {
       const current = focusedIdRef.current;
+      if (current === 'logout') {
+        focusElement('profile');
+        return;
+      }
       if (current === 'profile') {
         focusElement('edit');
         return;
@@ -428,6 +432,10 @@ export const SettingsScreen = () => {
         return;
       }
       if (current === 'switch-profile') {
+        focusElement('manage-subscription');
+        return;
+      }
+      if (current === 'manage-subscription') {
         focusElement('logout');
         return;
       }
@@ -449,7 +457,15 @@ export const SettingsScreen = () => {
     // 5. Up button handling
     if (type === 'up') {
       const current = focusedIdRef.current;
+      if (current === 'profile') {
+        focusElement('logout');
+        return;
+      }
       if (current === 'logout') {
+        focusElement('manage-subscription');
+        return;
+      }
+      if (current === 'manage-subscription') {
         focusElement('switch-profile');
         return;
       }
@@ -491,6 +507,8 @@ export const SettingsScreen = () => {
         handleOpenParentalControls();
       } else if (current === 'switch-profile') {
         handleSwitchProfile();
+      } else if (current === 'manage-subscription') {
+        handleManageSubscription();
       } else if (current === 'logout') {
         handleLogout();
       } else if (current.startsWith('theme-')) {
@@ -551,6 +569,18 @@ export const SettingsScreen = () => {
   const subscriptionExpiresAt = userProfile?.subscriptionExpiresAt;
   const city = userProfile?.city || strings.auth.notSpecified;
   const country = userProfile?.country || strings.auth.notSpecified;
+
+  const handleManageSubscription = () => {
+    analyticsService
+      .trackSubscriptionManagementOpened({
+        current_plan: subscription,
+        source_screen: 'Settings',
+      })
+      .catch(() => {});
+    navigation.navigate(Routes.Subscription, {
+      sourceScreen: 'Settings',
+    });
+  };
 
   const handleLogout = async () => {
     try {
@@ -659,6 +689,31 @@ export const SettingsScreen = () => {
                     {email}
                   </Text>
                 </View>
+                <TouchableOpacity
+                  ref={(node) => {
+                    elementRefs.current.logout = node;
+                  }}
+                  style={[
+                    styles.headerLogoutButton,
+                    focusedId === 'logout' &&
+                      !isMenuExpanded &&
+                      styles.headerLogoutButtonFocused,
+                  ]}
+                  onFocus={() => handleAccountFocus('logout')}
+                  onBlur={() => handleAccountFocus(null)}
+                  onPress={handleLogout}
+                  hasTVPreferredFocus={
+                    focusedId === 'logout' && !isMenuExpanded
+                  }
+                  activeOpacity={0.8}
+                  accessibilityRole="button"
+                  accessibilityLabel={strings.actions.logOut}
+                  accessibilityHint={strings.common.signOutOfThisTV}
+                  testID="logout-button">
+                  <Text style={styles.headerLogoutText}>
+                    {strings.actions.logOut}
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               <View style={styles.planRow}>
@@ -782,17 +837,7 @@ export const SettingsScreen = () => {
                   hint="View plans or change subscription tier"
                   focusedId={focusedId}
                   onFocus={handleAccountFocus}
-                  onPress={() => {
-                    analyticsService
-                      .trackSubscriptionManagementOpened({
-                        current_plan: subscription,
-                        source_screen: 'Settings',
-                      })
-                      .catch(() => {});
-                    navigation.navigate(Routes.Subscription, {
-                      sourceScreen: 'Settings',
-                    });
-                  }}
+                  onPress={handleManageSubscription}
                   hasTVPreferredFocus={
                     focusedId === 'manage-subscription' && !isMenuExpanded
                   }
@@ -800,25 +845,6 @@ export const SettingsScreen = () => {
                     elementRefs.current['manage-subscription'] = node;
                   }}
                   testID="settings-subscription-button"
-                />
-              </View>
-
-              <View style={styles.accountFooter}>
-                <ActionButton
-                  id="logout"
-                  label={strings.actions.logOut}
-                  hint={strings.common.signOutOfThisTV}
-                  focusedId={focusedId}
-                  onFocus={handleAccountFocus}
-                  onPress={handleLogout}
-                  hasTVPreferredFocus={
-                    focusedId === 'logout' && !isMenuExpanded
-                  }
-                  buttonRef={(node) => {
-                    elementRefs.current.logout = node;
-                  }}
-                  destructive
-                  testID="logout-button"
                 />
               </View>
             </View>

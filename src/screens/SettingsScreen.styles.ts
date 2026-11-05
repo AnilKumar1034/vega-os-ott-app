@@ -35,10 +35,37 @@ export const styles = StyleSheet.create({
   accountHeader: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
   accountHeaderCopy: {
     flex: 1,
     marginLeft: spacing.xlarge,
+    marginRight: spacing.md,
+  },
+  headerLogoutButton: {
+    paddingHorizontal: spacing.xlarge,
+    paddingVertical: spacing.md,
+    borderRadius: borderRadius.md,
+    backgroundColor: colors.logoutButtonBackground,
+    borderWidth: spacing.borderMedium,
+    borderColor: colors.logoutButtonBorder,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerLogoutButtonFocused: {
+    backgroundColor: colors.logoutButtonFocused,
+    borderColor: colors.focusRing,
+    transform: [{scale: 1.05}],
+    shadowColor: colors.focusRing,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.8,
+    shadowRadius: spacing.md,
+  },
+  headerLogoutText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.small,
+    fontWeight: fontWeights.bold,
+    letterSpacing: 0.5,
   },
   userName: {
     color: colors.textPrimary,
