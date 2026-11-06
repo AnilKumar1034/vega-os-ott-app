@@ -8,6 +8,7 @@ interface ContentRowCardItemProps {
   layout?: CardLayoutType;
   onContentFocus: () => void;
   shouldPreferFocus?: boolean;
+  isTargetCard?: boolean;
   onMenuEscapeLeft?: () => void;
   rowId?: string;
   selectionSource?: string;
@@ -22,6 +23,7 @@ export const ContentRowCardItem = ({
   layout = 'horizontal',
   onContentFocus,
   shouldPreferFocus,
+  isTargetCard,
   onMenuEscapeLeft,
   rowId,
   selectionSource,
@@ -29,6 +31,10 @@ export const ContentRowCardItem = ({
   recommendationSource,
   sectionName,
 }: ContentRowCardItemProps) => {
+  const hasPreferredFocus =
+    Boolean(shouldPreferFocus) &&
+    (isTargetCard !== undefined ? isTargetCard : index === 0);
+
   return (
     <ContentCard
       {...item}
@@ -59,7 +65,7 @@ export const ContentRowCardItem = ({
           : `content-card-${item.id}`
       }
       onFocus={onContentFocus}
-      hasTVPreferredFocus={shouldPreferFocus && index === 0}
+      hasTVPreferredFocus={hasPreferredFocus}
       onMenuEscapeLeft={index === 0 ? onMenuEscapeLeft : undefined}
     />
   );

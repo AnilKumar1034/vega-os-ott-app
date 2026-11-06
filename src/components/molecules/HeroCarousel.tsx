@@ -86,6 +86,7 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
   const [isTogglingList, setIsTogglingList] = useState(false);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const isCarouselFocusedRef = useRef(false);
+  const lastFocusedActionRef = useRef<'play' | 'list'>('play');
 
   const totalSlides = slides?.length || 0;
   const currentSlide = slides?.[activeIndex] || slides?.[0];
@@ -192,6 +193,9 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
   const handleFocus = (action: 'play' | 'list' | 'prev' | 'next' | number) => {
     isCarouselFocusedRef.current = true;
     setFocusedAction(action);
+    if (action === 'play' || action === 'list') {
+      lastFocusedActionRef.current = action;
+    }
     onContentFocus();
   };
 
@@ -378,8 +382,7 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
 
         <TVFocusGuideView
           ref={ref}
-          style={styles.actionsRow}
-          autoFocus={shouldPreferFocus}>
+          style={styles.actionsRow}>
           <View style={styles.actionsWrap}>
             <View style={styles.actions}>
               <TouchableOpacity
@@ -392,7 +395,9 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
                 onPress={playVideo}
                 activeOpacity={1}
                 focusable={true}
-                hasTVPreferredFocus={shouldPreferFocus && activeIndex === 0}
+                hasTVPreferredFocus={
+                  shouldPreferFocus && lastFocusedActionRef.current === 'play'
+                }
                 accessibilityRole="button"
                 accessibilityLabel={strings.hero.playAccessibility(
                   currentSlide.title,
@@ -411,6 +416,9 @@ export const HeroCarousel = React.forwardRef<any, HeroCarouselProps>(
                 onPress={toggleWatchlist}
                 activeOpacity={1}
                 focusable={true}
+                hasTVPreferredFocus={
+                  shouldPreferFocus && lastFocusedActionRef.current === 'list'
+                }
                 accessibilityRole="button"
                 accessibilityLabel={
                   isSavedInList

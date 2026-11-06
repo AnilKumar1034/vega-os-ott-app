@@ -413,7 +413,6 @@ export const MovieDetailScreen = () => {
         ) : (
           <TVFocusGuideView
             ref={contentGuideRef}
-            autoFocus={!isSearchFocused && !isMenuExpanded}
             style={styles.background}>
             <FlatList
               data={[selectedMovie]}

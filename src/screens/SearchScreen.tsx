@@ -235,6 +235,12 @@ export const SearchScreen = () => {
     if (!isKeyDown(evt.eventKeyAction)) return;
     const type = evt.eventType?.toLowerCase();
 
+    if (isSearchFocused && type === 'down') {
+      setIsSearchFocused(false);
+      setFocusedPillId('filter-type-movie');
+      return;
+    }
+
     if (isBackEvent(type)) {
       if (isMenuExpanded) {
         setIsMenuExpanded(false);
@@ -732,8 +738,7 @@ export const SearchScreen = () => {
         {/* Main Two-Column Layout */}
         <TVFocusGuideView
           ref={contentGuideRef}
-          style={styles.mainSplitBody}
-          autoFocus={!isSearchFocused && !isMenuExpanded}>
+          style={styles.mainSplitBody}>
           {/* LEFT PANE: Active Filters, Virtual Keyboard, Suggestions */}
           <View style={styles.leftPane}>
             {/* Active Filters Row (Movie ×, Hindi ×, Romance ×, Drama ×) */}
@@ -839,8 +844,8 @@ export const SearchScreen = () => {
               </TouchableOpacity>
 
               {/* Hidden/Auxiliary filter pills to maintain 100% test contract compatibility */}
-              {/* eslint-disable-next-line @amazon-devices/kepler/missing-accessibility-role */}
               <TouchableOpacity accessibilityHint="TODO"
+                accessibilityRole="button"
                 activeOpacity={0.9}
                 onFocus={() => setFocusedPillId('filter-type-series')}
                 onBlur={() => setFocusedPillId(null)}
@@ -849,8 +854,8 @@ export const SearchScreen = () => {
                 testID="filter-type-series">
                 <Text>Series</Text>
               </TouchableOpacity>
-              {/* eslint-disable-next-line @amazon-devices/kepler/missing-accessibility-role */}
               <TouchableOpacity accessibilityHint="TODO"
+                accessibilityRole="button"
                 activeOpacity={0.9}
                 onFocus={() => setFocusedPillId('filter-type-live')}
                 onBlur={() => setFocusedPillId(null)}
@@ -859,8 +864,8 @@ export const SearchScreen = () => {
                 testID="filter-type-live">
                 <Text>Live</Text>
               </TouchableOpacity>
-              {/* eslint-disable-next-line @amazon-devices/kepler/missing-accessibility-role */}
               <TouchableOpacity accessibilityHint="TODO"
+                accessibilityRole="button"
                 activeOpacity={0.9}
                 onFocus={() => setFocusedPillId('filter-sort-newest')}
                 onBlur={() => setFocusedPillId(null)}

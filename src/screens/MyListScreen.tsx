@@ -406,12 +406,20 @@ export const MyListScreen = () => {
             setFocusedAction(null);
           }}
           onSearchBlur={() => setIsSearchFocused(false)}
+          onFocusEscapeDown={() => {
+            setIsSearchFocused(false);
+            collapseMenu();
+            setLastFocusedCardIndex((prev) =>
+              filteredItems.length > 0
+                ? Math.min(prev, filteredItems.length - 1)
+                : 0,
+            );
+          }}
           searchHasTVPreferredFocus={isSearchFocused}
         />
         <TVFocusGuideView
           ref={contentGuideRef}
-          style={styles.contentGuide}
-          autoFocus={filteredItems.length > 0 && !isSearchFocused && !isMenuExpanded}>
+          style={styles.contentGuide}>
           <FlatList
             data={filteredItems}
             keyExtractor={(item) => `watchlist-${item.id}`}
@@ -439,6 +447,10 @@ export const MyListScreen = () => {
             renderItem={renderContentCard}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.gridContent}
+            removeClippedSubviews={false}
+            windowSize={11}
+            maxToRenderPerBatch={12}
+            initialNumToRender={8}
           />
         </TVFocusGuideView>
       </View>

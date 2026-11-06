@@ -97,6 +97,7 @@ export const CommonHeader = ({
             hasTVPreferredFocus={searchHasTVPreferredFocus}
             onSubmitEditing={onSearchSubmit}
             maxLength={searchMaxLength}
+            onFocusEscapeDown={onFocusEscapeDown}
           />
         )}
         {filterLabel && onFilterPress && (

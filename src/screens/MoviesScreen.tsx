@@ -45,7 +45,12 @@ export const MoviesScreen = () => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [lastFocusedRowIndex, setLastFocusedRowIndex] = useState(0);
+  const [lastFocusedCardByRow, setLastFocusedCardByRow] = useState<
+    Record<string, number>
+  >({});
+  const [lastFocusedColumn, setLastFocusedColumn] = useState<number>(0);
   const rowRefs = useRef<{[key: number]: any}>({});
+  const flatListRef = useRef<FlatList<any>>(null);
   const [continueWatchRecords, setContinueWatchRecords] = useState<
     ContinueWatchRecord[]
   >([]);
@@ -173,31 +178,50 @@ export const MoviesScreen = () => {
 
   const collapseMenu = () => setIsMenuExpanded(false);
 
+  const handleMovieCardFocus = (rowIndex: number, cardIndex: number = 0) => {
+    const row = filteredRows[rowIndex];
+    setLastFocusedRowIndex(rowIndex);
+    setLastFocusedColumn(cardIndex);
+    if (row?.id) {
+      setLastFocusedCardByRow((prev) => ({
+        ...prev,
+        [row.id]: cardIndex,
+      }));
+    }
+    collapseMenu();
+  };
+
   const renderMovieRow = ({
     item: row,
     index,
   }: {
     item: HomeContentRow;
     index: number;
-  }) => (
-    <ContentRow
-      ref={(node) => {
-        rowRefs.current[index] = node;
-      }}
-      row={row}
-      onContentFocus={() => {
-        setLastFocusedRowIndex(index);
-        collapseMenu();
-      }}
-      shouldPreferFocus={
-        index === lastFocusedRowIndex && !isMenuExpanded && !isSearchFocused
-      }
-      onMenuEscapeLeft={() => {
-        setLastFocusedRowIndex(index);
-        setIsMenuExpanded(true);
-      }}
-    />
-  );
+  }) => {
+    const rowCardIndex =
+      lastFocusedCardByRow[row.id] ??
+      Math.min(lastFocusedColumn, Math.max(0, (row.items?.length || 1) - 1));
+
+    return (
+      <ContentRow
+        ref={(node) => {
+          rowRefs.current[index] = node;
+        }}
+        row={row}
+        onContentFocus={(cardIdx?: number) =>
+          handleMovieCardFocus(index, cardIdx ?? 0)
+        }
+        focusedCardIndex={rowCardIndex}
+        shouldPreferFocus={
+          index === lastFocusedRowIndex && !isMenuExpanded && !isSearchFocused
+        }
+        onMenuEscapeLeft={() => {
+          setLastFocusedRowIndex(index);
+          setIsMenuExpanded(true);
+        }}
+      />
+    );
+  };
 
   const activeDestination =
     rowRefs.current[lastFocusedRowIndex] || contentGuideRef.current;
@@ -229,13 +253,22 @@ export const MoviesScreen = () => {
             collapseMenu();
           }}
           onSearchBlur={() => setIsSearchFocused(false)}
+          onFocusEscapeDown={() => {
+            setIsSearchFocused(false);
+            if (filteredRows.length > 0) {
+              handleMovieCardFocus(
+                0,
+                lastFocusedCardByRow[filteredRows[0].id] ?? 0,
+              );
+            }
+          }}
           searchHasTVPreferredFocus={isSearchFocused}
         />
         <TVFocusGuideView
           ref={contentGuideRef}
-          style={styles.contentGuide}
-          autoFocus={!isSearchFocused && !isMenuExpanded}>
+          style={styles.contentGuide}>
           <FlatList
+            ref={flatListRef}
             data={filteredRows}
             keyExtractor={(row) => `movies-${row.id}`}
             ListHeaderComponent={
@@ -251,6 +284,10 @@ export const MoviesScreen = () => {
             renderItem={renderMovieRow}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.contentList}
+            removeClippedSubviews={false}
+            windowSize={11}
+            maxToRenderPerBatch={10}
+            initialNumToRender={8}
           />
         </TVFocusGuideView>
       </View>

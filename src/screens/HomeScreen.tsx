@@ -68,8 +68,13 @@ export const HomeScreen = () => {
   const [isMenuExpanded, setIsMenuExpanded] = useState(false);
   const [isAnyCardFocused, setIsAnyCardFocused] = useState(false);
   const [lastFocusedRow, setLastFocusedRow] = useState<'hero' | number>('hero');
+  const [lastFocusedCardByRow, setLastFocusedCardByRow] = useState<
+    Record<string, number>
+  >({});
+  const [lastFocusedColumn, setLastFocusedColumn] = useState<number>(0);
   const rowRefs = useRef<{[key: number]: any}>({});
   const heroRef = useRef<any>(null);
+  const flatListRef = useRef<FlatList<any>>(null);
   const [continueWatchRecords, setContinueWatchRecords] = useState<
     ContinueWatchRecord[]
   >([]);
@@ -80,6 +85,7 @@ export const HomeScreen = () => {
 
   useEffect(() => {
     deeplinkManager.onDestinationOpened('home').catch(() => {});
+    flatListRef.current?.scrollToOffset({offset: 0, animated: false});
   }, []);
 
   useTVEventHandler((evt) => {
@@ -361,10 +367,19 @@ export const HomeScreen = () => {
     setLastFocusedRow('hero');
     setIsMenuExpanded(false);
     setIsAnyCardFocused(false);
+    flatListRef.current?.scrollToOffset({offset: 0, animated: true});
   };
 
-  const handleCardFocus = (rowIndex: number) => {
+  const handleCardFocus = (rowIndex: number, cardIndex: number = 0) => {
+    const row = filteredRows[rowIndex];
     setLastFocusedRow(rowIndex);
+    setLastFocusedColumn(cardIndex);
+    if (row?.id) {
+      setLastFocusedCardByRow((prev) => ({
+        ...prev,
+        [row.id]: cardIndex,
+      }));
+    }
     setIsMenuExpanded(false);
     setIsAnyCardFocused(true);
   };
@@ -375,27 +390,36 @@ export const HomeScreen = () => {
   }: {
     item: HomeContentRow;
     index: number;
-  }) => (
-    <ContentRow
-      ref={(node) => {
-        rowRefs.current[index] = node;
-      }}
-      row={row}
-      onContentFocus={() => handleCardFocus(index)}
-      shouldPreferFocus={
-        (filteredHeroSlides.length === 0 && lastFocusedRow === 'hero'
-          ? index === 0
-          : lastFocusedRow === index) &&
-        !isMenuExpanded &&
-        !isSearchFocused
-      }
-      onMenuEscapeLeft={() => {
-        setLastFocusedRow(index);
-        setIsAnyCardFocused(false);
-        setIsMenuExpanded(true);
-      }}
-    />
-  );
+  }) => {
+    const rowCardIndex =
+      lastFocusedCardByRow[row.id] ??
+      Math.min(lastFocusedColumn, Math.max(0, (row.items?.length || 1) - 1));
+
+    return (
+      <ContentRow
+        ref={(node) => {
+          rowRefs.current[index] = node;
+        }}
+        row={row}
+        onContentFocus={(cardIdx?: number) =>
+          handleCardFocus(index, cardIdx ?? 0)
+        }
+        focusedCardIndex={rowCardIndex}
+        shouldPreferFocus={
+          (filteredHeroSlides.length === 0 && lastFocusedRow === 'hero'
+            ? index === 0
+            : lastFocusedRow === index) &&
+          !isMenuExpanded &&
+          !isSearchFocused
+        }
+        onMenuEscapeLeft={() => {
+          setLastFocusedRow(index);
+          setIsAnyCardFocused(false);
+          setIsMenuExpanded(true);
+        }}
+      />
+    );
+  };
 
   const activeDestination =
     lastFocusedRow === 'hero'
@@ -429,16 +453,23 @@ export const HomeScreen = () => {
           }}
           onSearchFocus={() => {
             setIsSearchFocused(true);
-            handleHeroFocus();
           }}
           onSearchBlur={() => setIsSearchFocused(false)}
+          onFocusEscapeDown={() => {
+            setIsSearchFocused(false);
+            if (filteredHeroSlides.length > 0) {
+              handleHeroFocus();
+            } else if (filteredRows.length > 0) {
+              handleCardFocus(0, lastFocusedCardByRow[filteredRows[0].id] ?? 0);
+            }
+          }}
           searchHasTVPreferredFocus={isSearchFocused}
         />
         <TVFocusGuideView
           ref={contentGuideRef}
-          style={styles.contentGuide}
-          autoFocus={!isSearchFocused && !isMenuExpanded}>
+          style={styles.contentGuide}>
           <FlatList
+            ref={flatListRef}
             data={filteredRows}
             keyExtractor={(row) => row.id}
             ListHeaderComponent={
@@ -447,7 +478,9 @@ export const HomeScreen = () => {
                   ref={heroRef}
                   slides={filteredHeroSlides}
                   onContentFocus={handleHeroFocus}
-                  onLibraryChange={() => void loadLibraryState()}
+                  onLibraryChange={() => {
+                    loadLibraryState();
+                  }}
                   isMenuOpen={isMenuExpanded}
                   isPaused={isAnyCardFocused}
                   shouldPreferFocus={
@@ -466,6 +499,10 @@ export const HomeScreen = () => {
             renderItem={renderHomeRow}
             showsVerticalScrollIndicator={false}
             contentContainerStyle={styles.contentList}
+            removeClippedSubviews={false}
+            windowSize={11}
+            maxToRenderPerBatch={10}
+            initialNumToRender={8}
           />
         </TVFocusGuideView>
       </View>

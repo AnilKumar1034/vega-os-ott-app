@@ -7,9 +7,11 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import {useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {MenuIcon} from '../atoms/MenuIcon';
 import {colors} from '../../theme/colors';
 import {styles} from './CommonSearch.styles';
+import {isKeyDown} from '../../utils/inputUtils';
 
 import {strings} from '../../constants/strings';
 
@@ -23,6 +25,7 @@ export interface CommonSearchProps {
   hasTVPreferredFocus?: boolean;
   onSubmitEditing?: () => void;
   maxLength?: number;
+  onFocusEscapeDown?: () => void;
 }
 
 export const CommonSearch = ({
@@ -35,12 +38,24 @@ export const CommonSearch = ({
   hasTVPreferredFocus,
   onSubmitEditing,
   maxLength,
+  onFocusEscapeDown,
 }: CommonSearchProps) => {
   const [focusedTarget, setFocusedTarget] = useState<'input' | 'clear' | null>(
     null,
   );
   const inputRef = useRef<TextInput>(null);
   const isFocused = focusedTarget !== null;
+  const isFocusedRef = useRef(isFocused);
+  isFocusedRef.current = isFocused;
+
+  useTVEventHandler((evt) => {
+    if (!isFocusedRef.current || !evt) return;
+    if (!isKeyDown(evt.eventKeyAction)) return;
+    const type = evt.eventType?.toLowerCase();
+    if (type === 'down') {
+      onFocusEscapeDown?.();
+    }
+  });
 
   const handleTextChange = (text: string) => {
     onChangeText(text);
