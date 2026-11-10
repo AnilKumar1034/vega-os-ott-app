@@ -3,7 +3,7 @@ schema-version = 1
 [package]
 title = "LogiXstream"
 version = "0.1.0"
-build-number = 1
+build-number = 3
 id = "com.anil.vegaott"
 icon = "@image/vega.png"
 

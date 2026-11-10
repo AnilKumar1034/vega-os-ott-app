@@ -13,6 +13,7 @@ import {
 import {useNavigation} from '@react-navigation/native';
 import {
   I18nManager,
+  Pressable,
   TVFocusGuideView,
   useTVEventHandler,
 } from '@amazon-devices/react-native-kepler';
@@ -29,7 +30,6 @@ import {borderRadius, spacing} from '../../../theme/sizes';
 import {isBackEvent, isKeyDown, isSelectEvent} from '../../../utils/inputUtils';
 import {
   EPG_END_TIME,
-  EPG_START_TIME,
   epgPrograms,
   vegaEPGChannelData,
 } from '../data/epgMockData';
@@ -61,6 +61,11 @@ const freeLiveCategories = [
   strings.liveTV.categoryRegional,
   strings.liveTV.categoryDocumentary,
 ];
+const categoryMenuOptions = [
+  'all',
+  'free',
+  ...freeLiveCategories,
+];
 const epgLogoStyle = {backgroundColor: colors.cardBackground, width: 110};
 const epgOverlayStyle = {
   enabled: true,
@@ -79,8 +84,9 @@ const epgTileStyle = {
   borderRadius: borderRadius.sm,
   tileSpacing: spacing.xs,
 };
-type TVFocusable = React.ElementRef<typeof TVFocusGuideView> & {
-  requestTVFocus: () => void;
+type TVFocusable = {
+  requestTVFocus?: () => void;
+  focus?: () => void;
 };
 
 export const LiveTVScreen = () => {
@@ -110,6 +116,9 @@ export const LiveTVScreen = () => {
   const [isEmptyButtonFocused, setIsEmptyButtonFocused] = useState(false);
   const isEmptyButtonFocusedRef = useRef(isEmptyButtonFocused);
   isEmptyButtonFocusedRef.current = isEmptyButtonFocused;
+  const [isFilterPreferred, setIsFilterPreferred] = useState(false);
+  const isFilterPreferredRef = useRef(isFilterPreferred);
+  isFilterPreferredRef.current = isFilterPreferred;
   const epgRef = useRef<EPGActions>(null);
   const epgOpacity = useRef(new Animated.Value(0)).current;
   const nextChannelOffsetRef = useRef(EPG_INITIAL_CHANNEL_COUNT);
@@ -227,6 +236,19 @@ export const LiveTVScreen = () => {
     [handleProgramFocus, navigation],
   );
 
+  const categoryOptionRefs = useRef<Record<string, any>>({});
+
+  const focusCategoryOption = useCallback((option: string) => {
+    setFocusedCategoryOption(option);
+    focusedCategoryOptionRef.current = option;
+    const target = categoryOptionRefs.current[option];
+    if (target && typeof target.requestTVFocus === 'function') {
+      target.requestTVFocus();
+    } else if (target && typeof target.focus === 'function') {
+      target.focus();
+    }
+  }, []);
+
   const handleEPGMenu = useCallback(() => {
     epgRef.current?.focusOnEPG(false);
     setIsMenuExpanded(true);
@@ -234,16 +256,54 @@ export const LiveTVScreen = () => {
   }, []);
 
   const handleEPGFocusEscapeUp = useCallback(() => {
-    // Let the native EPG finish processing its directional event before moving
-    // focus, otherwise its own navigation can override this request.
+    setIsMenuExpanded(false);
     epgRef.current?.focusOnEPG(false);
-    setTimeout(() => categoryFilterFocusGuideRef.current?.requestTVFocus(), 50);
+    setIsFilterPreferred(true);
+    categoryFilterFocusGuideRef.current?.requestTVFocus?.();
+    setTimeout(() => {
+      categoryFilterFocusGuideRef.current?.requestTVFocus?.();
+    }, 50);
+  }, []);
+
+  const handleOpenFilterModal = useCallback(() => {
+    setIsMenuExpanded(false);
+    setIsFilterPreferred(false);
+    epgRef.current?.focusOnEPG(false);
+    setIsCategoryMenuVisible(true);
   }, []);
 
   const dismissCategoryMenu = useCallback(() => {
     setIsCategoryMenuVisible(false);
-    setTimeout(() => epgRef.current?.focusOnEPG(true), 100);
+    setIsMenuExpanded(false);
+    setTimeout(() => {
+      epgRef.current?.focusOnEPG(true);
+    }, 100);
   }, []);
+
+  const applyCategorySelection = useCallback(
+    (option: string) => {
+      if (option === 'all') {
+        setShowFreeLiveOnly(false);
+        handleSelectCategory(strings.liveTV.allCategories);
+        dismissCategoryMenu();
+      } else if (option === 'free') {
+        setShowFreeLiveOnly(true);
+        analyticsService
+          .trackContentCategorySelected({
+            category_name: 'Free Channels',
+            source_screen: 'LiveTV',
+            source_component: 'category_menu',
+          })
+          .catch(() => {});
+        dismissCategoryMenu();
+      } else if (option) {
+        setShowFreeLiveOnly(false);
+        handleSelectCategory(option);
+        dismissCategoryMenu();
+      }
+    },
+    [dismissCategoryMenu, handleSelectCategory],
+  );
 
   const dismissFutureProgrammeAlert = useCallback(() => {
     setProgrammeAlert(null);
@@ -271,24 +331,35 @@ export const LiveTVScreen = () => {
         const option =
           focusedCategoryOptionRef.current ||
           (showFreeLiveOnly ? 'free' : selectedCategory);
-        if (option === 'all') {
-          setShowFreeLiveOnly(false);
-          handleSelectCategory(strings.liveTV.allCategories);
-          dismissCategoryMenu();
-        } else if (option === 'free') {
-          setShowFreeLiveOnly(true);
-          analyticsService
-            .trackContentCategorySelected({
-              category_name: 'Free Channels',
-              source_screen: 'LiveTV',
-              source_component: 'category_menu',
-            })
-            .catch(() => {});
-          dismissCategoryMenu();
-        } else if (option) {
-          handleSelectCategory(option);
-          dismissCategoryMenu();
+        if (option) {
+          applyCategorySelection(option);
         }
+        return;
+      }
+      if (type === 'up') {
+        const currentOption =
+          focusedCategoryOptionRef.current ||
+          (showFreeLiveOnly ? 'free' : selectedCategory);
+        const currentIndex = categoryMenuOptions.indexOf(currentOption);
+        if (currentIndex > 0) {
+          focusCategoryOption(categoryMenuOptions[currentIndex - 1]);
+        }
+        return;
+      }
+      if (type === 'down') {
+        const currentOption =
+          focusedCategoryOptionRef.current ||
+          (showFreeLiveOnly ? 'free' : selectedCategory);
+        const currentIndex = categoryMenuOptions.indexOf(currentOption);
+        if (
+          currentIndex >= 0 &&
+          currentIndex < categoryMenuOptions.length - 1
+        ) {
+          focusCategoryOption(categoryMenuOptions[currentIndex + 1]);
+        }
+        return;
+      }
+      if (type === 'left' || type === 'right') {
         return;
       }
     }
@@ -297,6 +368,14 @@ export const LiveTVScreen = () => {
       if (isSelectEvent(type) && isEmptyButtonFocusedRef.current) {
         setShowFreeLiveOnly(false);
         handleSelectCategory(strings.liveTV.allCategories);
+        return;
+      }
+      if (type === 'up' && isEmptyButtonFocusedRef.current) {
+        setIsEmptyButtonFocused(false);
+        setIsFilterPreferred(true);
+        setTimeout(() => {
+          categoryFilterFocusGuideRef.current?.requestTVFocus?.();
+        }, 50);
         return;
       }
     }
@@ -541,7 +620,33 @@ export const LiveTVScreen = () => {
   }, []);
 
   useEffect(() => {
-    if (isEPGReady && !isCategoryMenuVisible && !isMenuExpanded) {
+    if (isCategoryMenuVisible) {
+      setIsMenuExpanded(false);
+      const initialOption = showFreeLiveOnly
+        ? 'free'
+        : selectedCategory && selectedCategory !== strings.liveTV.allCategories
+        ? selectedCategory
+        : 'all';
+      focusCategoryOption(initialOption);
+      const timer = setTimeout(() => {
+        focusCategoryOption(initialOption);
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [
+    focusCategoryOption,
+    isCategoryMenuVisible,
+    selectedCategory,
+    showFreeLiveOnly,
+  ]);
+
+  useEffect(() => {
+    if (
+      isEPGReady &&
+      !isCategoryMenuVisible &&
+      !isMenuExpanded &&
+      !isFilterPreferredRef.current
+    ) {
       const timer = setTimeout(() => {
         epgRef.current?.focusOnEPG(true);
       }, 100);
@@ -556,12 +661,18 @@ export const LiveTVScreen = () => {
       <SideMenu
         key={`live-tv-menu-${menuFocusVersion}`}
         activeRoute={Routes.LiveTV}
-        isExpanded={isMenuExpanded}
-        preferActiveFocus={isMenuExpanded}
-        onMenuFocus={() => setIsMenuExpanded(true)}
+        isExpanded={!isCategoryMenuVisible && isMenuExpanded}
+        preferActiveFocus={!isCategoryMenuVisible && isMenuExpanded}
+        onMenuFocus={() => {
+          if (!isCategoryMenuVisible) {
+            setIsMenuExpanded(true);
+          }
+        }}
         onMenuBlur={() => {
           setIsMenuExpanded(false);
-          epgRef.current?.focusOnEPG(true);
+          if (!isCategoryMenuVisible) {
+            epgRef.current?.focusOnEPG(true);
+          }
         }}
       />
       <View style={styles.content} testID="live-tv-screen">
@@ -570,11 +681,15 @@ export const LiveTVScreen = () => {
           logo={require('../../../assets/vega.png')}
           filterLabel={strings.liveTV.filters}
           filterFocusGuideRef={categoryFilterFocusGuideRef}
-          onFilterPress={() => {
-            epgRef.current?.focusOnEPG(false);
-            setIsCategoryMenuVisible((visible) => !visible);
-          }}
+          filterHasTVPreferredFocus={isFilterPreferred}
+          onFilterPress={handleOpenFilterModal}
           onFocusEscapeDown={() => {
+            setIsFilterPreferred(false);
+            setIsMenuExpanded(false);
+            epgRef.current?.focusOnEPG(true);
+          }}
+          onFocusEscapeLeft={() => {
+            setIsFilterPreferred(false);
             epgRef.current?.focusOnEPG(true);
           }}
         />
@@ -697,13 +812,16 @@ export const LiveTVScreen = () => {
                 styles.emptyChannelButton,
                 isEmptyButtonFocused && styles.emptyChannelButtonFocused,
               ]}
-              onFocus={() => setIsEmptyButtonFocused(true)}
+              onFocus={() => {
+                setIsEmptyButtonFocused(true);
+                setIsFilterPreferred(false);
+              }}
               onBlur={() => setIsEmptyButtonFocused(false)}
               onPress={() => {
                 setShowFreeLiveOnly(false);
                 setSelectedCategory(strings.liveTV.allCategories);
               }}
-              hasTVPreferredFocus
+              hasTVPreferredFocus={!isFilterPreferred}
               accessibilityRole="button"
               accessibilityLabel={strings.liveTV.showAllChannels}>
               <Text style={styles.emptyChannelButtonText}>
@@ -719,79 +837,98 @@ export const LiveTVScreen = () => {
         animationType="none"
         onRequestClose={dismissCategoryMenu}>
         <View style={styles.categoryMenuBackdrop}>
-          <View style={styles.categoryMenu}>
-            <TouchableOpacity
-              style={[
+          <TVFocusGuideView
+            style={styles.categoryMenu}
+            autoFocus
+            trapFocusLeft
+            trapFocusRight
+            trapFocusUp
+            trapFocusDown>
+            <Pressable
+              ref={(node) => {
+                categoryOptionRefs.current.all = node;
+              }}
+              style={({focused}) => [
                 styles.categoryOption,
-                !showFreeLiveOnly && styles.categoryOptionSelected,
-                focusedCategoryOption === 'all' &&
+                !showFreeLiveOnly &&
+                  (!selectedCategory ||
+                    selectedCategory === strings.liveTV.allCategories) &&
+                  styles.categoryOptionSelected,
+                (focused || focusedCategoryOption === 'all') &&
                   styles.categoryOptionFocused,
               ]}
-              onFocus={() => setFocusedCategoryOption('all')}
-              onBlur={() => setFocusedCategoryOption(null)}
-              onPress={() => {
-                setShowFreeLiveOnly(false);
-                handleSelectCategory(strings.liveTV.allCategories);
-                dismissCategoryMenu();
+              onFocus={() => {
+                setFocusedCategoryOption('all');
+                focusedCategoryOptionRef.current = 'all';
               }}
-              hasTVPreferredFocus={!showFreeLiveOnly}
+              onPress={() => applyCategorySelection('all')}
+              hasTVPreferredFocus={
+                !showFreeLiveOnly &&
+                (!selectedCategory ||
+                  selectedCategory === strings.liveTV.allCategories)
+              }
               accessibilityRole="button"
-              accessibilityLabel={strings.liveTV.allChannelsFilter}>
+              accessibilityLabel={strings.liveTV.allChannelsFilter}
+              testID="category-option-all">
               <Text style={styles.categoryOptionText}>
                 {strings.liveTV.allChannelsFilter}
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
+            </Pressable>
+            <Pressable
+              ref={(node) => {
+                categoryOptionRefs.current.free = node;
+              }}
+              style={({focused}) => [
                 styles.categoryOption,
                 showFreeLiveOnly && styles.categoryOptionSelected,
-                focusedCategoryOption === 'free' &&
+                (focused || focusedCategoryOption === 'free') &&
                   styles.categoryOptionFocused,
               ]}
-              onFocus={() => setFocusedCategoryOption('free')}
-              onBlur={() => setFocusedCategoryOption(null)}
-              onPress={() => {
-                setShowFreeLiveOnly(true);
-                analyticsService
-                  .trackContentCategorySelected({
-                    category_name: 'Free Channels',
-                    source_screen: 'LiveTV',
-                    source_component: 'category_menu',
-                  })
-                  .catch(() => {});
-                dismissCategoryMenu();
+              onFocus={() => {
+                setFocusedCategoryOption('free');
+                focusedCategoryOptionRef.current = 'free';
               }}
+              onPress={() => applyCategorySelection('free')}
               hasTVPreferredFocus={showFreeLiveOnly}
               accessibilityRole="button"
-              accessibilityLabel={strings.liveTV.freeChannelsFilter}>
+              accessibilityLabel={strings.liveTV.freeChannelsFilter}
+              testID="category-option-free">
               <Text style={styles.categoryOptionText}>
                 {strings.liveTV.freeChannelsFilter}
               </Text>
-            </TouchableOpacity>
+            </Pressable>
             <View style={styles.filterDivider} />
             {freeLiveCategories.map((category) => (
-              <TouchableOpacity
+              <Pressable
                 key={category}
-                style={[
+                ref={(node) => {
+                  categoryOptionRefs.current[category] = node;
+                }}
+                style={({focused}) => [
                   styles.categoryOption,
-                  selectedCategory === category &&
+                  !showFreeLiveOnly &&
+                    selectedCategory === category &&
                     styles.categoryOptionSelected,
-                  focusedCategoryOption === category &&
+                  (focused || focusedCategoryOption === category) &&
                     styles.categoryOptionFocused,
                 ]}
-                onFocus={() => setFocusedCategoryOption(category)}
-                onBlur={() => setFocusedCategoryOption(null)}
-                onPress={() => {
-                  handleSelectCategory(category);
-                  dismissCategoryMenu();
+                onFocus={() => {
+                  setFocusedCategoryOption(category);
+                  focusedCategoryOptionRef.current = category;
                 }}
-                hasTVPreferredFocus={selectedCategory === category}
+                onPress={() => applyCategorySelection(category)}
+                hasTVPreferredFocus={
+                  !showFreeLiveOnly &&
+                  selectedCategory === category &&
+                  category !== strings.liveTV.allCategories
+                }
                 accessibilityRole="button"
-                accessibilityLabel={category}>
+                accessibilityLabel={category}
+                testID={`category-option-${category}`}>
                 <Text style={styles.categoryOptionText}>{category}</Text>
-              </TouchableOpacity>
+              </Pressable>
             ))}
-          </View>
+          </TVFocusGuideView>
         </View>
       </Modal>
       <Modal

@@ -62,4 +62,76 @@ describe('LiveTVScreen', () => {
       );
     }
   });
+
+  it('opens category modal, isolates side menu, navigates options and selects Free Channels', async () => {
+    const {act, fireEvent} = require('@testing-library/react-native');
+    const {getByTestId} = render(<LiveTVScreen />);
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    const {analyticsService} = require('../src/analytics');
+    const trackCategorySpy = jest.spyOn(analyticsService, 'trackContentCategorySelected');
+
+    // Open filter modal
+    const filterBtn = getByTestId('common-header-filter-button');
+    act(() => {
+      fireEvent(filterBtn, 'press');
+    });
+
+    expect(getByTestId('category-option-all')).toBeTruthy();
+    expect(getByTestId('category-option-free')).toBeTruthy();
+
+    // Get the latest TV event handler for LiveTVScreen
+    const liveTvHandlers = useTVEventHandler.mock.calls
+      .map((call: any) => call[0])
+      .filter((fn: any) => fn.toString().includes('isCategoryMenuVisible'));
+    const latestHandler = liveTvHandlers[liveTvHandlers.length - 1];
+
+    expect(latestHandler).toBeDefined();
+
+    // Navigate down to 'free'
+    act(() => {
+      latestHandler({eventType: 'down', eventKeyAction: 0});
+    });
+
+    // Press select on 'free'
+    act(() => {
+      latestHandler({eventType: 'select', eventKeyAction: 0});
+    });
+
+    expect(trackCategorySpy).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category_name: 'Free Channels',
+        source_screen: 'LiveTV',
+        source_component: 'category_menu',
+      }),
+    );
+  });
+
+  it('dismisses category modal when remote back key is pressed', () => {
+    const {act, fireEvent} = require('@testing-library/react-native');
+    const {getByTestId, queryByTestId} = render(<LiveTVScreen />);
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+
+    // Open filter modal
+    const filterBtn = getByTestId('common-header-filter-button');
+    act(() => {
+      fireEvent(filterBtn, 'press');
+    });
+
+    expect(getByTestId('category-option-all')).toBeTruthy();
+
+    const liveTvHandlers = useTVEventHandler.mock.calls
+      .map((call: any) => call[0])
+      .filter((fn: any) => fn.toString().includes('isCategoryMenuVisible'));
+    const latestHandler = liveTvHandlers[liveTvHandlers.length - 1];
+
+    expect(latestHandler).toBeDefined();
+
+    // Send back key event
+    act(() => {
+      latestHandler({eventType: 'back', eventKeyAction: 0});
+    });
+
+    // Modal should close
+    expect(queryByTestId('category-option-all')).toBeNull();
+  });
 });

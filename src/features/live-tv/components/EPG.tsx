@@ -1,7 +1,6 @@
 import React, {
   forwardRef,
   useCallback,
-  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
@@ -11,15 +10,13 @@ import {
   ColorValue,
   Image,
   ScrollView,
-  StyleProp,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
   ViewProps,
-  ViewStyle,
 } from 'react-native';
 import {
+  Pressable,
   TVFocusGuideView,
   useTVEventHandler,
 } from '@amazon-devices/react-native-kepler';
@@ -370,7 +367,7 @@ const EPGComponent = forwardRef<KeplerEPGRef, KeplerEPGProps>((props, ref) => {
       };
 
       if (program) {
-        onTileFocus({
+        onTileFocus?.({
           title: program.title,
           payload: {
             program,
@@ -397,7 +394,7 @@ const EPGComponent = forwardRef<KeplerEPGRef, KeplerEPGProps>((props, ref) => {
       channel: Channel,
     ) => {
       if (program) {
-        onTilePress({
+        onTilePress?.({
           title: program.title,
           payload: {
             program,
@@ -427,8 +424,9 @@ const EPGComponent = forwardRef<KeplerEPGRef, KeplerEPGProps>((props, ref) => {
         const c = focusedColRef.current;
         const currentChannel = channelsRef.current[r];
         const currentProgram = currentInfoRef.current?.program;
+        const type = evt.eventType?.toLowerCase();
 
-        if (evt.eventType === 'left') {
+        if (type === 'left') {
           if (c === 0) {
             onMenu?.({
               title: currentProgram?.title || '',
@@ -438,11 +436,11 @@ const EPGComponent = forwardRef<KeplerEPGRef, KeplerEPGProps>((props, ref) => {
               },
             });
           }
-        } else if (evt.eventType === 'up') {
+        } else if (type === 'up') {
           if (r === 0) {
             onFocusEscapeUp?.({row: 0});
           }
-        } else if (evt.eventType === 'menu') {
+        } else if (type === 'menu') {
           onMenu?.({
             title: currentProgram?.title || '',
             payload: {
@@ -450,7 +448,7 @@ const EPGComponent = forwardRef<KeplerEPGRef, KeplerEPGProps>((props, ref) => {
               channel: currentChannel || ({} as Channel),
             },
           });
-        } else if (isSelectEvent(evt.eventType)) {
+        } else if (isSelectEvent(type)) {
           const ch = currentInfoRef.current?.channel ?? currentChannel;
           let prog = currentInfoRef.current?.program;
           if (!prog && ch) {
@@ -518,6 +516,7 @@ const EPGComponent = forwardRef<KeplerEPGRef, KeplerEPGProps>((props, ref) => {
       updateFavorite: () => {},
       focusOnEPG: (isFocus: boolean) => {
         setIsEpgFocused(isFocus);
+        isEpgFocusedRef.current = isFocus;
         if (isFocus) {
           const key = `${focusedRowRef.current}-${focusedColRef.current}`;
           const target = tileRefs.current[key] || tileRefs.current['0-0'];
@@ -618,7 +617,7 @@ const EPGComponent = forwardRef<KeplerEPGRef, KeplerEPGProps>((props, ref) => {
             }}
             style={styles.programsScroll}>
             <TVFocusGuideView
-              autoFocus
+              autoFocus={isEpgFocused}
               trapFocusLeft={false}
               trapFocusUp={false}
               style={{width: totalTimelineWidth}}>
@@ -679,12 +678,11 @@ const EPGComponent = forwardRef<KeplerEPGRef, KeplerEPGProps>((props, ref) => {
                       }
 
                       return (
-                        <TouchableOpacity
+                        <Pressable
                           key={seg.key}
                           ref={(r) => {
                             tileRefs.current[`${rIdx}-${cIdx}`] = r;
                           }}
-                          activeOpacity={0.85}
                           hasTVPreferredFocus={isFocused}
                           onFocus={() =>
                             handleTileFocus(
@@ -776,7 +774,7 @@ const EPGComponent = forwardRef<KeplerEPGRef, KeplerEPGProps>((props, ref) => {
                               />
                             </View>
                           )}
-                        </TouchableOpacity>
+                        </Pressable>
                       );
                     })}
                   </View>

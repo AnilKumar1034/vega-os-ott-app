@@ -1,6 +1,12 @@
-import React, {useRef, useState} from 'react';
-import {Image, ImageSourcePropType, Pressable, Text, View} from 'react-native';
+import React, {useCallback, useEffect, useImperativeHandle, useRef, useState} from 'react';
 import {
+  Image,
+  ImageSourcePropType,
+  Text,
+  View,
+} from 'react-native';
+import {
+  Pressable,
   TVFocusGuideView,
   useTVEventHandler,
 } from '@amazon-devices/react-native-kepler';
@@ -9,7 +15,7 @@ import {styles} from './CommonHeader.styles';
 
 import {strings} from '../../constants/strings';
 import {useAuth} from '../../context/authContext';
-import {isKeyDown, isSelectEvent} from '../../utils/inputUtils';
+import {isBackEvent, isKeyDown, isSelectEvent} from '../../utils/inputUtils';
 
 export interface CommonHeaderProps {
   title: string;
@@ -24,7 +30,8 @@ export interface CommonHeaderProps {
   filterLabel?: string;
   onFilterPress?: () => void;
   onFocusEscapeDown?: () => void;
-  filterFocusGuideRef?: React.Ref<React.ElementRef<typeof TVFocusGuideView>>;
+  onFocusEscapeLeft?: () => void;
+  filterFocusGuideRef?: React.Ref<any>;
   filterHasTVPreferredFocus?: boolean;
   onSearchSubmit?: () => void;
   searchMaxLength?: number;
@@ -43,15 +50,51 @@ export const CommonHeader = ({
   filterLabel,
   onFilterPress,
   onFocusEscapeDown,
+  onFocusEscapeLeft,
   filterFocusGuideRef,
   filterHasTVPreferredFocus,
   onSearchSubmit,
   searchMaxLength,
 }: CommonHeaderProps) => {
   const [isFilterFocused, setIsFilterFocused] = useState(false);
-  const [filterButton, setFilterButton] = useState<React.ElementRef<
-    typeof Pressable
-  > | null>(null);
+  const [filterButton, setFilterButton] = useState<any>(null);
+  const filterButtonRef = useRef<any>(null);
+  const filterGuideRef = useRef<any>(null);
+
+  const focusFilterButton = useCallback(() => {
+    setIsFilterFocused(true);
+    isFilterFocusedRef.current = true;
+    if (
+      filterButtonRef.current &&
+      typeof filterButtonRef.current.requestTVFocus === 'function'
+    ) {
+      filterButtonRef.current.requestTVFocus();
+    } else if (
+      filterButtonRef.current &&
+      typeof filterButtonRef.current.focus === 'function'
+    ) {
+      filterButtonRef.current.focus();
+    }
+  }, []);
+
+  useImperativeHandle(
+    filterFocusGuideRef,
+    () => ({
+      requestTVFocus: focusFilterButton,
+      focus: focusFilterButton,
+      getNode: () => filterButtonRef.current,
+      setDestinations: (destinations: any[]) => {
+        filterGuideRef.current?.setDestinations?.(destinations);
+      },
+    }),
+    [focusFilterButton],
+  );
+
+  useEffect(() => {
+    if (filterHasTVPreferredFocus) {
+      focusFilterButton();
+    }
+  }, [filterHasTVPreferredFocus, focusFilterButton]);
 
   const auth = useAuth();
   const currentSub =
@@ -71,15 +114,15 @@ export const CommonHeader = ({
     const type = evt.eventType?.toLowerCase();
     if (isSelectEvent(type)) {
       onFilterPress?.();
-    } else if (type === 'down') {
+    } else if (type === 'down' || isBackEvent(type)) {
       onFocusEscapeDown?.();
+    } else if (type === 'left') {
+      onFocusEscapeLeft?.();
     }
   });
 
   return (
-    <TVFocusGuideView
-      style={styles.container}
-      autoFocus={Boolean(filterLabel && onFilterPress)}>
+    <TVFocusGuideView style={styles.container}>
       <Text style={styles.title} numberOfLines={1}>
         {title}
       </Text>
@@ -102,21 +145,30 @@ export const CommonHeader = ({
         )}
         {filterLabel && onFilterPress && (
           <TVFocusGuideView
-            ref={filterFocusGuideRef}
-            autoFocus
+            ref={filterGuideRef}
             destinations={filterButton ? [filterButton] : []}>
             <Pressable
-              ref={setFilterButton}
-              style={[
+              ref={(node) => {
+                filterButtonRef.current = node;
+                setFilterButton(node);
+              }}
+              style={({focused}) => [
                 styles.filterButton,
-                isFilterFocused && styles.filterButtonFocused,
+                (focused || isFilterFocused) && styles.filterButtonFocused,
               ]}
               onPress={onFilterPress}
-              onFocus={() => setIsFilterFocused(true)}
-              onBlur={() => setIsFilterFocused(false)}
+              onFocus={() => {
+                setIsFilterFocused(true);
+                isFilterFocusedRef.current = true;
+              }}
+              onBlur={() => {
+                setIsFilterFocused(false);
+                isFilterFocusedRef.current = false;
+              }}
               hasTVPreferredFocus={filterHasTVPreferredFocus}
               accessibilityRole="button"
-              accessibilityLabel={filterLabel}>
+              accessibilityLabel={filterLabel}
+              testID="common-header-filter-button">
               <Text style={styles.filterButtonText}>{filterLabel} ▾</Text>
             </Pressable>
           </TVFocusGuideView>

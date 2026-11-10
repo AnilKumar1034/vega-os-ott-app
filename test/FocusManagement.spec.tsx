@@ -3,6 +3,9 @@ import {act, fireEvent, render} from '@testing-library/react-native';
 import {ContentRow} from '../src/components/molecules/ContentRow';
 import {HeroCarousel} from '../src/components/molecules/HeroCarousel';
 import {CommonSearch} from '../src/components/molecules/CommonSearch';
+import {CommonHeader} from '../src/components/molecules/CommonHeader';
+import {EPG, type EPGActions} from '../src/features/live-tv/components/EPG';
+import {LiveTVScreen} from '../src/features/live-tv/screens/LiveTVScreen';
 import {HomeContentRow} from '../src/data/home';
 
 jest.mock('@react-navigation/native', () => ({
@@ -162,5 +165,125 @@ describe('Focus Management & Last-Focused Restoration', () => {
 
     handler({eventType: 'down', eventKeyAction: 0});
     expect(onFocusEscapeDown).toHaveBeenCalledTimes(1);
+  });
+
+  it('6. CommonHeader: filter button exposes requestTVFocus and remote handlers', () => {
+    const onFilterPress = jest.fn();
+    const onFocusEscapeDown = jest.fn();
+    const onFocusEscapeLeft = jest.fn();
+    const filterRef = React.createRef<any>();
+
+    const {getByTestId} = render(
+      <CommonHeader
+        title="Live TV"
+        filterLabel="Filters"
+        onFilterPress={onFilterPress}
+        onFocusEscapeDown={onFocusEscapeDown}
+        onFocusEscapeLeft={onFocusEscapeLeft}
+        filterFocusGuideRef={filterRef}
+      />,
+    );
+
+    const button = getByTestId('common-header-filter-button');
+    expect(button).toBeTruthy();
+    expect(filterRef.current).toBeDefined();
+    expect(typeof filterRef.current.requestTVFocus).toBe('function');
+
+    // Call programmatic requestTVFocus on filterRef
+    act(() => {
+      filterRef.current.requestTVFocus();
+    });
+
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    const headerHandler = useTVEventHandler.mock.calls
+      .map((call: any) => call[0])
+      .find((fn: any) => fn.toString().includes('isFilterFocusedRef'));
+
+    expect(headerHandler).toBeDefined();
+
+    // Down key escapes down
+    headerHandler({eventType: 'down', eventKeyAction: 0});
+    expect(onFocusEscapeDown).toHaveBeenCalledTimes(1);
+
+    // Left key escapes left
+    headerHandler({eventType: 'left', eventKeyAction: 0});
+    expect(onFocusEscapeLeft).toHaveBeenCalledTimes(1);
+
+    // Select key triggers onFilterPress
+    headerHandler({eventType: 'select', eventKeyAction: 0});
+    expect(onFilterPress).toHaveBeenCalledTimes(1);
+
+    // Back key escapes down to EPG
+    headerHandler({eventType: 'back', eventKeyAction: 0});
+    expect(onFocusEscapeDown).toHaveBeenCalledTimes(2);
+  });
+
+  it('7. EPG: triggers onFocusEscapeUp on row 0 when up key is pressed', () => {
+    const onFocusEscapeUp = jest.fn();
+    const epgRef = React.createRef<EPGActions>();
+
+    const {getByText} = render(
+      <EPG
+        ref={epgRef}
+        onFocusEscapeUp={onFocusEscapeUp}
+        timeRange={{
+          startTimeMs: 1720000000000,
+          initialPosition: 1720000000000,
+        }}
+      />,
+    );
+
+    act(() => {
+      epgRef.current?.resetData([
+        {
+          id: 'ch-1',
+          displayName: 'Channel 1',
+          logoUrl: '',
+          programs: [
+            {
+              programId: 'p-1',
+              title: 'Top Show',
+              startTime: 1720000000000,
+              endTime: 1720003600000,
+            },
+          ],
+        },
+      ]);
+      epgRef.current?.focusOnEPG(true);
+    });
+
+    const tile = getByText('Top Show');
+    act(() => {
+      fireEvent(tile, 'focus');
+    });
+
+    const {useTVEventHandler} = require('@amazon-devices/react-native-kepler');
+    const epgHandler = useTVEventHandler.mock.calls
+      .map((call: any) => call[0])
+      .find((fn: any) => fn.toString().includes('onFocusEscapeUp'));
+
+    expect(epgHandler).toBeDefined();
+
+    // Test with uppercase 'Up' event to verify case-insensitivity
+    epgHandler({eventType: 'Up', eventKeyAction: 0});
+    expect(onFocusEscapeUp).toHaveBeenCalledTimes(1);
+  });
+
+  it('8. LiveTVScreen: pressing filters button opens category menu modal', () => {
+    const {getByTestId, getByText, queryByText} = render(<LiveTVScreen />);
+
+    const filterButton = getByTestId('common-header-filter-button');
+    expect(filterButton).toBeTruthy();
+
+    // Category modal is not visible initially
+    expect(queryByText('Free Channels')).toBeNull();
+
+    // Press filter button
+    act(() => {
+      fireEvent.press(filterButton);
+    });
+
+    // Category modal options are now displayed
+    expect(getByText('Free Channels')).toBeTruthy();
   });
 });
