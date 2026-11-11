@@ -298,6 +298,35 @@ describe('Day 3 — Amazon Vega IAP Package Integration & Product Configuration'
 
       unsubscribe();
     });
+
+    it('fetches Amazon user data (userId and marketplace) via getUserData', async () => {
+      const mockUserData: UserData = {
+        userId: 'amzn_user_alpha_1',
+        marketplace: 'IN',
+        countryCode: 'IN',
+        lwaConsentStatus: 2,
+        userProfileAccessConsentStatus: 2,
+      };
+
+      const mockProvider: PurchasingServiceProvider = {
+        getProductData: jest.fn().mockResolvedValue({
+          productData: new Map(),
+          responseCode: ProductDataResponseCode.SUCCESSFUL,
+          unavailableSkus: [],
+        } as ProductDataResponse),
+        getUserData: jest.fn().mockResolvedValue({
+          userData: mockUserData,
+          responseCode: 0,
+        } as any),
+      };
+
+      amazonVegaIapService.setPurchasingProvider(mockProvider);
+      const resp = await amazonVegaIapService.getUserData();
+
+      expect(resp?.userData?.userId).toBe('amzn_user_alpha_1');
+      expect(resp?.userData?.marketplace).toBe('IN');
+      expect(amazonVegaIapService.getAmazonUserData()?.userId).toBe('amzn_user_alpha_1');
+    });
   });
 
   describe('3. IapServiceFactory & Mock vs Real Separation', () => {

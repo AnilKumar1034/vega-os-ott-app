@@ -53,6 +53,7 @@ export class AmazonVegaIapService implements IIapService {
   private _state: PurchaseFlowState = 'idle';
   private _products: IapProduct[] = [];
   private _unavailableSkus: string[] = [];
+  private _userData: UserData | null = null;
   private _lastPurchaseResult: PurchaseResult | null = null;
   private _lastReceiptInfo: AmazonReceiptInfo | null = null;
   private _listeners: Set<(state: PurchaseFlowState) => void> = new Set();
@@ -95,6 +96,32 @@ export class AmazonVegaIapService implements IIapService {
 
   public getUnavailableSkus(): string[] {
     return [...this._unavailableSkus];
+  }
+
+  /**
+   * Retrieves the current Amazon account details (userId, marketplace) from PurchasingService.
+   */
+  public async getUserData(
+    request?: {fetchUserProfileAccessConsentStatus?: boolean},
+  ): Promise<UserDataResponse | null> {
+    try {
+      if (typeof this._purchasingProvider.getUserData === 'function') {
+        const response = await this._purchasingProvider.getUserData(request || {});
+        if (response?.userData) {
+          this._userData = response.userData;
+        }
+        return response;
+      }
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[AmazonVegaIapService] getUserData error:', err);
+      }
+    }
+    return null;
+  }
+
+  public getAmazonUserData(): UserData | null {
+    return this._userData;
   }
 
   public getState(): PurchaseFlowState {
@@ -148,6 +175,20 @@ export class AmazonVegaIapService implements IIapService {
 
     this._isInitializing = true;
     this._setState('loading_products');
+
+    // Establish Appstore user session and query user info as recommended by Amazon
+    try {
+      if (typeof this._purchasingProvider.getUserData === 'function') {
+        const userResp = await this._purchasingProvider.getUserData({});
+        if (userResp?.userData) {
+          this._userData = userResp.userData;
+        }
+      }
+    } catch (userErr) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[AmazonVegaIapService] Non-fatal getUserData error on init:', userErr);
+      }
+    }
 
     const requestedSkus = getAllAmazonSkus();
 
@@ -373,12 +414,26 @@ export class AmazonVegaIapService implements IIapService {
           // Process transaction record in transaction manager
           this._transactionManager.processPurchaseResponse(response, canonicalSku);
 
+          // Communicate fulfillment to Amazon Appstore
+          try {
+            if (typeof this._purchasingProvider.notifyFulfillment === 'function') {
+              await this._purchasingProvider.notifyFulfillment({
+                receiptId,
+                fulfillmentResult: FulfillmentResult.FULFILLED,
+              });
+            }
+          } catch (fulfillErr) {
+            if (typeof __DEV__ !== 'undefined' && __DEV__) {
+              console.warn('[AmazonVegaIapService] notifyFulfillment error:', fulfillErr);
+            }
+          }
+
           const successResult: PurchaseResult = {
             status: 'success',
             productId: canonicalSku,
             transactionId: receiptId,
             purchaseTime,
-            message: 'Amazon purchase completed successfully. Awaiting receipt verification.',
+            message: 'Amazon purchase completed successfully.',
             awaitingVerification: true,
             receiptInfo,
           };
@@ -405,7 +460,7 @@ export class AmazonVegaIapService implements IIapService {
             status: 'failed',
             productId: canonicalSku,
             errorCode: 'INVALID_PRODUCT',
-            message: `Amazon Appstore rejected SKU '${canonicalSku}' as invalid.`,
+            message: `Amazon Appstore rejected SKU '${canonicalSku}' as invalid. Please ensure this in-app item is created and submitted in the Amazon Developer Console.`,
           };
           this._lastPurchaseResult = invalidSkuResult;
           return invalidSkuResult;
@@ -432,7 +487,7 @@ export class AmazonVegaIapService implements IIapService {
             status: 'failed',
             productId: canonicalSku,
             errorCode: 'PAYMENT_DECLINED',
-            message: 'Purchase transaction failed or was declined by Amazon Appstore.',
+            message: 'Purchase transaction could not be completed by Amazon Appstore. Please ensure in-app items are submitted in Amazon Developer Console.',
           };
           this._lastPurchaseResult = failedResult;
           return failedResult;
@@ -535,6 +590,7 @@ export class AmazonVegaIapService implements IIapService {
     this._isPurchasing = false;
     this._products = [];
     this._unavailableSkus = [];
+    this._userData = null;
     this._lastPurchaseResult = null;
     this._lastReceiptInfo = null;
     this._listeners.clear();

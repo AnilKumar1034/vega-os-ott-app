@@ -16,6 +16,7 @@ import {useAuth} from '../context/authContext';
 import {useProfile} from '../profiles/hooks/useProfile';
 import {useEntitlement} from '../hooks/useEntitlement';
 import {getAvailablePlans, normalizeTier} from '../services/subscriptionService';
+import {updateUserProfile} from '../services/authService';
 import {analyticsService} from '../analytics';
 import {BillingCycle, SubscriptionPlan} from '../types/subscription';
 import {isBackEvent, isKeyDown, isSelectEvent} from '../utils/inputUtils';
@@ -176,6 +177,15 @@ export const SubscriptionScreen = () => {
   useEffect(() => {
     isMountedRef.current = true;
     amazonVegaIapService.setActiveAppUserId(user?.uid || null);
+
+    // Initialize IAP provider and warm up product catalog on screen mount
+    const iapService = getIapService();
+    iapService.initialize().catch((err: any) => {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[SubscriptionScreen] IAP initialization error:', err);
+      }
+    });
+
     return () => {
       isMountedRef.current = false;
     };
@@ -239,6 +249,27 @@ export const SubscriptionScreen = () => {
               `[SIMULATED] Purchase successful for ${plan.name} (${billingCycle})!\nMock Entitlement Active. Txn: ${result.transactionId}`,
             );
           } else {
+            // Production Amazon IAP: Grant user entitlement & synchronize profile
+            if (user?.uid) {
+              const expiresAt = new Date(
+                Date.now() + (billingCycle === 'annually' ? 365 : 30) * 24 * 60 * 60 * 1000,
+              ).toISOString();
+              try {
+                await updateUserProfile(user.uid, {
+                  subscription: plan.name,
+                  subscriptionStatus: 'active',
+                  subscriptionStartedAt: new Date().toISOString(),
+                  subscriptionExpiresAt: expiresAt,
+                  billingCycle,
+                });
+              } catch (updateErr) {
+                if (typeof __DEV__ !== 'undefined' && __DEV__) {
+                  console.warn('[SubscriptionScreen] Failed to update user profile in Firestore:', updateErr);
+                }
+              }
+              await refreshEntitlement();
+            }
+
             await analyticsService.trackSubscriptionPlanSelected({
               plan_id: plan.id,
               plan_name: plan.name,
@@ -255,7 +286,7 @@ export const SubscriptionScreen = () => {
                 : result.transactionId;
 
             showToast(
-              `Amazon purchase submitted successfully!\nReceipt: ${shortTxn}\nAwaiting receipt verification.`,
+              `Amazon purchase submitted successfully!\nReceipt: ${shortTxn}\nSubscribed to ${plan.name} (${billingCycle}).`,
             );
           }
         } else if (result.status === 'already_purchased') {
@@ -283,6 +314,7 @@ export const SubscriptionScreen = () => {
       billingCycle,
       currentPlanTier,
       currentStatus,
+      handleRestorePurchases,
       refreshEntitlement,
       showToast,
       updating,
