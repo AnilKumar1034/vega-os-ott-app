@@ -151,16 +151,20 @@ export const SubscriptionScreen = () => {
 
         if (result.status === 'restored') {
           showToast(
-            `[SIMULATED] Successfully restored ${result.entitlement?.planName || 'active'} subscription!`,
+            isDevMode
+              ? `[SIMULATED] Successfully restored ${result.entitlement?.planName || 'active'} subscription!`
+              : `Successfully restored ${result.entitlement?.planName || 'active'} subscription!`,
           );
         } else if (result.status === 'expired') {
           showToast(
-            `[SIMULATED] Restored subscription for ${result.entitlement?.planName || 'previous plan'}, but it has expired.`,
+            isDevMode
+              ? `[SIMULATED] Restored subscription for ${result.entitlement?.planName || 'previous plan'}, but it has expired.`
+              : `Restored subscription for ${result.entitlement?.planName || 'previous plan'}, but it has expired.`,
           );
         } else if (result.status === 'no_entitlement_found') {
-          showToast('No previous mock subscription found for this account.');
+          showToast('No previous subscription found for this account.');
         } else {
-          showToast(result.message || 'Failed to restore subscription from local storage.');
+          showToast(result.message || 'Failed to restore subscription.');
         }
       } else {
         showToast(result.message || 'Purchase restore check completed.');
@@ -224,7 +228,7 @@ export const SubscriptionScreen = () => {
 
         if (result.status === 'success') {
           if (mockIapConfig.isEnabled()) {
-            // Development Mock IAP: Grant local entitlement immediately for testing
+            // Mock IAP: Grant local entitlement immediately for testing / POC
             if (user?.uid) {
               await mockEntitlementService.grantEntitlement(
                 user.uid,
@@ -232,6 +236,23 @@ export const SubscriptionScreen = () => {
                 billingCycle,
                 result.transactionId,
               );
+              // Also update user profile in Firestore so the account is saved and consistent
+              const expiresAt = new Date(
+                Date.now() + (billingCycle === 'annually' ? 365 : 30) * 24 * 60 * 60 * 1000,
+              ).toISOString();
+              try {
+                await updateUserProfile(user.uid, {
+                  subscription: plan.name,
+                  subscriptionStatus: 'active',
+                  subscriptionStartedAt: new Date().toISOString(),
+                  subscriptionExpiresAt: expiresAt,
+                  billingCycle,
+                });
+              } catch (updateErr) {
+                if (typeof __DEV__ !== 'undefined' && __DEV__) {
+                  console.warn('[SubscriptionScreen] Failed to update user profile in Firestore:', updateErr);
+                }
+              }
               await refreshEntitlement();
             }
 
@@ -245,9 +266,15 @@ export const SubscriptionScreen = () => {
                   : plan.monthlyPrice,
             });
 
-            showToast(
-              `[SIMULATED] Purchase successful for ${plan.name} (${billingCycle})!\nMock Entitlement Active. Txn: ${result.transactionId}`,
-            );
+            if (isDevMode) {
+              showToast(
+                `[SIMULATED] Purchase successful for ${plan.name} (${billingCycle})!\nMock Entitlement Active. Txn: ${result.transactionId}`,
+              );
+            } else {
+              showToast(
+                `Purchase successful for ${plan.name} (${billingCycle})!\nSubscribed to ${plan.name}.`,
+              );
+            }
           } else {
             // Production Amazon IAP: Grant user entitlement & synchronize profile
             if (user?.uid) {

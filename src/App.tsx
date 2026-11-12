@@ -1,7 +1,7 @@
 import React, {useEffect} from 'react';
 import {AppNavigator} from './navigation/AppNavigator';
 import {analyticsService} from './analytics';
-import {amazonVegaIapService} from './iap';
+import {getIapService} from './iap';
 
 export const App = () => {
   useEffect(() => {
@@ -9,8 +9,8 @@ export const App = () => {
       .initialize({trackAppOpenOnInitialLaunch: true})
       .catch(() => {});
 
-    // Initialize Amazon IAP service and establish Appstore session on launch
-    amazonVegaIapService
+    // Initialize active IAP service (Mock for POC or Amazon for live)
+    getIapService()
       .initialize()
       .catch(() => {});
   }, []);

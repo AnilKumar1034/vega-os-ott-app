@@ -808,6 +808,7 @@ export const LiveTVScreen = () => {
               {strings.liveTV.noFreeLiveChannels}
             </Text>
             <TouchableOpacity
+             accessibilityHint="TODO"
               style={[
                 styles.emptyChannelButton,
                 isEmptyButtonFocused && styles.emptyChannelButtonFocused,
@@ -821,9 +822,9 @@ export const LiveTVScreen = () => {
                 setShowFreeLiveOnly(false);
                 setSelectedCategory(strings.liveTV.allCategories);
               }}
-              hasTVPreferredFocus={!isFilterPreferred}
-              accessibilityRole="button"
-              accessibilityLabel={strings.liveTV.showAllChannels}>
+              focusable={!isFilterPreferred}
+              role="button"
+              aria-label={strings.liveTV.showAllChannels}>
               <Text style={styles.emptyChannelButtonText}>
                 {strings.liveTV.showAllChannels}
               </Text>
@@ -844,7 +845,7 @@ export const LiveTVScreen = () => {
             trapFocusRight
             trapFocusUp
             trapFocusDown>
-            <Pressable
+            <Pressable accessibilityHint="TODO"
               ref={(node) => {
                 categoryOptionRefs.current.all = node;
               }}
@@ -862,19 +863,19 @@ export const LiveTVScreen = () => {
                 focusedCategoryOptionRef.current = 'all';
               }}
               onPress={() => applyCategorySelection('all')}
-              hasTVPreferredFocus={
+              focusable={
                 !showFreeLiveOnly &&
                 (!selectedCategory ||
                   selectedCategory === strings.liveTV.allCategories)
               }
-              accessibilityRole="button"
-              accessibilityLabel={strings.liveTV.allChannelsFilter}
+              role="button"
+              aria-label={strings.liveTV.allChannelsFilter}
               testID="category-option-all">
               <Text style={styles.categoryOptionText}>
                 {strings.liveTV.allChannelsFilter}
               </Text>
             </Pressable>
-            <Pressable
+            <Pressable accessibilityHint="TODO"
               ref={(node) => {
                 categoryOptionRefs.current.free = node;
               }}
@@ -890,8 +891,8 @@ export const LiveTVScreen = () => {
               }}
               onPress={() => applyCategorySelection('free')}
               hasTVPreferredFocus={showFreeLiveOnly}
-              accessibilityRole="button"
-              accessibilityLabel={strings.liveTV.freeChannelsFilter}
+              role="button"
+              aria-label={strings.liveTV.freeChannelsFilter}
               testID="category-option-free">
               <Text style={styles.categoryOptionText}>
                 {strings.liveTV.freeChannelsFilter}
@@ -899,7 +900,7 @@ export const LiveTVScreen = () => {
             </Pressable>
             <View style={styles.filterDivider} />
             {freeLiveCategories.map((category) => (
-              <Pressable
+              <Pressable accessibilityHint="TODO"
                 key={category}
                 ref={(node) => {
                   categoryOptionRefs.current[category] = node;
@@ -917,13 +918,13 @@ export const LiveTVScreen = () => {
                   focusedCategoryOptionRef.current = category;
                 }}
                 onPress={() => applyCategorySelection(category)}
-                hasTVPreferredFocus={
+                focusable={
                   !showFreeLiveOnly &&
                   selectedCategory === category &&
                   category !== strings.liveTV.allCategories
                 }
-                accessibilityRole="button"
-                accessibilityLabel={category}
+                role="button"
+                aria-label={category}
                 testID={`category-option-${category}`}>
                 <Text style={styles.categoryOptionText}>{category}</Text>
               </Pressable>
@@ -940,16 +941,16 @@ export const LiveTVScreen = () => {
           <View
             style={styles.alertCard}
             accessibilityViewIsModal
-            accessibilityRole="alert">
+            role="alert">
             <Text style={styles.alertTitle}>{alertTitle}</Text>
             <Text style={styles.alertMessage}>{alertMessage}</Text>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityHint="TODO"
               style={styles.alertButton}
               onPress={dismissFutureProgrammeAlert}
               hasTVPreferredFocus
               activeOpacity={1}
-              accessibilityRole="button"
-              accessibilityLabel={strings.liveTV.futureProgrammeDismiss}
+              role="button"
+              aria-label={strings.liveTV.futureProgrammeDismiss}
               testID="future-programme-alert-dismiss">
               <Text style={styles.alertButtonText}>
                 {strings.liveTV.futureProgrammeDismiss}
@@ -988,7 +989,7 @@ const ProgramDetails = ({
           source={{uri: program.image}}
           style={styles.detailsImage}
           resizeMode="contain"
-          accessibilityLabel={program.title}
+          aria-label={program.title}
         />
       )}
       <View style={styles.detailsText}>

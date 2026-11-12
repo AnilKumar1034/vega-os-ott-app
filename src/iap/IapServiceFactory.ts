@@ -14,9 +14,11 @@ export type IapProviderType = 'mock' | 'amazon';
 export class IapServiceFactory {
   /**
    * Returns active IAP provider type.
+   * Resolves 'mock' when mock IAP is active (for dev testing or POC mode).
+   * Resolves 'amazon' when configured for live Amazon Appstore IAP.
    */
   public static getActiveProviderType(): IapProviderType {
-    if (typeof __DEV__ !== 'undefined' && __DEV__ && mockIapConfig.isEnabled()) {
+    if (mockIapConfig.isEnabled()) {
       return 'mock';
     }
     return 'amazon';

@@ -2,35 +2,35 @@ import {MockPurchaseScenario} from './types';
 
 export const DEFAULT_SIMULATED_DELAY_MS = 800;
 
+/**
+ * POC Mode Toggle:
+ * Set to `true` to enable mock subscriptions in both development and production release builds.
+ * Flip to `false` when upgrading to real Amazon Appstore In-App Purchasing.
+ */
+export const USE_MOCK_IAP_POC = true;
+
 class MockIapConfigManager {
   private enabled: boolean;
   private simulatedDelayMs: number;
   private scenario: MockPurchaseScenario;
 
   constructor() {
-    this.enabled = typeof __DEV__ !== 'undefined' ? Boolean(__DEV__) : false;
+    this.enabled = USE_MOCK_IAP_POC || (typeof __DEV__ !== 'undefined' ? Boolean(__DEV__) : false);
     this.simulatedDelayMs = DEFAULT_SIMULATED_DELAY_MS;
     this.scenario = 'success';
   }
 
   /**
    * Indicates whether mock IAP is active.
-   * Safety boundary: Release builds can NEVER activate the mock purchase service.
    */
   public isEnabled(): boolean {
-    if (typeof __DEV__ !== 'undefined' && !__DEV__) {
-      return false;
-    }
     return this.enabled;
   }
 
   /**
-   * Sets mock IAP enabled flag in development. No-op in production release builds.
+   * Sets mock IAP enabled flag.
    */
   public setEnabled(enabled: boolean): void {
-    if (typeof __DEV__ !== 'undefined' && !__DEV__) {
-      return;
-    }
     this.enabled = enabled;
   }
 
@@ -63,10 +63,10 @@ class MockIapConfigManager {
   }
 
   /**
-   * Resets mock configuration to baseline development defaults.
+   * Resets mock configuration to baseline defaults.
    */
   public reset(): void {
-    this.enabled = typeof __DEV__ !== 'undefined' ? Boolean(__DEV__) : false;
+    this.enabled = USE_MOCK_IAP_POC || (typeof __DEV__ !== 'undefined' ? Boolean(__DEV__) : false);
     this.simulatedDelayMs = DEFAULT_SIMULATED_DELAY_MS;
     this.scenario = 'success';
   }

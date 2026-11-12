@@ -19,6 +19,7 @@ import {strings} from '../constants/strings';
 import {
   mockEntitlementService,
   mockEntitlementToSubscriptionEntitlement,
+  mockIapConfig,
 } from '../iap';
 
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes cache TTL
@@ -46,7 +47,7 @@ export class EntitlementService {
     this.cache.clear();
     this.pendingRequests.clear();
     this.requestSequenceMap.clear();
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    if (mockIapConfig.isEnabled()) {
       mockEntitlementService.clearMemoryCache();
     }
   }
@@ -61,7 +62,7 @@ export class EntitlementService {
   }
 
   /**
-   * Resolves entitlement with development-only mock entitlement priority.
+   * Resolves entitlement with mock entitlement priority when mock IAP is active.
    * If a valid mock entitlement exists for the user, it is honored without touching Firestore.
    */
   public resolveEntitlement(
@@ -71,7 +72,7 @@ export class EntitlementService {
       return this.resolveEntitlementFromProfile(null);
     }
 
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    if (mockIapConfig.isEnabled()) {
       const mock = mockEntitlementService.getActiveEntitlementSync(profile.uid);
       if (mock) {
         return mockEntitlementToSubscriptionEntitlement(mock);
@@ -136,8 +137,8 @@ export class EntitlementService {
       return this.resolveEntitlementFromProfile(null);
     }
 
-    // Dev check: Load mock entitlement from local development storage
-    if (typeof __DEV__ !== 'undefined' && __DEV__) {
+    // Mock check: Load mock entitlement from local storage when mock IAP is active
+    if (mockIapConfig.isEnabled()) {
       const mock = await mockEntitlementService.getEntitlement(userId);
       if (mock) {
         const subEntitlement = mockEntitlementToSubscriptionEntitlement(mock);
