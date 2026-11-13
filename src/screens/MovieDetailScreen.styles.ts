@@ -247,4 +247,336 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.lg,
   },
+
+  // Trailer button
+  trailerButton: {
+    minWidth: sizes.movieDetailSecondaryMinWidth,
+    alignItems: 'center',
+    borderRadius: spacing.md,
+    paddingHorizontal: spacing.giant,
+    paddingVertical: spacing.large,
+    backgroundColor: colors.controlBackground,
+    marginRight: spacing.xlarge,
+  },
+  trailerButtonText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.heroAction,
+    fontWeight: fontWeights.bold,
+  },
+
+  // Entitlement action button & badges
+  subscribeButton: {
+    minWidth: sizes.movieDetailPlayMinWidth,
+    alignItems: 'center',
+    borderRadius: spacing.md,
+    paddingHorizontal: spacing.colossal,
+    paddingVertical: spacing.large,
+    backgroundColor: colors.heroAccent,
+    marginRight: spacing.xlarge,
+  },
+  subscribeButtonText: {
+    color: colors.white,
+    fontSize: fontSizes.heroAction,
+    fontWeight: fontWeights.bold,
+  },
+  entitlementBadge: {
+    backgroundColor: colors.goldDeep,
+    borderRadius: spacing.xs,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    marginRight: spacing.xxl,
+  },
+  entitlementBadgeText: {
+    color: colors.white,
+    fontSize: fontSizes.cardBadge,
+    fontWeight: fontWeights.bold,
+    letterSpacing: 1.2,
+  },
+
+  // Season Tabs
+  seasonsSection: {
+    marginTop: spacing.huge,
+    marginBottom: spacing.section,
+  },
+  seasonTabsContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.large,
+  },
+  seasonTab: {
+    paddingHorizontal: spacing.section,
+    paddingVertical: spacing.large,
+    borderRadius: spacing.sm,
+    backgroundColor: colors.subPillBackground,
+    marginRight: spacing.xlarge,
+    borderWidth: spacing.borderThin,
+    borderColor: colors.cardBorderLight,
+  },
+  seasonTabFocused: {
+    borderColor: colors.focusRing,
+    backgroundColor: colors.controlFocusedBackground,
+  },
+  seasonTabSelected: {
+    backgroundColor: colors.heroAccent,
+    borderColor: colors.heroAccent,
+  },
+  seasonTabText: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.heroAction,
+    fontWeight: fontWeights.semibold,
+  },
+  seasonTabTextFocused: {
+    color: colors.white,
+  },
+  seasonTabTextSelected: {
+    color: colors.white,
+    fontWeight: fontWeights.bold,
+  },
+
+  // Episode Cards
+  episodesSection: {
+    marginTop: spacing.xlarge,
+    marginBottom: spacing.section,
+  },
+  episodesList: {
+    paddingVertical: spacing.large,
+  },
+  episodeCard: {
+    width: 280,
+    backgroundColor: colors.cardBackground,
+    borderRadius: spacing.md,
+    marginRight: spacing.section,
+    overflow: 'hidden',
+    borderWidth: spacing.borderThin,
+    borderColor: colors.cardBorder,
+  },
+  episodeCardFocused: {
+    borderColor: colors.focusRing,
+    borderWidth: spacing.borderThick,
+  },
+  episodeThumbnailWrapper: {
+    width: '100%',
+    height: 140,
+    backgroundColor: colors.dialogBackground,
+    position: 'relative',
+  },
+  episodeThumbnail: {
+    width: '100%',
+    height: '100%',
+  },
+  episodeDurationBadge: {
+    position: 'absolute',
+    bottom: spacing.sm,
+    right: spacing.sm,
+    backgroundColor: colors.ratingBackground,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: spacing.xs,
+  },
+  episodeDurationText: {
+    color: colors.white,
+    fontSize: fontSizes.cardBadge,
+    fontWeight: fontWeights.bold,
+  },
+  episodeDetails: {
+    padding: spacing.large,
+  },
+  episodeHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  episodeBadge: {
+    color: colors.heroAccent,
+    fontSize: fontSizes.cardBadge,
+    fontWeight: fontWeights.bold,
+    letterSpacing: 1,
+  },
+  episodeRating: {
+    color: colors.goldStar,
+    fontSize: fontSizes.portraitBadge,
+    fontWeight: fontWeights.bold,
+  },
+  episodeTitle: {
+    color: colors.white,
+    fontSize: fontSizes.cardTitle,
+    fontWeight: fontWeights.bold,
+    marginBottom: spacing.sm,
+  },
+  episodeDescription: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.bodySmall,
+    lineHeight: 14,
+    marginBottom: spacing.sm,
+  },
+  episodeProgressContainer: {
+    height: 3,
+    backgroundColor: colors.progressTrack,
+    borderRadius: 2,
+    overflow: 'hidden',
+    marginTop: spacing.xs,
+  },
+  episodeProgressBar: {
+    height: '100%',
+    backgroundColor: colors.heroAccent,
+  },
+  episodeWatchedPill: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.kidsGreen,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
+    borderRadius: spacing.xs,
+    marginTop: spacing.xs,
+  },
+  episodeWatchedText: {
+    color: colors.white,
+    fontSize: fontSizes.cardBadge,
+    fontWeight: fontWeights.bold,
+  },
+  emptyEpisodesContainer: {
+    paddingVertical: spacing.section,
+    alignItems: 'center',
+  },
+  emptyEpisodesText: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.body,
+  },
+
+  // Cast & Crew Cards
+  castSection: {
+    marginTop: spacing.section,
+    marginBottom: spacing.section,
+  },
+  castList: {
+    paddingVertical: spacing.large,
+  },
+  castCard: {
+    width: 130,
+    alignItems: 'center',
+    padding: spacing.large,
+    backgroundColor: colors.cardBackgroundMuted,
+    borderRadius: spacing.md,
+    marginRight: spacing.large,
+    borderWidth: spacing.borderThin,
+    borderColor: colors.cardBorderLight,
+  },
+  castCardFocused: {
+    borderColor: colors.focusRing,
+    borderWidth: spacing.borderThick,
+    backgroundColor: colors.controlFocusedBackground,
+  },
+  castAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: colors.subPillBackground,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+    borderWidth: spacing.borderThin,
+    borderColor: colors.borderLight,
+  },
+  castInitials: {
+    color: colors.white,
+    fontSize: fontSizes.subheading,
+    fontWeight: fontWeights.bold,
+  },
+  castName: {
+    color: colors.white,
+    fontSize: fontSizes.bodySmall,
+    fontWeight: fontWeights.semibold,
+    textAlign: 'center',
+    marginBottom: spacing.xxs,
+  },
+  castRole: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.cardBadge,
+    textAlign: 'center',
+  },
+
+  // Loading & Error States
+  centerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.colossal,
+  },
+  loadingText: {
+    color: colors.textPrimary,
+    fontSize: fontSizes.subheading,
+    marginTop: spacing.section,
+    fontWeight: fontWeights.semibold,
+  },
+  errorCard: {
+    maxWidth: 480,
+    alignItems: 'center',
+    backgroundColor: colors.dialogBackground,
+    borderRadius: spacing.large,
+    padding: spacing.section,
+    borderWidth: spacing.borderThin,
+    borderColor: colors.errorBorder,
+  },
+  errorBadge: {
+    backgroundColor: colors.errorBackground,
+    paddingHorizontal: spacing.large,
+    paddingVertical: spacing.xs,
+    borderRadius: spacing.xs,
+    marginBottom: spacing.large,
+  },
+  errorBadgeText: {
+    color: colors.errorText,
+    fontSize: fontSizes.caption,
+    fontWeight: fontWeights.bold,
+    letterSpacing: 1.2,
+  },
+  errorTitle: {
+    color: colors.white,
+    fontSize: fontSizes.pageTitle,
+    fontWeight: fontWeights.bold,
+    marginBottom: spacing.sm,
+    textAlign: 'center',
+  },
+  errorMessage: {
+    color: colors.textSecondary,
+    fontSize: fontSizes.body,
+    textAlign: 'center',
+    marginBottom: spacing.section,
+    lineHeight: 18,
+  },
+  errorButtonsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  retryButton: {
+    paddingHorizontal: spacing.section,
+    paddingVertical: spacing.large,
+    borderRadius: spacing.sm,
+    backgroundColor: colors.heroAccent,
+    marginRight: spacing.large,
+  },
+  retryButtonFocused: {
+    borderColor: colors.focusRing,
+    borderWidth: spacing.borderThin,
+  },
+  retryButtonText: {
+    color: colors.white,
+    fontSize: fontSizes.button,
+    fontWeight: fontWeights.bold,
+  },
+  homeButton: {
+    paddingHorizontal: spacing.section,
+    paddingVertical: spacing.large,
+    borderRadius: spacing.sm,
+    backgroundColor: colors.actionSecondary,
+  },
+  homeButtonFocused: {
+    borderColor: colors.focusRing,
+    borderWidth: spacing.borderThin,
+  },
+  homeButtonText: {
+    color: colors.white,
+    fontSize: fontSizes.button,
+    fontWeight: fontWeights.bold,
+  },
 });

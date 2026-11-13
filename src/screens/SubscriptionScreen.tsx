@@ -241,7 +241,7 @@ export const SubscriptionScreen = () => {
                 Date.now() + (billingCycle === 'annually' ? 365 : 30) * 24 * 60 * 60 * 1000,
               ).toISOString();
               try {
-                await updateUserProfile(user.uid, {
+                await updateUserProfile({
                   subscription: plan.name,
                   subscriptionStatus: 'active',
                   subscriptionStartedAt: new Date().toISOString(),
@@ -282,7 +282,7 @@ export const SubscriptionScreen = () => {
                 Date.now() + (billingCycle === 'annually' ? 365 : 30) * 24 * 60 * 60 * 1000,
               ).toISOString();
               try {
-                await updateUserProfile(user.uid, {
+                await updateUserProfile({
                   subscription: plan.name,
                   subscriptionStatus: 'active',
                   subscriptionStartedAt: new Date().toISOString(),

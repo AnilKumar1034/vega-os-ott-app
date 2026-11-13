@@ -226,6 +226,8 @@ describe('Focus Management & Last-Focused Restoration', () => {
       <EPG
         ref={epgRef}
         onFocusEscapeUp={onFocusEscapeUp}
+        onTileFocus={jest.fn()}
+        onTilePress={jest.fn()}
         timeRange={{
           startTimeMs: 1720000000000,
           initialPosition: 1720000000000,
