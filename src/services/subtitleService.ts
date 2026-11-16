@@ -1,8 +1,10 @@
 import {SubtitleCue, SubtitleTrack} from '../types/subtitles';
 
 const SUBTITLE_PREF_KEY_PREFIX = '@vegaott/subtitle-pref-';
+const SUBTITLE_APPEARANCE_KEY_PREFIX = '@vegaott/subtitle-appearance-';
 
 const inMemorySubtitlePrefCache: Record<string, string> = {};
+const inMemorySubtitleAppearanceCache: Record<string, any> = {};
 
 const getAsyncStorage = () => {
   try {
@@ -183,6 +185,81 @@ export async function getSavedSubtitlePreference(
 }
 
 /**
+ * Reads preferred subtitle appearance settings (fontSize, contrast) for a specific profile.
+ */
+export async function getSavedSubtitleAppearancePreference(
+  profileId?: string,
+): Promise<{fontSize?: 'small' | 'medium' | 'large'; contrast?: 'standard' | 'high' | 'translucent'}> {
+  const key = `${SUBTITLE_APPEARANCE_KEY_PREFIX}${profileId || 'global'}`;
+  try {
+    const storage = getAsyncStorage();
+    if (storage) {
+      const raw = await storage.getItem(key);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        inMemorySubtitleAppearanceCache[key] = parsed;
+        return parsed;
+      }
+    }
+  } catch (error) {
+    console.log('Error reading subtitle appearance preference:', error);
+  }
+  return inMemorySubtitleAppearanceCache[key] || {fontSize: 'medium', contrast: 'standard'};
+}
+
+/**
+ * Saves subtitle appearance settings to local storage for a specific profile.
+ */
+export async function saveSubtitleAppearancePreference(
+  profileId: string | undefined,
+  settings: {fontSize?: 'small' | 'medium' | 'large'; contrast?: 'standard' | 'high' | 'translucent'},
+): Promise<void> {
+  const key = `${SUBTITLE_APPEARANCE_KEY_PREFIX}${profileId || 'global'}`;
+  inMemorySubtitleAppearanceCache[key] = settings;
+  try {
+    const storage = getAsyncStorage();
+    if (storage && settings) {
+      await storage.setItem(key, JSON.stringify(settings));
+    }
+  } catch (error) {
+    console.log('Error saving subtitle appearance preference:', error);
+  }
+}
+
+/**
+ * Returns font size and capsule background styling for given appearance preferences.
+ */
+export function getSubtitleStyleForAppearance(appearance?: {
+  fontSize?: 'small' | 'medium' | 'large';
+  contrast?: 'standard' | 'high' | 'translucent';
+}) {
+  let fontSize = 12;
+  let lineHeight = 18;
+  if (appearance?.fontSize === 'small') {
+    fontSize = 10;
+    lineHeight = 15;
+  } else if (appearance?.fontSize === 'large') {
+    fontSize = 15;
+    lineHeight = 22;
+  }
+
+  let backgroundColor = 'rgba(0, 0, 0, 0.82)';
+  let borderColor = 'rgba(255, 255, 255, 0.15)';
+  let textColor = '#FFFFFF';
+
+  if (appearance?.contrast === 'high') {
+    backgroundColor = '#000000';
+    borderColor = '#FFFF00';
+    textColor = '#FFFF00';
+  } else if (appearance?.contrast === 'translucent') {
+    backgroundColor = 'rgba(0, 0, 0, 0.50)';
+    borderColor = 'transparent';
+  }
+
+  return {fontSize, lineHeight, backgroundColor, borderColor, textColor};
+}
+
+/**
  * Loads and resolves subtitle cues for a track (supporting static cues or remote WebVTT URLs).
  */
 export async function loadSubtitleTrackCues(
@@ -226,5 +303,17 @@ export async function saveSubtitlePreference(
     }
   } catch (error) {
     console.log('Error saving subtitle preference:', error);
+  }
+}
+
+/**
+ * Clears the in-memory subtitle caches (primarily for unit tests).
+ */
+export function clearSubtitlePrefCache(): void {
+  for (const k of Object.keys(inMemorySubtitlePrefCache)) {
+    delete inMemorySubtitlePrefCache[k];
+  }
+  for (const k of Object.keys(inMemorySubtitleAppearanceCache)) {
+    delete inMemorySubtitleAppearanceCache[k];
   }
 }

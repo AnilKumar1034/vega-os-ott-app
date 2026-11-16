@@ -50,6 +50,7 @@ import {
   findActiveSubtitleCue,
   getSavedSubtitlePreference,
   saveSubtitlePreference,
+  getSavedSubtitleAppearancePreference,
 } from '../services/subtitleService';
 import {SubtitleTrack} from '../types/subtitles';
 import {SubtitleOverlay} from '../components/molecules/SubtitleOverlay';
@@ -85,6 +86,22 @@ import {
 } from '../services/episodeService';
 import {NextEpisodeModal} from '../components/molecules/NextEpisodeModal';
 import {analyticsService, playbackSessionManager} from '../analytics';
+import {
+  PlaybackSpeed,
+  SubtitleAppearanceSettings,
+} from '../types/playerFeatures';
+import {
+  applyPlaybackSpeed,
+  calculateBackoffDelay,
+  DEFAULT_PLAYBACK_SPEED,
+  extractIntroInterval,
+  extractRecapInterval,
+  isPositionInInterval,
+  isRecoverablePlaybackError,
+  MAX_RECOVERY_ATTEMPTS,
+} from '../services/playerFeatureService';
+import {SkipIntervalPrompt} from '../components/molecules/SkipIntervalPrompt';
+import {PlaybackSpeedModal} from '../components/molecules/PlaybackSpeedModal';
 
 let KeplerVideoViewComponent: any = View;
 let VideoPlayerClass: any = null;
@@ -372,21 +389,36 @@ export const VideoPlayerScreen = () => {
   const [activeSubtitleCueText, setActiveSubtitleCueText] = useState<
     string | null
   >(null);
+  const [subtitleAppearance, setSubtitleAppearance] =
+    useState<SubtitleAppearanceSettings>({});
   const subtitleSyncTimerRef = useRef<any>(null);
 
-  // Load saved subtitle preference for active profile
+  // Load saved subtitle preference and appearance for active profile
   useEffect(() => {
     let active = true;
     const loadSubtitlePref = async () => {
       const targetProfileId = playbackProfileIdRef.current || activeProfile?.id;
       const savedPref = await getSavedSubtitlePreference(targetProfileId);
       if (active && savedPref) {
+        const matching = availableSubtitleTracks.find((t) => t.id === savedPref);
         const exists =
-          savedPref === SUBTITLE_OFF_ID ||
-          availableSubtitleTracks.some((t) => t.id === savedPref);
+          savedPref === SUBTITLE_OFF_ID || Boolean(matching);
         if (exists) {
           setSelectedSubtitleTrackId(savedPref);
+          playbackSessionManager
+            .recordSubtitlePreferenceApplied({
+              trackId: savedPref,
+              language: matching?.language,
+              isOff: savedPref === SUBTITLE_OFF_ID,
+            })
+            .catch(() => {});
         }
+      }
+      const savedAppearance = await getSavedSubtitleAppearancePreference(
+        targetProfileId,
+      );
+      if (active && savedAppearance) {
+        setSubtitleAppearance(savedAppearance);
       }
     };
     loadSubtitlePref();
@@ -505,6 +537,12 @@ export const VideoPlayerScreen = () => {
         );
         if (matching) {
           setSelectedAudioTrackId(matching.id);
+          playbackSessionManager
+            .recordAudioPreferenceApplied({
+              trackId: matching.id,
+              language: matching.language,
+            })
+            .catch(() => {});
         }
       }
     };
@@ -579,6 +617,32 @@ export const VideoPlayerScreen = () => {
     );
   }, [availableVideoQualities, selectedQualityId]);
 
+  // --- Playback Speed Feature Setup ---
+  const [playbackSpeed, setPlaybackSpeed] =
+    useState<PlaybackSpeed>(DEFAULT_PLAYBACK_SPEED);
+  const [isSpeedModalOpen, setIsSpeedModalOpen] = useState(false);
+  const [isSpeedFocused, setIsSpeedFocused] = useState(false);
+
+  // Restore normal speed when unmounting or switching content
+  useEffect(() => {
+    return () => {
+      applyPlaybackSpeed(player, DEFAULT_PLAYBACK_SPEED, shakaPlayerRef.current);
+    };
+  }, [player]);
+
+  // --- Skip Intro & Skip Recap Feature Setup ---
+  const introInterval = useMemo(() => extractIntroInterval(movie), [movie]);
+  const recapInterval = useMemo(() => extractRecapInterval(movie), [movie]);
+  const [showSkipIntro, setShowSkipIntro] = useState(false);
+  const [showSkipRecap, setShowSkipRecap] = useState(false);
+  const hasSkippedIntroRef = useRef(false);
+  const hasSkippedRecapRef = useRef(false);
+
+  // --- Playback Recovery Feature Setup ---
+  const [isRecovering, setIsRecovering] = useState(false);
+  const recoveryAttemptRef = useRef(0);
+  const recoveryTimerRef = useRef<any>(null);
+
   const updateActiveSubtitle = useCallback(() => {
     if (!player || !activeSubtitleTrack || !activeSubtitleTrack.cues) {
       setActiveSubtitleCueText(null);
@@ -632,6 +696,23 @@ export const VideoPlayerScreen = () => {
       setShowControls(false);
     }, 8000);
   }, []);
+
+  const handleSelectSpeed = useCallback(
+    (speed: PlaybackSpeed) => {
+      const fromSpeed = playbackSpeed;
+      setPlaybackSpeed(speed);
+      setIsSpeedModalOpen(false);
+      resetHideTimer();
+      applyPlaybackSpeed(player, speed, shakaPlayerRef.current);
+      playbackSessionManager
+        .recordPlaybackSpeedChanged({
+          fromSpeed,
+          toSpeed: speed,
+        })
+        .catch(() => {});
+    },
+    [playbackSpeed, player, resetHideTimer],
+  );
 
   const handleSelectSubtitleTrack = useCallback(
     async (trackId: string) => {
@@ -1379,23 +1460,97 @@ export const VideoPlayerScreen = () => {
       if (!disposed) {
         console.log('Player error event:', evt);
         const playerErr = player?.error || evt;
-        setVideoError(
-          player?.error?.message ||
-            (typeof evt?.message === 'string'
-              ? evt.message
-              : strings.errors.videoPlaybackUnavailable),
-        );
-        playbackSessionManager
-          .recordPlaybackError(playerErr, {
-            position: player?.currentTime || 0,
-            isFatal: true,
-          })
-          .catch(() => {});
+        const currentPos = player?.currentTime || playbackTimeRef.current;
+        const isRecoverable = isRecoverablePlaybackError(playerErr);
+
+        if (
+          isRecoverable &&
+          recoveryAttemptRef.current < MAX_RECOVERY_ATTEMPTS
+        ) {
+          const attempt = recoveryAttemptRef.current + 1;
+          recoveryAttemptRef.current = attempt;
+          setIsRecovering(true);
+
+          playbackSessionManager
+            .recordPlaybackError(playerErr, {
+              position: currentPos,
+              isFatal: false,
+            })
+            .catch(() => {});
+
+          playbackSessionManager
+            .recordPlaybackRecoveryStarted({
+              attempt,
+              maxAttempts: MAX_RECOVERY_ATTEMPTS,
+              position: currentPos,
+              error:
+                playerErr?.message ||
+                (typeof evt === 'string' ? evt : undefined),
+            })
+            .catch(() => {});
+
+          const delay = calculateBackoffDelay(attempt);
+          if (recoveryTimerRef.current) {
+            clearTimeout(recoveryTimerRef.current);
+          }
+          recoveryTimerRef.current = setTimeout(() => {
+            if (disposed) {
+              return;
+            }
+            try {
+              if (player) {
+                player.src = videoUrl;
+                if (currentPos > 0 && player.currentTime !== undefined) {
+                  player.currentTime = currentPos;
+                }
+                Promise.resolve(player.play?.()).catch(() => {});
+              }
+            } catch (retryErr) {
+              console.log('Automatic recovery retry error:', retryErr);
+            }
+          }, delay);
+        } else {
+          setIsRecovering(false);
+          if (recoveryAttemptRef.current >= MAX_RECOVERY_ATTEMPTS) {
+            playbackSessionManager
+              .recordPlaybackRecoveryFailed({
+                attempts: MAX_RECOVERY_ATTEMPTS,
+                error:
+                  playerErr?.message ||
+                  (typeof evt === 'string' ? evt : undefined),
+                isFatal: true,
+              })
+              .catch(() => {});
+          }
+
+          setVideoError(
+            player?.error?.message ||
+              (typeof evt?.message === 'string'
+                ? evt.message
+                : strings.errors.videoPlaybackUnavailable),
+          );
+          playbackSessionManager
+            .recordPlaybackError(playerErr, {
+              position: currentPos,
+              isFatal: true,
+            })
+            .catch(() => {});
+        }
       }
     };
 
     const handlePlaybackStarted = () => {
       if (!disposed && !playbackSessionManager.hasPlaybackStarted()) {
+        if (recoveryAttemptRef.current > 0) {
+          playbackSessionManager
+            .recordPlaybackRecoverySucceeded({
+              attempt: recoveryAttemptRef.current,
+              position: player?.currentTime || 0,
+            })
+            .catch(() => {});
+          recoveryAttemptRef.current = 0;
+          setIsRecovering(false);
+        }
         playbackSessionManager
           .recordPlaybackStarted({
             startPosition: player?.currentTime || 0,
@@ -1409,6 +1564,16 @@ export const VideoPlayerScreen = () => {
       if (!disposed) {
         if (!playbackSessionManager.hasPlaybackStarted()) {
           handlePlaybackStarted();
+        }
+        if (recoveryAttemptRef.current > 0) {
+          playbackSessionManager
+            .recordPlaybackRecoverySucceeded({
+              attempt: recoveryAttemptRef.current,
+              position: player?.currentTime || 0,
+            })
+            .catch(() => {});
+          recoveryAttemptRef.current = 0;
+          setIsRecovering(false);
         }
         if (!playbackSessionManager.hasFirstFrameRendered()) {
           playbackSessionManager
@@ -1429,6 +1594,24 @@ export const VideoPlayerScreen = () => {
           setPlaybackTime(player.currentTime);
           if (player.currentTime > 0) {
             handleFirstFrame();
+          }
+
+          if (!isLive) {
+            const inIntro =
+              !hasSkippedIntroRef.current &&
+              isPositionInInterval(player.currentTime, introInterval);
+            const inRecap =
+              !hasSkippedRecapRef.current &&
+              isPositionInInterval(player.currentTime, recapInterval);
+            setShowSkipIntro(inIntro);
+            setShowSkipRecap(inRecap);
+
+            if (introInterval && player.currentTime < introInterval.start) {
+              hasSkippedIntroRef.current = false;
+            }
+            if (recapInterval && player.currentTime < recapInterval.start) {
+              hasSkippedRecapRef.current = false;
+            }
           }
         }
         if (
@@ -1771,6 +1954,10 @@ export const VideoPlayerScreen = () => {
         clearTimeout(sourceTimerRef.current);
         sourceTimerRef.current = null;
       }
+      if (recoveryTimerRef.current) {
+        clearTimeout(recoveryTimerRef.current);
+        recoveryTimerRef.current = null;
+      }
       if (player?.removeEventListener) {
         player.removeEventListener('loadstart', onLoadStart);
         player.removeEventListener('error', onError);
@@ -1913,11 +2100,35 @@ export const VideoPlayerScreen = () => {
       if (!ep) {
         return;
       }
+
+      // Pre-playback entitlement / access policy verification
+      if (activeProfile && !canProfileAccessContent(activeProfile, ep)) {
+        setVideoError(strings.parentalControls.contentRestrictedMessage);
+        setIsNextEpisodeModalOpen(false);
+        return;
+      }
+
       if (countdownTimerRef.current) {
         clearInterval(countdownTimerRef.current);
         countdownTimerRef.current = null;
       }
       setIsNextEpisodeModalOpen(false);
+
+      if (targetEpisode) {
+        playbackSessionManager
+          .recordNextEpisodeSelected({
+            nextEpisodeId: ep.id,
+            selectionType: 'list_select',
+          })
+          .catch(() => {});
+      } else {
+        playbackSessionManager
+          .recordNextEpisodeSelected({
+            nextEpisodeId: ep.id,
+            selectionType: 'play_now',
+          })
+          .catch(() => {});
+      }
 
       playbackSessionManager
         .recordStop({
@@ -1973,7 +2184,7 @@ export const VideoPlayerScreen = () => {
         sourceScreen: 'VideoPlayer',
       });
     },
-    [movie, navigation, resolvedNextEpisode],
+    [activeProfile, movie, navigation, resolvedNextEpisode, userProfile],
   );
 
   const handlePlayNextEpisodeRef = useRef(handlePlayNextEpisode);
@@ -2002,6 +2213,13 @@ export const VideoPlayerScreen = () => {
     const isAuto = isAutoplayEnabled(userProfile, activeProfile);
     setNextEpisodeCountdown(DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS);
     setIsNextEpisodeModalOpen(true);
+    playbackSessionManager
+      .recordNextEpisodeImpression({
+        nextEpisodeId: resolvedNextEpisode.id,
+        countdownSeconds: DEFAULT_NEXT_EPISODE_COUNTDOWN_SECONDS,
+        isAutoplay: isAuto,
+      })
+      .catch(() => {});
 
     if (countdownTimerRef.current) {
       clearInterval(countdownTimerRef.current);
@@ -2018,6 +2236,12 @@ export const VideoPlayerScreen = () => {
             clearInterval(countdownTimerRef.current);
             countdownTimerRef.current = null;
           }
+          playbackSessionManager
+            .recordAutoplayStarted({
+              nextEpisodeId: resolvedNextEpisode.id,
+              seriesId: resolvedNextEpisode.seriesId,
+            })
+            .catch(() => {});
           handlePlayNextEpisodeRef.current();
         }
       }, 1000);
@@ -2079,6 +2303,44 @@ export const VideoPlayerScreen = () => {
     },
     [isLive, persistProgress, player, resetHideTimer],
   );
+
+  const handleSkipIntroInterval = useCallback(() => {
+    if (!introInterval) {
+      return;
+    }
+    hasSkippedIntroRef.current = true;
+    setShowSkipIntro(false);
+    resetHideTimer();
+    const current = playbackTimeRef.current;
+    handleUserSeek(introInterval.end);
+    playbackSessionManager
+      .recordSkipIntroSelected({
+        position: current,
+        targetPosition: introInterval.end,
+        introStart: introInterval.start,
+        introEnd: introInterval.end,
+      })
+      .catch(() => {});
+  }, [handleUserSeek, introInterval, resetHideTimer]);
+
+  const handleSkipRecapInterval = useCallback(() => {
+    if (!recapInterval) {
+      return;
+    }
+    hasSkippedRecapRef.current = true;
+    setShowSkipRecap(false);
+    resetHideTimer();
+    const current = playbackTimeRef.current;
+    handleUserSeek(recapInterval.end);
+    playbackSessionManager
+      .recordSkipRecapSelected({
+        position: current,
+        targetPosition: recapInterval.end,
+        recapStart: recapInterval.start,
+        recapEnd: recapInterval.end,
+      })
+      .catch(() => {});
+  }, [handleUserSeek, recapInterval, resetHideTimer]);
 
   useEffect(() => {
     if (!player) {
@@ -2310,6 +2572,8 @@ export const VideoPlayerScreen = () => {
   isVideoQualityModalOpenRef.current = isVideoQualityModalOpen;
   const isNextEpisodeModalOpenRef = useRef(isNextEpisodeModalOpen);
   isNextEpisodeModalOpenRef.current = isNextEpisodeModalOpen;
+  const isSpeedModalOpenRef = useRef(isSpeedModalOpen);
+  isSpeedModalOpenRef.current = isSpeedModalOpen;
   const isBackFocusedRef = useRef(isBackFocused);
   isBackFocusedRef.current = isBackFocused;
   const isCCFocusedRef = useRef(isCCFocused);
@@ -2318,6 +2582,8 @@ export const VideoPlayerScreen = () => {
   isAudioFocusedRef.current = isAudioFocused;
   const isQualityFocusedRef = useRef(isQualityFocused);
   isQualityFocusedRef.current = isQualityFocused;
+  const isSpeedFocusedRef = useRef(isSpeedFocused);
+  isSpeedFocusedRef.current = isSpeedFocused;
 
   const handleBackFocus = () => {
     resetHideTimer();
@@ -2337,6 +2603,11 @@ export const VideoPlayerScreen = () => {
     }
     if (isVideoQualityModalOpenRef.current) {
       setIsVideoQualityModalOpen(false);
+      resetHideTimer();
+      return;
+    }
+    if (isSpeedModalOpenRef.current) {
+      setIsSpeedModalOpen(false);
       resetHideTimer();
       return;
     }
@@ -2397,6 +2668,7 @@ export const VideoPlayerScreen = () => {
           isSubtitlesModalOpenRef.current ||
           isAudioTracksModalOpenRef.current ||
           isVideoQualityModalOpenRef.current ||
+          isSpeedModalOpenRef.current ||
           isNextEpisodeModalOpenRef.current;
 
         if (evt.eventType === 'back') {
@@ -2469,6 +2741,10 @@ export const VideoPlayerScreen = () => {
               setIsVideoQualityModalOpen(true);
               break;
             }
+            if (isSpeedFocusedRef.current) {
+              setIsSpeedModalOpen(true);
+              break;
+            }
             if (!showControlsRef.current) {
               togglePlayback().catch(() => {});
             }
@@ -2531,6 +2807,7 @@ export const VideoPlayerScreen = () => {
       <SubtitleOverlay
         currentCueText={activeSubtitleCueText}
         isControlsVisible={showControls}
+        appearance={subtitleAppearance}
       />
 
       {videoError && (
@@ -2587,6 +2864,8 @@ export const VideoPlayerScreen = () => {
                 style={styles.retryButton}
                 onPress={() => {
                   setVideoError(null);
+                  recoveryAttemptRef.current = 0;
+                  setIsRecovering(false);
                   if (useShakaPlayer) {
                     navigation.replace(Routes.VideoPlayer, route.params);
                     return;
@@ -2771,6 +3050,39 @@ export const VideoPlayerScreen = () => {
               )}
             </TouchableOpacity>
 
+            {/* Top Video Speed Status Badge - Shows selected speed e.g. 1x or 1.5x */}
+            {!isLive && (
+              <TouchableOpacity
+                style={[
+                  styles.topSpeedBadge,
+                  playbackSpeed !== DEFAULT_PLAYBACK_SPEED &&
+                    styles.topSpeedBadgeActive,
+                  isSpeedFocused && styles.topSpeedBadgeFocused,
+                ]}
+                onFocus={() => {
+                  resetHideTimer();
+                  setIsSpeedFocused(true);
+                }}
+                onBlur={() => setIsSpeedFocused(false)}
+                onPress={() => {
+                  resetHideTimer();
+                  setIsSpeedModalOpen(true);
+                }}
+                activeOpacity={0.8}
+                accessibilityRole="button"
+                accessibilityLabel={strings.accessibility.speedButton(
+                  `${playbackSpeed}x`,
+                )}
+                testID="player-speed-button">
+                <Text style={styles.speedBadgeTag}>
+                  {strings.playerControls.speedBadge || 'SPEED'}
+                </Text>
+                <Text style={styles.speedLabelText}>
+                  {`Speed: ${playbackSpeed}x`}
+                </Text>
+              </TouchableOpacity>
+            )}
+
             <View
               style={styles.seekbarBadge}
               pointerEvents="none"
@@ -2887,6 +3199,48 @@ export const VideoPlayerScreen = () => {
         onPlayNow={(targetEp) => handlePlayNextEpisode(targetEp)}
         onCancel={handleCancelNextEpisode}
         onSelectEpisode={(targetEp) => handlePlayNextEpisode(targetEp)}
+      />
+
+      {/* Skip Intro Floating Prompt */}
+      {showSkipIntro && introInterval && (
+        <SkipIntervalPrompt
+          isVisible={showSkipIntro}
+          type="intro"
+          targetPosition={introInterval.end}
+          onSkip={handleSkipIntroInterval}
+          onInteraction={resetHideTimer}
+        />
+      )}
+
+      {/* Skip Recap Floating Prompt */}
+      {showSkipRecap && recapInterval && (
+        <SkipIntervalPrompt
+          isVisible={showSkipRecap}
+          type="recap"
+          targetPosition={recapInterval.end}
+          onSkip={handleSkipRecapInterval}
+          onInteraction={resetHideTimer}
+        />
+      )}
+
+      {/* Automatic Playback Recovery Banner */}
+      {isRecovering && (
+        <View style={styles.recoveryBanner} testID="playback-recovery-banner">
+          <Text style={styles.recoveryBannerText}>
+            Recovering playback...
+          </Text>
+        </View>
+      )}
+
+      {/* Playback Speed Selection Modal */}
+      <PlaybackSpeedModal
+        isOpen={isSpeedModalOpen}
+        currentSpeed={playbackSpeed}
+        onSelectSpeed={handleSelectSpeed}
+        onClose={() => {
+          setIsSpeedModalOpen(false);
+          resetHideTimer();
+        }}
       />
     </TVFocusGuideView>
   );

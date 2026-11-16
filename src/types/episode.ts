@@ -22,6 +22,12 @@ export interface EpisodeItem {
   director?: string;
   seekbarType?: any;
   progress?: number;
+  intro?: {start: number; end: number};
+  introStart?: number;
+  introEnd?: number;
+  recap?: {start: number; end: number};
+  recapStart?: number;
+  recapEnd?: number;
 }
 
 export interface NextEpisodeState {

@@ -123,6 +123,12 @@ export interface HomeContentItem {
   seriesId?: string;
   duration?: string;
   releaseYear?: number;
+  intro?: {start: number; end: number};
+  introStart?: number;
+  introEnd?: number;
+  recap?: {start: number; end: number};
+  recapStart?: number;
+  recapEnd?: number;
 }
 
 export interface HomeContentRow {

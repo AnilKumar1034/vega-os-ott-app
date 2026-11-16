@@ -1,5 +1,7 @@
 {
   "preset": "react-native",
+  "watchman": false,
+  "testTimeout": 15000,
   "transform": {
     "^.+\\.tsx?$": [
       "ts-jest",

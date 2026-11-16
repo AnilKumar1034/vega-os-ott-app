@@ -72,6 +72,17 @@ export const AnalyticsEvent = {
   SUBSCRIPTION_STATUS_REFRESHED: 'subscription_status_refreshed',
   SUBSCRIPTION_ACCESS_GRANTED: 'subscription_access_granted',
   SUBSCRIPTION_PLAN_SELECTED: 'subscription_plan_selected',
+  SKIP_INTRO_SELECTED: 'skip_intro_selected',
+  SKIP_RECAP_SELECTED: 'skip_recap_selected',
+  NEXT_EPISODE_IMPRESSION: 'next_episode_impression',
+  NEXT_EPISODE_SELECTED: 'next_episode_selected',
+  AUTOPLAY_STARTED: 'autoplay_started',
+  PLAYBACK_SPEED_CHANGED: 'playback_speed_changed',
+  AUDIO_PREFERENCE_APPLIED: 'audio_preference_applied',
+  SUBTITLE_PREFERENCE_APPLIED: 'subtitle_preference_applied',
+  PLAYBACK_RECOVERY_STARTED: 'playback_recovery_started',
+  PLAYBACK_RECOVERY_SUCCEEDED: 'playback_recovery_succeeded',
+  PLAYBACK_RECOVERY_FAILED: 'playback_recovery_failed',
 } as const;
 
 export type AnalyticsEventName =

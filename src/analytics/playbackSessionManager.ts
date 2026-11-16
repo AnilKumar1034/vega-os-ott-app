@@ -1,4 +1,5 @@
 import {AnalyticsService, analyticsService} from './analyticsService';
+import {AnalyticsEvent} from './analyticsEvents';
 import {
   AudioTrackChangedParams,
   BitrateChangedParams,
@@ -1806,6 +1807,299 @@ export class PlaybackSessionManager {
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[PlaybackSessionManager] trackGoLive failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Advanced Player: skip_intro_selected
+   */
+  public async recordSkipIntroSelected(params: {
+    position: number;
+    targetPosition: number;
+    introStart?: number;
+    introEnd?: number;
+  }): Promise<void> {
+    if (!this.currentSession) {
+      return;
+    }
+    const base = this.getBasePlaybackParams(this.currentSession);
+    const payload = {
+      ...base,
+      position: params.position,
+      target_position: params.targetPosition,
+      intro_start: params.introStart,
+      intro_end: params.introEnd,
+    };
+    try {
+      await this.analytics.track(AnalyticsEvent.SKIP_INTRO_SELECTED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] recordSkipIntroSelected failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Advanced Player: skip_recap_selected
+   */
+  public async recordSkipRecapSelected(params: {
+    position: number;
+    targetPosition: number;
+    recapStart?: number;
+    recapEnd?: number;
+  }): Promise<void> {
+    if (!this.currentSession) {
+      return;
+    }
+    const base = this.getBasePlaybackParams(this.currentSession);
+    const payload = {
+      ...base,
+      position: params.position,
+      target_position: params.targetPosition,
+      recap_start: params.recapStart,
+      recap_end: params.recapEnd,
+    };
+    try {
+      await this.analytics.track(AnalyticsEvent.SKIP_RECAP_SELECTED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] recordSkipRecapSelected failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Advanced Player: next_episode_impression
+   */
+  public async recordNextEpisodeImpression(params: {
+    nextEpisodeId: string;
+    countdownSeconds?: number;
+    isAutoplay?: boolean;
+  }): Promise<void> {
+    if (!this.currentSession) {
+      return;
+    }
+    const base = this.getBasePlaybackParams(this.currentSession);
+    const payload = {
+      ...base,
+      next_episode_id: params.nextEpisodeId,
+      countdown_seconds: params.countdownSeconds,
+      is_autoplay: params.isAutoplay,
+    };
+    try {
+      await this.analytics.track(AnalyticsEvent.NEXT_EPISODE_IMPRESSION, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] recordNextEpisodeImpression failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Advanced Player: next_episode_selected
+   */
+  public async recordNextEpisodeSelected(params: {
+    nextEpisodeId: string;
+    selectionType?: 'play_now' | 'list_select' | 'countdown';
+  }): Promise<void> {
+    if (!this.currentSession) {
+      return;
+    }
+    const base = this.getBasePlaybackParams(this.currentSession);
+    const payload = {
+      ...base,
+      next_episode_id: params.nextEpisodeId,
+      selection_type: params.selectionType || 'play_now',
+    };
+    try {
+      await this.analytics.track(AnalyticsEvent.NEXT_EPISODE_SELECTED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] recordNextEpisodeSelected failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Advanced Player: autoplay_started
+   */
+  public async recordAutoplayStarted(params: {
+    nextEpisodeId: string;
+    seriesId?: string;
+  }): Promise<void> {
+    if (!this.currentSession) {
+      return;
+    }
+    const base = this.getBasePlaybackParams(this.currentSession);
+    const payload = {
+      ...base,
+      next_episode_id: params.nextEpisodeId,
+      series_id: params.seriesId,
+    };
+    try {
+      await this.analytics.track(AnalyticsEvent.AUTOPLAY_STARTED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] recordAutoplayStarted failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Advanced Player: playback_speed_changed
+   */
+  public async recordPlaybackSpeedChanged(params: {
+    fromSpeed: number;
+    toSpeed: number;
+  }): Promise<void> {
+    if (!this.currentSession) {
+      return;
+    }
+    const base = this.getBasePlaybackParams(this.currentSession);
+    const payload = {
+      ...base,
+      from_speed: params.fromSpeed,
+      to_speed: params.toSpeed,
+    };
+    try {
+      await this.analytics.track(AnalyticsEvent.PLAYBACK_SPEED_CHANGED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] recordPlaybackSpeedChanged failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Advanced Player: audio_preference_applied
+   */
+  public async recordAudioPreferenceApplied(params: {
+    trackId: string;
+    language?: string;
+  }): Promise<void> {
+    if (!this.currentSession) {
+      return;
+    }
+    const base = this.getBasePlaybackParams(this.currentSession);
+    const payload = {
+      ...base,
+      audio_track_id: params.trackId,
+      language: params.language,
+    };
+    try {
+      await this.analytics.track(AnalyticsEvent.AUDIO_PREFERENCE_APPLIED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] recordAudioPreferenceApplied failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Advanced Player: subtitle_preference_applied
+   */
+  public async recordSubtitlePreferenceApplied(params: {
+    trackId: string;
+    language?: string;
+    isOff?: boolean;
+  }): Promise<void> {
+    if (!this.currentSession) {
+      return;
+    }
+    const base = this.getBasePlaybackParams(this.currentSession);
+    const payload = {
+      ...base,
+      subtitle_track_id: params.trackId,
+      language: params.language,
+      is_off: params.isOff ?? (params.trackId === 'off'),
+    };
+    try {
+      await this.analytics.track(AnalyticsEvent.SUBTITLE_PREFERENCE_APPLIED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] recordSubtitlePreferenceApplied failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Advanced Player: playback_recovery_started
+   */
+  public async recordPlaybackRecoveryStarted(params: {
+    attempt: number;
+    maxAttempts?: number;
+    position?: number;
+    error?: string;
+  }): Promise<void> {
+    if (!this.currentSession) {
+      return;
+    }
+    const base = this.getBasePlaybackParams(this.currentSession);
+    const payload = {
+      ...base,
+      recovery_attempt: params.attempt,
+      max_attempts: params.maxAttempts || 3,
+      position: params.position ?? 0,
+      error_message: params.error,
+    };
+    try {
+      await this.analytics.track(AnalyticsEvent.PLAYBACK_RECOVERY_STARTED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] recordPlaybackRecoveryStarted failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Advanced Player: playback_recovery_succeeded
+   */
+  public async recordPlaybackRecoverySucceeded(params: {
+    attempt: number;
+    position?: number;
+  }): Promise<void> {
+    if (!this.currentSession) {
+      return;
+    }
+    const base = this.getBasePlaybackParams(this.currentSession);
+    const payload = {
+      ...base,
+      recovery_attempt: params.attempt,
+      position: params.position ?? 0,
+    };
+    try {
+      await this.analytics.track(AnalyticsEvent.PLAYBACK_RECOVERY_SUCCEEDED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] recordPlaybackRecoverySucceeded failed:', err);
+      }
+    }
+  }
+
+  /**
+   * Advanced Player: playback_recovery_failed
+   */
+  public async recordPlaybackRecoveryFailed(params: {
+    attempts: number;
+    error?: string;
+    isFatal?: boolean;
+  }): Promise<void> {
+    if (!this.currentSession) {
+      return;
+    }
+    const base = this.getBasePlaybackParams(this.currentSession);
+    const payload = {
+      ...base,
+      attempts: params.attempts,
+      error_message: params.error,
+      is_fatal: params.isFatal ?? true,
+    };
+    try {
+      await this.analytics.track(AnalyticsEvent.PLAYBACK_RECOVERY_FAILED, payload);
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[PlaybackSessionManager] recordPlaybackRecoveryFailed failed:', err);
       }
     }
   }
