@@ -1028,7 +1028,11 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
               isPaused ? strings.actions.play : strings.actions.pause
             }
             testID="player-play-pause-toggle">
-            <Text style={styles.playPauseIconText}>
+            <Text
+              style={[
+                styles.playPauseIconText,
+                isPaused && styles.playIconOpticalOffset,
+              ]}>
               {isPaused
                 ? strings.playerControls.pauseAction
                 : strings.playerControls.playAction}
@@ -1111,7 +1115,8 @@ export const PlayerSeekBar: React.FC<PlayerSeekBarProps> = ({
                     accessibilityLabel={strings.nextEpisode.nextEpisodeButton}
                     testID="player-next-episode-button">
                     <Text style={styles.quickActionButtonText}>
-                      ⏭ {strings.nextEpisode.nextEpisodeButton}
+                      <Text style={styles.buttonMicroIcon}>⏭ </Text>
+                      {strings.nextEpisode.nextEpisodeButton}
                     </Text>
                   </TouchableOpacity>
                 )}

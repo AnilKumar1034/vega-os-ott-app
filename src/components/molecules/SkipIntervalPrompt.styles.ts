@@ -1,37 +1,39 @@
 import {StyleSheet} from 'react-native';
-import {fontSizes, fontWeights} from '../../theme/fonts';
-import {borderRadius, spacing} from '../../theme/sizes';
+import {fontWeights} from '../../theme/fonts';
 
 export const styles = StyleSheet.create({
   container: {
     position: 'absolute',
     right: 48,
-    bottom: 104,
+    bottom: 96,
     zIndex: 25,
   },
   button: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(20, 20, 20, 0.88)',
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.4)',
-    borderRadius: borderRadius.md,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    backgroundColor: 'rgba(14, 18, 28, 0.88)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
+    borderRadius: 17,
+    height: 34,
+    paddingHorizontal: 14,
     shadowColor: '#000000',
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.5,
-    shadowRadius: 6,
+    shadowRadius: 8,
     elevation: 8,
   },
   buttonFocused: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#00A8E1',
-    transform: [{scale: 1.05}],
+    borderColor: '#00ADE1',
+    transform: [{scale: 1.04}],
+    shadowColor: '#00ADE1',
+    shadowOpacity: 0.7,
+    shadowRadius: 10,
   },
   icon: {
-    fontSize: 16,
-    marginRight: spacing.sm,
+    fontSize: 10.5,
+    marginRight: 6,
     color: '#FFFFFF',
   },
   iconFocused: {
@@ -39,9 +41,9 @@ export const styles = StyleSheet.create({
   },
   text: {
     color: '#FFFFFF',
-    fontSize: fontSizes.body,
+    fontSize: 10.5,
     fontWeight: fontWeights.bold,
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
   textFocused: {
     color: '#000000',

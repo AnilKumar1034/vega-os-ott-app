@@ -1,9 +1,148 @@
+diff --git a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/CaptionButton.js b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/CaptionButton.js
+index 2fe3145..9cb17bd 100644
+--- a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/CaptionButton.js
++++ b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/CaptionButton.js
+@@ -43,8 +43,9 @@ const react_native_1 = require("react-native");
+ const FloatingButton_1 = __importStar(require("./FloatingButton"));
+ const styles = react_native_1.StyleSheet.create({
+     imageContainer: {
+-        width: "80",
+-        height: "80",
++        width: 32,
++        height: 32,
++        marginHorizontal: 3,
+         alignItems: "center",
+         justifyContent: "center"
+     }
+@@ -56,7 +57,7 @@ const CaptionButton = (0, react_1.forwardRef)((props, ref) => {
+             onPressHandler();
+         }
+     };
+-    return (<react_native_1.View style={styles.imageContainer}>
++    return (<react_native_1.View style={styles.imageContainer} pointerEvents="box-none">
+                 {captionDataAvailable ?
+             <FloatingButton_1.default ref={ref} onPressHandler={onClickHandler} buttonType={captionOff ? FloatingButton_1.ButtonType.CAPTION_DISABLED : FloatingButton_1.ButtonType.CAPTION_ENABLED} {...rest}/> :
+             <FloatingButton_1.default ref={ref} onPressHandler={onClickHandler} buttonType={FloatingButton_1.ButtonType.CAPTION_NOT_AVAILABLE} {...rest}/>}
 diff --git a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/FloatingButton.js b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/FloatingButton.js
-index 3aba614..da0fcc3 100644
+index 3aba614..5eeb51e 100644
 --- a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/FloatingButton.js
 +++ b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/FloatingButton.js
-@@ -162,7 +162,7 @@ const styles = react_native_1.StyleSheet.create({
-         fontSize: 50
+@@ -106,63 +106,98 @@ const FloatingButton = (0, react_1.forwardRef)((props, ref) => {
+         default: button = null;
+     }
+     const isPlayPauseButton = buttonType === ButtonType.PLAY || buttonType === ButtonType.PAUSE;
+-    return (<react_native_1.TouchableOpacity accessibilityLabel={buttonType} accessibilityRole={"button"} hasTVPreferredFocus={hasTVPreferredFocus} ref={ref} onFocus={() => {
++    return (<react_native_1.TouchableOpacity
++        accessibilityLabel={buttonType}
++        accessibilityRole={"button"}
++        hasTVPreferredFocus={hasTVPreferredFocus}
++        focusable={true}
++        hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
++        ref={ref}
++        onFocus={() => {
+             updateColor(styles.pressedColor.color);
+-        }} onBlur={() => {
++        }}
++        onBlur={() => {
+             updateColor('');
+-        }} onPress={(e) => {
+-            onPressHandler();
+-            e.stopPropagation();
+-        }} onPressIn={() => {
++        }}
++        onPress={(e) => {
++            try {
++                if (onPressHandler) {
++                    onPressHandler();
++                }
++                if (e && typeof e.stopPropagation === 'function') {
++                    e.stopPropagation();
++                }
++            } catch (err) {
++                console.warn('[FloatingButton] onPress error:', err);
++            }
++        }}
++        onPressIn={() => {
+             updateColor(styles.pressedColor.color);
+-        }} onPressOut={() => {
++        }}
++        onPressOut={() => {
+             updateColor('');
+-        }} {...rest} activeOpacity={1}>
++        }}
++        {...rest}
++        activeOpacity={0.8}>
+             <react_native_1.View nativeID={"FloatingButtonContainer"} style={[isPlayPauseButton ? styles.backgroundContainerPlayPause : styles.backgroundContainer,
+             value != null && styles.playbackContainer,
+-            { backgroundColor: color }]}>
++            color ? { backgroundColor: color, borderColor: color } : null]}>
+                 {button}
+             </react_native_1.View>
+         </react_native_1.TouchableOpacity>);
+ });
+ const styles = react_native_1.StyleSheet.create({
+     backgroundContainerPlayPause: {
+-        width: 230,
+-        height: 230,
++        width: 58,
++        height: 58,
+         alignItems: 'center',
+         justifyContent: 'center',
+         alignContent: 'center',
+-        borderRadius: 115,
+-        bottom: 30,
+-        right: 30
++        borderRadius: 29,
++        backgroundColor: 'rgba(0, 0, 0, 0.5)',
++        borderWidth: 1.5,
++        borderColor: 'rgba(255, 255, 255, 0.25)',
++        bottom: 0,
++        right: 0
+     },
+     backgroundContainer: {
+-        width: 80,
+-        height: 80,
++        width: 32,
++        height: 32,
+         alignItems: 'center',
+         justifyContent: 'center',
+-        borderRadius: 40
++        borderRadius: 16,
++        backgroundColor: 'rgba(0, 0, 0, 0.45)'
+     },
+     playbackContainer: {
+-        minWidth: 160,
++        minWidth: 38,
+         width: 'auto',
++        height: 32,
++        alignItems: 'center',
++        justifyContent: 'center',
++        paddingHorizontal: 6,
++        borderRadius: 16,
+         overflow: 'hidden'
+     },
+     imageContainer: {
+-        width: 60,
+-        height: 60,
++        width: 18,
++        height: 18,
++        resizeMode: 'contain'
+     },
+     playPauseImageContainer: {
+-        width: 170,
+-        height: 170,
++        width: 28,
++        height: 28,
++        resizeMode: 'contain'
+     },
+     textButton: {
+         fontFamily: DEFAULT_FONT_FAMILY,
+         color: 'white',
+-        fontSize: 50
++        fontSize: 13,
++        fontWeight: 'bold',
++        textAlign: 'center',
++        includeFontPadding: false
      },
      pressedColor: {
 -        color: 'rgba(43, 47, 53, 0.4)'
@@ -11,16 +150,332 @@ index 3aba614..da0fcc3 100644
      }
  });
  exports.default = FloatingButton;
+diff --git a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/FloatingList.js b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/FloatingList.js
+index 042193e..6b6c557 100644
+--- a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/FloatingList.js
++++ b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/FloatingList.js
+@@ -49,7 +49,9 @@ const FloatingList = (0, react_1.forwardRef)((props, ref) => {
+     const refItems = (0, react_1.useRef)([]);
+     refItems.current = data.map((_, i) => refItems.current[i] ?? React.createRef());
+     (0, react_1.useEffect)(() => {
+-        refItems.current[0].current.focus();
++        try {
++            refItems.current[0]?.current?.focus?.();
++        } catch (_) {}
+     }, []);
+     const renderItem = ({ item, index }) => (<FocusableButton_1.default title={item.value} ref={refItems.current[index]} selected={item.id === selectedId} onPress={() => {
+             setSelectedId(item.id);
 diff --git a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/FocusableButton.js b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/FocusableButton.js
-index 237565d..9df96e7 100644
+index 237565d..87590be 100644
 --- a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/FocusableButton.js
 +++ b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/FocusableButton.js
-@@ -49,7 +49,7 @@ const DEFAULT_STYLE = react_native_1.StyleSheet.create({
-         justifyContent: 'center'
+@@ -41,24 +41,27 @@ const react_native_1 = require("react-native");
+ const DEFAULT_FONT_FAMILY = 'Amazon-Ember-Regular';
+ const DEFAULT_STYLE = react_native_1.StyleSheet.create({
+     BUTTON: {
+-        minWidth: 140,
+-        backgroundColor: '#7F7F7F',
+-        paddingVertical: 10,
++        minWidth: 90,
++        backgroundColor: '#23272E',
++        paddingVertical: 6,
+         paddingLeft: 10,
+-        paddingRight: 50,
+-        justifyContent: 'center'
++        paddingRight: 24,
++        justifyContent: 'center',
++        borderBottomWidth: 1,
++        borderBottomColor: '#2F343B'
      },
      BUTTON_FOCUSED: {
 -        backgroundColor: '#2B2F35'
 +        backgroundColor: '#E50914'
      },
      TITLE: {
-         color: 'black',
+-        color: 'black',
++        color: '#FFFFFF',
+         fontFamily: DEFAULT_FONT_FAMILY,
+-        fontSize: 20
++        fontSize: 13
+     },
+     TITLE_SELECTED: {
+         fontWeight: 'bold',
+-        fontSize: 23
++        fontSize: 13,
++        color: '#FFFFFF'
+     }
+ });
+ const FocusableButton = (0, react_1.forwardRef)((props, ref) => {
+diff --git a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/MediaControls.js b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/MediaControls.js
+index bd41956..4cac346 100644
+--- a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/MediaControls.js
++++ b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/MediaControls.js
+@@ -73,46 +73,54 @@ const styles = react_native_1.StyleSheet.create({
+         backgroundColor: 'rgba(0, 0, 0, 0.5)'
+     },
+     otherOptionsContainer: {
+-        bottom: 0,
+-        right: 0,
+-        padding: 5,
++        bottom: 12,
++        right: 20,
++        padding: 2,
+         position: 'absolute',
+         flexDirection: 'row',
+         justifyContent: 'flex-end',
+-        alignItems: 'flex-end'
++        alignItems: 'center'
+     },
+     captionList: {
+         position: 'absolute',
+-        right: 10,
+-        bottom: 90,
++        right: 20,
++        bottom: 50,
+     },
+     playbackSpeedList: {
+         position: 'absolute',
+-        right: 10,
+-        bottom: 90,
++        right: 20,
++        bottom: 50,
+     },
+     imageContainer: {
+-        width: 80,
+-        height: 80,
++        width: 32,
++        height: 32,
++        marginHorizontal: 3,
++        alignItems: 'center',
++        justifyContent: 'center'
+     },
+     playPauseImageContainer: {
+-        width: 170,
+-        height: 170,
++        width: 58,
++        height: 58,
++        alignItems: 'center',
++        justifyContent: 'center'
+     },
+     imageContainerForPlaybackButton: {
+-        minWidth: 160,
++        minWidth: 38,
+         width: 'auto',
+-        height: 80
++        height: 32,
++        marginHorizontal: 3,
++        alignItems: 'center',
++        justifyContent: 'center'
+     },
+     slider: {
+         width: '100%',
+         position: 'absolute',
+-        bottom: 125,
++        bottom: 74,
+     },
+     seekBox: {
+         width: '100%',
+         position: 'absolute',
+-        bottom: 50,
++        bottom: 46,
+         flexDirection: 'row',
+         justifyContent: 'space-between'
+     },
+@@ -145,6 +153,7 @@ const MediaControls = (props) => {
+     const [isPlaybackListVisible, setIsPlaybackListVisible] = (0, react_1.useState)(false);
+     const captionValue = (0, react_1.useRef)(DEFAULT_CAPTION);
+     const playbackSpeedValue = (0, react_1.useRef)(DEFAULT_PLAYBACK_SPEED);
++    const [playbackSpeedDisplay, setPlaybackSpeedDisplay] = (0, react_1.useState)(DEFAULT_PLAYBACK_SPEED);
+     const captionData = (0, react_1.useRef)(null);
+     const [currentTrackTime, setCurrentTrackTime] = (0, react_1.useState)(0);
+     const [stepValue, setStepValue] = (0, react_1.useState)(DEFAULT_STEP);
+@@ -156,6 +165,9 @@ const MediaControls = (props) => {
+         return () => clearInterval(currentinterval);
+     }, [props.mediaPlayer]);
+     (0, react_1.useEffect)(() => {
++        if (props.mediaPlayer?.textTracks) {
++            captionDataFetch(props.mediaPlayer.textTracks);
++        }
+         setUpEventListener();
+         return () => {
+             removeEventListeners();
+@@ -400,10 +412,17 @@ const MediaControls = (props) => {
+         closeFloatingList();
+         refPlay.current?.focus();
+     };
+-    return (<react_native_1.TouchableOpacity style={styles.container} onPress={onPressHandler} activeOpacity={1}>
+-                <react_native_1.View style={styles.buttonsContainer}>
++    return (<react_native_1.View style={styles.container} pointerEvents="box-none">
++                {(isCaptionListVisible || isPlaybackListVisible) ? (
++                    <react_native_1.TouchableOpacity
++                        style={react_native_1.StyleSheet.absoluteFillObject}
++                        onPress={closeFloatingList}
++                        activeOpacity={1}
++                    />
++                ) : null}
++                <react_native_1.View style={styles.buttonsContainer} pointerEvents="box-none">
+                     {button}
+-                    <react_native_1.View style={styles.seekBox}>
++                    <react_native_1.View style={styles.seekBox} pointerEvents="box-none">
+ 	                    {SliderMetaDataView}
+ 	                 </react_native_1.View>
+ 	                 <react_native_1.View style={styles.slider}>
+@@ -426,6 +445,6 @@ const MediaControls = (props) => {
+                 }} ref={refPlaybackSpeedList}/> : null}
+                     </react_native_1.View>
+                 </react_native_1.View>
+-        </react_native_1.TouchableOpacity>);
++        </react_native_1.View>);
+ };
+ exports.default = MediaControls;
+diff --git a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/SeekBarUI/ProgressBar/ProgressBarUtilities.js b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/SeekBarUI/ProgressBar/ProgressBarUtilities.js
+index 91db726..f26d4f2 100644
+--- a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/SeekBarUI/ProgressBar/ProgressBarUtilities.js
++++ b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/SeekBarUI/ProgressBar/ProgressBarUtilities.js
+@@ -14,18 +14,18 @@ const progressBarTokens = (type) => ({
+         },
+         size: {
+             borderRadius: {
+-                xs: 8,
+-                sm: 8,
+-                md: 10,
+-                lg: 12,
+-                xl: 14
++                xs: 2,
++                sm: 2,
++                md: 3,
++                lg: 3,
++                xl: 4
+             },
+             height: {
+-                xs: 8,
+-                sm: 8,
+-                md: 10,
+-                lg: 12,
+-                xl: 14
++                xs: 3,
++                sm: 4,
++                md: 4,
++                lg: 5,
++                xl: 6
+             },
+             width: {
+                 xs: 350,
+@@ -42,11 +42,11 @@ const progressBarTokens = (type) => ({
+         },
+         size: {
+             borderRadius: {
+-                xs: 8,
+-                sm: 8,
+-                md: 10,
+-                lg: 12,
+-                xl: 14
++                xs: 2,
++                sm: 2,
++                md: 3,
++                lg: 3,
++                xl: 4
+             },
+             width: {
+                 indeterminate: 70
+@@ -65,11 +65,11 @@ const progressBarTokens = (type) => ({
+         },
+         size: {
+             borderRadius: {
+-                xs: 8,
+-                sm: 8,
+-                md: 10,
+-                lg: 12,
+-                xl: 14
++                xs: 2,
++                sm: 2,
++                md: 3,
++                lg: 3,
++                xl: 4
+             }
+         }
+     },
+@@ -81,11 +81,11 @@ const progressBarTokens = (type) => ({
+             }
+         },
+         size: {
+-            xs: 12,
+-            sm: 18,
+-            md: 24,
+-            lg: 36,
+-            xl: 48,
++            xs: 8,
++            sm: 10,
++            md: 12,
++            lg: 14,
++            xl: 16,
+             opacity: {
+                 disabled: 1
+             }
+diff --git a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/SeekBarUI/Slider/tokenResolver.slider.js b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/SeekBarUI/Slider/tokenResolver.slider.js
+index fd07332..3d47029 100644
+--- a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/SeekBarUI/Slider/tokenResolver.slider.js
++++ b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/SeekBarUI/Slider/tokenResolver.slider.js
+@@ -6,10 +6,10 @@
+  */
+ Object.defineProperty(exports, "__esModule", { value: true });
+ exports.resolveProgressBarTokens = exports.resolveMarkerTokens = exports.resolveCenteredNodeTokens = exports.resolveTimeShiftIndicatorTokens = exports.resolveBarContainerTokens = exports.resolveThumbDotTokens = exports.resolveThumbContainerTokens = exports.thumbRippleRadius = exports.thumbRippleSize = void 0;
+-exports.thumbRippleSize = 80;
++exports.thumbRippleSize = 32;
+ exports.thumbRippleRadius = exports.thumbRippleSize / 2;
+-const thumbSize = 24;
+-const thumbColor = 'red';
++const thumbSize = 14;
++const thumbColor = '#E50914';
+ const resolveThumbContainerTokens = () => {
+     return {
+         zIndex: 1,
+diff --git a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/SliderMetaData.js b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/SliderMetaData.js
+index 995f9d8..0a1ca85 100644
+--- a/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/SliderMetaData.js
++++ b/node_modules/@amazon-devices/react-native-w3cmedia/dist/components/mediacontrols/SliderMetaData.js
+@@ -22,29 +22,31 @@ const react_native_1 = require("react-native");
+ const styles = react_native_1.StyleSheet.create({
+     seekContainer: {
+         width: '100%',
+-        bottom: 25,
++        bottom: 0,
+         position: 'absolute',
+         flexDirection: 'row',
+         justifyContent: 'space-between',
+-        paddingLeft: "2%",
+-        paddingRight: "2%",
++        paddingLeft: 24,
++        paddingRight: 24,
+     },
+     seekValue: {
+-        padding: 10,
++        paddingVertical: 3,
++        paddingHorizontal: 8,
+         color: '#fafafa',
+-        fontSize: 20,
+-        fontWeight: '500',
+-        backgroundColor: 'rgba(33, 33, 33, 0.23)',
+-        borderRadius: 5,
++        fontSize: 13,
++        fontWeight: '600',
++        backgroundColor: 'rgba(15, 15, 20, 0.6)',
++        borderRadius: 4,
+         fontFamily: 'Amazon Ember Display'
+     },
+     liveValue: {
+-        padding: 10,
++        paddingVertical: 3,
++        paddingHorizontal: 8,
+         color: '#fafafa',
+-        fontSize: 20,
+-        fontWeight: '500',
+-        backgroundColor: 'rgba(33, 33, 33, 0.23)',
+-        borderRadius: 5,
++        fontSize: 13,
++        fontWeight: '600',
++        backgroundColor: 'rgba(15, 15, 20, 0.6)',
++        borderRadius: 4,
+         fontFamily: 'Amazon Ember Display'
+     }
+ });

@@ -2745,7 +2745,7 @@ export const VideoPlayerScreen = () => {
               setIsSpeedModalOpen(true);
               break;
             }
-            if (!showControlsRef.current) {
+            if (!showControlsRef.current && !isPlayerInitialized) {
               togglePlayback().catch(() => {});
             }
             break;
@@ -2782,7 +2782,7 @@ export const VideoPlayerScreen = () => {
         return false;
       }}>
       {/* Backdrop Poster Image at zIndex: 0 */}
-      <ImageBackground
+      <ImageBackground aria-label="TODO"
         source={backdropSource}
         style={styles.backdropPoster}
         imageStyle={styles.backdropImageStyle}
@@ -2822,7 +2822,7 @@ export const VideoPlayerScreen = () => {
               {(!user ||
                 videoError.toLowerCase().includes('sign in') ||
                 videoError.toLowerCase().includes('account')) && (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityHint="TODO"
                   style={styles.retryButton}
                   onPress={() => {
                     navigation.replace(Routes.Login, {
@@ -2832,8 +2832,8 @@ export const VideoPlayerScreen = () => {
                       },
                     });
                   }}
-                  accessibilityRole="button"
-                  accessibilityLabel={strings.actions.signIn}
+                  role="button"
+                  aria-label={strings.actions.signIn}
                   testID="video-login-button">
                   <Text style={styles.retryButtonText}>
                     {strings.actions.signIn}
@@ -2844,15 +2844,15 @@ export const VideoPlayerScreen = () => {
               {(videoError.toLowerCase().includes('subscription') ||
                 videoError.toLowerCase().includes('plan') ||
                 videoError.toLowerCase().includes('renew')) && (
-                <TouchableOpacity
+                <TouchableOpacity accessibilityHint="TODO"
                   style={styles.retryButton}
                   onPress={() => {
                     navigation.navigate(Routes.Subscription, {
                       sourceScreen: 'VideoPlayer',
                     });
                   }}
-                  accessibilityRole="button"
-                  accessibilityLabel="Choose a Plan"
+                  role="button"
+                  aria-label="Choose a Plan"
                   testID="video-subscribe-button">
                   <Text style={styles.retryButtonText}>
                     Choose a Plan
@@ -2860,7 +2860,7 @@ export const VideoPlayerScreen = () => {
                 </TouchableOpacity>
               )}
 
-              <TouchableOpacity
+              <TouchableOpacity accessibilityHint="TODO"
                 style={styles.retryButton}
                 onPress={() => {
                   setVideoError(null);
@@ -2875,8 +2875,8 @@ export const VideoPlayerScreen = () => {
                     Promise.resolve(player.play?.()).catch(() => {});
                   }
                 }}
-                accessibilityRole="button"
-                accessibilityLabel={strings.accessibility.retryVideoPlayback}
+                role="button"
+                aria-label={strings.accessibility.retryVideoPlayback}
                 testID="video-retry-button">
                 <Text style={styles.retryButtonText}>
                   {strings.actions.retry}
@@ -2897,7 +2897,7 @@ export const VideoPlayerScreen = () => {
             style={styles.topHeader}
             pointerEvents="box-none"
             autoFocus>
-            <TouchableOpacity
+            <TouchableOpacity accessibilityHint="TODO"
               ref={(node) => {
                 backButtonRef.current = node;
                 if (node && !backButtonNode) {
@@ -2913,8 +2913,8 @@ export const VideoPlayerScreen = () => {
               onBlur={() => setIsBackFocused(false)}
               onPress={handleBack}
               activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel={strings.accessibility.backToHome}
+              role="button"
+              aria-label={strings.accessibility.backToHome}
               testID="player-back-button">
               <Text style={styles.backButtonText}>
                 {strings.actions.backChevron} {strings.actions.back}
@@ -2933,7 +2933,7 @@ export const VideoPlayerScreen = () => {
             </View>
 
             {/* Top Subtitles Status Badge - Shows selected language or On / Off */}
-            <TouchableOpacity
+            <TouchableOpacity accessibilityHint="TODO"
               style={[
                 styles.topSubtitlesBadge,
                 selectedSubtitleTrackId !== SUBTITLE_OFF_ID &&
@@ -2950,8 +2950,8 @@ export const VideoPlayerScreen = () => {
                 setIsSubtitlesModalOpen(true);
               }}
               activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel={strings.accessibility.subtitlesButton(
+              role="button"
+              aria-label={strings.accessibility.subtitlesButton(
                 selectedSubtitleTrackId === SUBTITLE_OFF_ID
                   ? strings.subtitles.off
                   : activeSubtitleTrack?.label || strings.subtitles.english,
@@ -2970,7 +2970,7 @@ export const VideoPlayerScreen = () => {
             </TouchableOpacity>
 
             {/* Top Audio Status Badge - Shows selected audio track / language */}
-            <TouchableOpacity
+            <TouchableOpacity accessibilityHint="TODO"
               style={[
                 styles.topAudioBadge,
                 styles.topAudioBadgeActive,
@@ -2986,8 +2986,8 @@ export const VideoPlayerScreen = () => {
                 setIsAudioTracksModalOpen(true);
               }}
               activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel={strings.accessibility.audioTracksButton(
+              role="button"
+              aria-label={strings.accessibility.audioTracksButton(
                 activeAudioTrack?.label || strings.audioTracks.original,
               )}
               testID="player-audio-button">
@@ -3002,7 +3002,7 @@ export const VideoPlayerScreen = () => {
             </TouchableOpacity>
 
             {/* Top Video Quality Status Badge - Shows selected quality e.g. Auto or 1080p */}
-            <TouchableOpacity
+            <TouchableOpacity accessibilityHint="TODO"
               style={[
                 styles.topQualityBadge,
                 styles.topQualityBadgeActive,
@@ -3018,8 +3018,8 @@ export const VideoPlayerScreen = () => {
                 setIsVideoQualityModalOpen(true);
               }}
               activeOpacity={0.8}
-              accessibilityRole="button"
-              accessibilityLabel={strings.accessibility.qualityButton(
+              role="button"
+              aria-label={strings.accessibility.qualityButton(
                 activeVideoQuality?.label ||
                   strings.videoQuality?.autoRecommended ||
                   'Auto',
@@ -3052,7 +3052,7 @@ export const VideoPlayerScreen = () => {
 
             {/* Top Video Speed Status Badge - Shows selected speed e.g. 1x or 1.5x */}
             {!isLive && (
-              <TouchableOpacity
+              <TouchableOpacity accessibilityHint="TODO"
                 style={[
                   styles.topSpeedBadge,
                   playbackSpeed !== DEFAULT_PLAYBACK_SPEED &&
@@ -3069,8 +3069,8 @@ export const VideoPlayerScreen = () => {
                   setIsSpeedModalOpen(true);
                 }}
                 activeOpacity={0.8}
-                accessibilityRole="button"
-                accessibilityLabel={strings.accessibility.speedButton(
+                role="button"
+                aria-label={strings.accessibility.speedButton(
                   `${playbackSpeed}x`,
                 )}
                 testID="player-speed-button">
