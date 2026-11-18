@@ -17,6 +17,7 @@ export const Routes = {
   Register: 'Register',
   MyList: 'MyList',
   Subscription: 'Subscription',
+  Shorts: 'Shorts',
 } as const;
 
 export type RouteName = (typeof Routes)[keyof typeof Routes];

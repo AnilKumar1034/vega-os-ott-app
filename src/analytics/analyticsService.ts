@@ -80,6 +80,8 @@ import {
   SubscriptionStatusRefreshedParams,
   SubscriptionPlanSelectedParams,
   SubscriptionVerificationFailedParams,
+  ShortsOpenedParams,
+  ShortsImpressionParams,
 } from './analyticsTypes';
 
 const getAsyncStorage = () => {
@@ -114,6 +116,7 @@ export const SCREEN_CLASS_MAP: Record<string, string> = {
   Register: 'RegisterScreen',
   MyList: 'MyListScreen',
   Subscription: 'SubscriptionScreen',
+  Shorts: 'ShortsScreen',
 };
 
 export class AnalyticsService implements IAnalyticsService {
@@ -2876,6 +2879,38 @@ export class AnalyticsService implements IAnalyticsService {
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackSubscriptionVerificationFailed error:', err);
+      }
+    }
+  }
+
+  public async trackShortsOpened(params: ShortsOpenedParams = {}): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SHORTS_OPENED, {
+        source_screen: params.source_screen || this.currentScreenName || 'Home',
+        initial_short_id: params.initial_short_id || 'none',
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackShortsOpened error:', err);
+      }
+    }
+  }
+
+  public async trackShortsImpression(
+    params: ShortsImpressionParams,
+  ): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SHORTS_IMPRESSION, {
+        short_id: params.short_id,
+        title: params.title,
+        category: params.category || 'all',
+        duration_seconds: params.duration_seconds ?? 0,
+        is_premium: params.is_premium ?? false,
+        aspect_ratio: params.aspect_ratio || '9:16',
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackShortsImpression error:', err);
       }
     }
   }

@@ -83,6 +83,14 @@ export const AnalyticsEvent = {
   PLAYBACK_RECOVERY_STARTED: 'playback_recovery_started',
   PLAYBACK_RECOVERY_SUCCEEDED: 'playback_recovery_succeeded',
   PLAYBACK_RECOVERY_FAILED: 'playback_recovery_failed',
+  SHORTS_OPENED: 'shorts_opened',
+  SHORTS_IMPRESSION: 'shorts_impression',
+  SHORTS_STARTED: 'shorts_started',
+  SHORTS_PAUSED: 'shorts_paused',
+  SHORTS_COMPLETED: 'shorts_completed',
+  SHORTS_SKIPPED: 'shorts_skipped',
+  SHORTS_LIKED: 'shorts_liked',
+  SHORTS_UNLIKED: 'shorts_unliked',
 } as const;
 
 export type AnalyticsEventName =

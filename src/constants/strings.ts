@@ -32,6 +32,22 @@ export const strings = {
     myListHeaderTitle: 'My List',
     myListHeaderSubtitle:
       'Browse handpicked movies saved to your active profile watchlist.',
+    shortsTitle: 'Shorts',
+    shortsDesc: 'Browse bite-sized stories and quick video highlights.',
+  },
+
+  shorts: {
+    title: 'Shorts • Quick Stories',
+    screenTitle: 'LogiXstream Shorts',
+    screenSubtitle: 'Bite-sized stories, previews, and highlights',
+    loading: 'Loading Shorts feed…',
+    noShortsFound: 'No Shorts Found',
+    noShortsMessage:
+      'There are no Shorts available matching your current category filter or profile settings.',
+    browseAll: 'Browse All Shorts',
+    errorTitle: 'Unable to Load Shorts',
+    errorMessage: 'A network error occurred. Please try again.',
+    retry: '↻ Retry',
   },
 
   liveTV: {

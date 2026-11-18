@@ -793,12 +793,72 @@ export interface AnalyticsEventParamsMap {
   content_category_selected: ContentCategorySelectedEventParams;
   recommendation_impression: RecommendationImpressionEventParams;
   recommendation_selected: RecommendationSelectedEventParams;
+  shorts_opened: ShortsOpenedParams;
+  shorts_impression: ShortsImpressionParams;
+  shorts_started: ShortsStartedParams;
+  shorts_paused: ShortsPausedParams;
+  shorts_completed: ShortsCompletedParams;
+  shorts_skipped: ShortsSkippedParams;
+  shorts_liked: ShortsLikedParams;
+  shorts_unliked: ShortsUnlikedParams;
 }
 
 export type AnalyticsEventParams<T extends AnalyticsEventName = AnalyticsEventName> =
   T extends keyof AnalyticsEventParamsMap
     ? AnalyticsEventParamsMap[T]
     : Record<string, unknown>;
+
+export interface ShortsOpenedParams {
+  source_screen?: string;
+  initial_short_id?: string;
+  [key: string]: unknown;
+}
+
+export interface ShortsImpressionParams {
+  short_id: string;
+  title: string;
+  category?: string;
+  duration_seconds?: number;
+  is_premium?: boolean;
+  aspect_ratio?: string;
+  [key: string]: unknown;
+}
+
+export interface ShortsStartedParams {
+  short_id: string;
+  title: string;
+  category?: string;
+  duration_seconds?: number;
+  [key: string]: unknown;
+}
+
+export interface ShortsPausedParams {
+  short_id: string;
+  position_seconds?: number;
+  [key: string]: unknown;
+}
+
+export interface ShortsCompletedParams {
+  short_id: string;
+  duration_seconds?: number;
+  [key: string]: unknown;
+}
+
+export interface ShortsSkippedParams {
+  short_id: string;
+  watch_duration_seconds?: number;
+  [key: string]: unknown;
+}
+
+export interface ShortsLikedParams {
+  short_id: string;
+  [key: string]: unknown;
+}
+
+export interface ShortsUnlikedParams {
+  short_id: string;
+  [key: string]: unknown;
+}
 
 export interface AnalyticsServiceOptions {
   trackAppOpenOnInitialLaunch?: boolean;
@@ -943,6 +1003,8 @@ export interface IAnalyticsService {
   trackSubscriptionStatusRefreshed(params: SubscriptionStatusRefreshedParams): Promise<void>;
   trackSubscriptionPlanSelected(params: SubscriptionPlanSelectedParams): Promise<void>;
   trackSubscriptionVerificationFailed(params: SubscriptionVerificationFailedParams): Promise<void>;
+  trackShortsOpened(params?: ShortsOpenedParams): Promise<void>;
+  trackShortsImpression(params: ShortsImpressionParams): Promise<void>;
   resetRecommendationImpressions(): void;
   syncWatchlistState(profileId: string, contentIds: string[]): void;
   reset(): void;

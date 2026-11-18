@@ -36,6 +36,9 @@ import {
 } from '../services/recommendationService';
 import {analyticsService} from '../analytics';
 import {WatchlistItem} from '../types/watchlist';
+import {shortsApi} from '../features/shorts/services/shortsApi';
+import {ShortsItem} from '../features/shorts/types/shorts.types';
+import {MOCK_SHORTS_DATA} from '../features/shorts/mocks/shorts.mock';
 import {
   canProfileAccessContent,
   filterContentRowsForProfile,
@@ -82,6 +85,29 @@ export const HomeScreen = () => {
   const [viewingHistoryRecords, setViewingHistoryRecords] = useState<
     ViewingHistoryItem[]
   >([]);
+  const [shortsItems, setShortsItems] = useState<ShortsItem[]>(() =>
+    MOCK_SHORTS_DATA.filter((s) => s.status === 'published').slice(0, 8),
+  );
+
+  useEffect(() => {
+    let isCurrent = true;
+    shortsApi
+      .getFeed({limit: 8, profileId: activeProfile?.id})
+      .then((res) => {
+        if (isCurrent && res.data) {
+          setShortsItems(res.data);
+        }
+      })
+      .catch(() => {
+        if (isCurrent) {
+          setShortsItems([]);
+        }
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [activeProfile?.id]);
 
   useEffect(() => {
     deeplinkManager.onDestinationOpened('home').catch(() => {});
@@ -320,12 +346,54 @@ export const HomeScreen = () => {
     };
   }, [recommendations.recentlyAdded]);
 
+  const shortsRow: HomeContentRow | null = useMemo(() => {
+    if (!shortsItems || shortsItems.length === 0) {
+      return null;
+    }
+
+    const items: HomeContentItem[] = shortsItems
+      .filter((item) =>
+        canProfileAccessContent(activeProfile, {
+          maturityRating: item.maturityRating || item.ageRating,
+        }),
+      )
+      .map((item) => ({
+        id: item.id,
+        title: item.title,
+        maturityRating: (item.maturityRating || item.ageRating) as any,
+        image: {uri: item.thumbnailUrl},
+        badge: item.durationSeconds ? `${item.durationSeconds}s` : 'SHORT',
+        description: item.description,
+        genre: item.category || 'Shorts',
+        contentType: 'movie' as const,
+        onPress: () => {
+          analyticsService.trackShortsOpened?.({
+            source_screen: 'Home',
+            initial_short_id: item.id,
+          });
+          navigation.navigate(Routes.Shorts, {shortId: item.id});
+        },
+      } as any));
+
+    if (items.length === 0) {
+      return null;
+    }
+
+    return {
+      id: 'shorts',
+      title: strings.shorts?.title || 'Shorts • Quick Stories',
+      layout: 'portrait',
+      items,
+    };
+  }, [activeProfile, navigation, shortsItems]);
+
   const allowedCatalogRows = useMemo(() => {
     const rawCatalog = homeContentRows.filter(
       (row) =>
         row.id !== 'continue-watching' &&
         row.id !== 'favourites' &&
         row.id !== 'my-list' &&
+        row.id !== 'shorts' &&
         row.id !== 'recommended-for-you' &&
         row.id !== 'because-you-watched' &&
         row.id !== 'recently-added',
@@ -340,6 +408,7 @@ export const HomeScreen = () => {
       ? (homeContentRows.filter((r) => r.id === 'continue-watching') as HomeContentRow[])
       : []),
     ...(watchlistRow ? [watchlistRow] : []),
+    ...(shortsRow ? [shortsRow] : []),
     ...(recommendedForYouRow ? [recommendedForYouRow] : []),
     ...(becauseYouWatchedRow ? [becauseYouWatchedRow] : []),
     ...(recentlyAddedRow ? [recentlyAddedRow] : []),

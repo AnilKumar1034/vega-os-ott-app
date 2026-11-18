@@ -248,6 +248,12 @@ export const ContentCard = ({
 
     if (onPress) {
       onPress();
+    } else if (
+      rowId === 'shorts' ||
+      rowId === 'shorts-row' ||
+      contentType === 'short'
+    ) {
+      navigation.navigate(Routes.Shorts, {shortId: id});
     } else {
       const navParams: Record<string, any> = {
         movie: {
