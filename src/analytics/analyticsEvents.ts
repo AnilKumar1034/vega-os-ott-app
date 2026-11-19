@@ -91,6 +91,7 @@ export const AnalyticsEvent = {
   SHORTS_SKIPPED: 'shorts_skipped',
   SHORTS_LIKED: 'shorts_liked',
   SHORTS_UNLIKED: 'shorts_unliked',
+  SHORTS_PLAYBACK_ERROR: 'shorts_playback_error',
 } as const;
 
 export type AnalyticsEventName =

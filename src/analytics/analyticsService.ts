@@ -82,6 +82,10 @@ import {
   SubscriptionVerificationFailedParams,
   ShortsOpenedParams,
   ShortsImpressionParams,
+  ShortsStartedParams,
+  ShortsPausedParams,
+  ShortsCompletedParams,
+  ShortsPlaybackErrorParams,
 } from './analyticsTypes';
 
 const getAsyncStorage = () => {
@@ -2911,6 +2915,62 @@ export class AnalyticsService implements IAnalyticsService {
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackShortsImpression error:', err);
+      }
+    }
+  }
+
+  public async trackShortsStarted(params: ShortsStartedParams): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SHORTS_STARTED, {
+        category: 'all',
+        duration_seconds: 0,
+        ...params,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackShortsStarted error:', err);
+      }
+    }
+  }
+
+  public async trackShortsPaused(params: ShortsPausedParams): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SHORTS_PAUSED, {
+        position_seconds: 0,
+        ...params,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackShortsPaused error:', err);
+      }
+    }
+  }
+
+  public async trackShortsCompleted(params: ShortsCompletedParams): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SHORTS_COMPLETED, {
+        duration_seconds: 0,
+        ...params,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackShortsCompleted error:', err);
+      }
+    }
+  }
+
+  public async trackShortsPlaybackError(
+    params: ShortsPlaybackErrorParams,
+  ): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SHORTS_PLAYBACK_ERROR, {
+        error_message: 'Playback error',
+        error_code: 'PLAYBACK_ERROR',
+        ...params,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackShortsPlaybackError error:', err);
       }
     }
   }

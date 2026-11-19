@@ -36,6 +36,13 @@ export const SHORTS_TEST_IDS = {
   nextButton: 'shorts-next-button',
   prevButton: 'shorts-prev-button',
   feedRail: 'shorts-feed-rail',
+  player: 'shorts-player',
+  playerSurface: 'shorts-player-surface',
+  playerControls: 'shorts-player-controls',
+  playPauseButton: 'shorts-play-pause-button',
+  replayButton: 'shorts-replay-button',
+  playerErrorRetryButton: 'shorts-player-error-retry-button',
+  playerBuffering: 'shorts-player-buffering',
 };
 
 export const DEFAULT_SHORTS_FALLBACK_THUMBNAIL =

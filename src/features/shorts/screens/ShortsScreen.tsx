@@ -16,6 +16,7 @@ import {ShortsMetadata} from '../components/ShortsMetadata';
 import {ShortsLoading} from '../components/ShortsLoading';
 import {ShortsEmptyState} from '../components/ShortsEmptyState';
 import {ShortsErrorState} from '../components/ShortsErrorState';
+import {ShortsPlayer} from '../components/ShortsPlayer';
 import {
   DEFAULT_SHORTS_FALLBACK_THUMBNAIL,
   SHORTS_TEST_IDS,
@@ -206,44 +207,15 @@ export const ShortsScreen = () => {
             /* Main Content Area */
             <View style={{flex: 1}}>
               <View style={styles.mainStage}>
-                {/* 9:16 Portrait Preview Stage */}
-                <View
+                {/* 9:16 Portrait Video Playback Stage */}
+                <ShortsPlayer
+                  short={selectedShort}
+                  isActive={!loading && !error && !isEmpty}
+                  autoPlay={true}
+                  showControls={true}
+                  testID={SHORTS_TEST_IDS.preview}
                   style={styles.previewContainer}
-                  testID={SHORTS_TEST_IDS.preview}>
-                  <Image
-                    source={{
-                      uri:
-                        imgError || !selectedShort?.thumbnailUrl
-                          ? DEFAULT_SHORTS_FALLBACK_THUMBNAIL
-                          : selectedShort.thumbnailUrl,
-                    }}
-                    onError={() => setImgError(true)}
-                    style={styles.previewImage}
-                    resizeMode="cover"
-                  />
-                  <View style={styles.previewOverlay}>
-                    <View style={styles.previewTopRow}>
-                      <View style={styles.previewDurationBadge}>
-                        <Text style={styles.previewDurationText}>
-                          {selectedShort?.durationSeconds
-                            ? `${selectedShort.durationSeconds}s`
-                            : '9:16'}
-                        </Text>
-                      </View>
-                    </View>
-
-                    {/* Play Hint (Playback planned for Day 2) */}
-                    <View style={styles.previewCenterPlayHint}>
-                      <View style={styles.playIconCircle}>
-                        <Text style={styles.playIconText}>▶</Text>
-                      </View>
-                      <Text style={styles.playNotice}>
-                        Playback active in Day 2
-                      </Text>
-                    </View>
-                    <View />
-                  </View>
-                </View>
+                />
 
                 {/* Metadata Column */}
                 <View style={styles.metadataContainer}>

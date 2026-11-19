@@ -91,3 +91,28 @@ export interface ShortsRecommendationsParams {
   limit?: number;
   profileId?: string;
 }
+
+export type ShortsPlaybackState =
+  | 'idle'
+  | 'loading'
+  | 'playing'
+  | 'paused'
+  | 'buffering'
+  | 'completed'
+  | 'error';
+
+export interface ShortsPlaybackControlsProps {
+  state: ShortsPlaybackState;
+  onPlayPause: () => void;
+  onReplay: () => void;
+  onRetry: () => void;
+  disabled?: boolean;
+}
+
+export interface ShortsPlayerProps {
+  short: ShortsItem | null;
+  isActive: boolean;
+  onCompleted?: (short: ShortsItem) => void;
+  onError?: (short: ShortsItem, error: string) => void;
+  showControls?: boolean;
+}

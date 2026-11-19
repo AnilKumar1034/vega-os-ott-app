@@ -801,6 +801,7 @@ export interface AnalyticsEventParamsMap {
   shorts_skipped: ShortsSkippedParams;
   shorts_liked: ShortsLikedParams;
   shorts_unliked: ShortsUnlikedParams;
+  shorts_playback_error: ShortsPlaybackErrorParams;
 }
 
 export type AnalyticsEventParams<T extends AnalyticsEventName = AnalyticsEventName> =
@@ -857,6 +858,15 @@ export interface ShortsLikedParams {
 
 export interface ShortsUnlikedParams {
   short_id: string;
+  [key: string]: unknown;
+}
+
+export interface ShortsPlaybackErrorParams {
+  short_id: string;
+  error_message?: string;
+  error_code?: string;
+  title?: string;
+  category?: string;
   [key: string]: unknown;
 }
 
