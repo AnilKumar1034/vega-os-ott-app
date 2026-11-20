@@ -57,12 +57,14 @@ export const useShortsPlayback = (
   const playerRef = useRef<any>(null);
   const shortRef = useRef<ShortsItem | null>(short);
   shortRef.current = short;
+  const currentLoadedShortRef = useRef<ShortsItem | null>(null);
   const isActiveRef = useRef<boolean>(isActive);
   isActiveRef.current = isActive;
   const playbackStateRef = useRef<ShortsPlaybackState>(playbackState);
   playbackStateRef.current = playbackState;
   const isUserPausedRef = useRef<boolean>(false);
   const hasTrackedStartRef = useRef<boolean>(false);
+  const completionHandledRef = useRef<boolean>(false);
   const sequenceIdRef = useRef<number>(0);
   const sourceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMountedRef = useRef<boolean>(true);
@@ -71,12 +73,25 @@ export const useShortsPlayback = (
   onCompletedRef.current = onCompleted;
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
+  const surfaceHandleRef = useRef<string | null>(null);
 
   // Initialize single VideoPlayer instance across the hook lifecycle
   if (playerRef.current === null) {
     playerRef.current = createVideoPlayerInstance();
   }
   const player = playerRef.current;
+
+  // Intercept player.setSurfaceHandle to track and restore the native surface
+  useEffect(() => {
+    if (!player) return;
+    const origSetSurface = player.setSurfaceHandle?.bind(player);
+    player.setSurfaceHandle = (handle: string) => {
+      if (handle) {
+        surfaceHandleRef.current = handle;
+      }
+      origSetSurface?.(handle);
+    };
+  }, [player]);
 
   // Helper to load and initialize a Short
   const loadShort = useCallback(
@@ -87,8 +102,27 @@ export const useShortsPlayback = (
         sourceTimerRef.current = null;
       }
 
+      // Track skip for the previous short if it was playing and not completed
+      const previousShort = currentLoadedShortRef.current;
+      if (
+        previousShort &&
+        previousShort.id !== targetShort?.id &&
+        hasTrackedStartRef.current &&
+        playbackStateRef.current !== 'completed' &&
+        playbackStateRef.current !== 'error'
+      ) {
+        analyticsService
+          .trackShortsSkipped({
+            short_id: previousShort.id,
+            watch_duration_seconds: player?.currentTime || 0,
+          })
+          .catch(() => {});
+      }
+
+      currentLoadedShortRef.current = targetShort;
       const seq = ++sequenceIdRef.current;
       hasTrackedStartRef.current = false;
+      completionHandledRef.current = false;
       isUserPausedRef.current = !shouldAutoPlay;
 
       if (!targetShort) {
@@ -124,8 +158,15 @@ export const useShortsPlayback = (
         return;
       }
 
-      // Release previous media session before starting the new Short
-      releasePlayerResourcesSync(player);
+      // Release previous media session only when switching short or retrying after an error
+      const isSwitchingShort = Boolean(
+        previousShort && previousShort.id !== targetShort.id,
+      );
+      const isRetryingFromError = playbackStateRef.current === 'error';
+
+      if (isSwitchingShort || isRetryingFromError) {
+        releasePlayerResourcesSync(player);
+      }
 
       setPlaybackState('loading');
       setErrorMessage(null);
@@ -143,6 +184,15 @@ export const useShortsPlayback = (
         .then(() => {
           if (!isMountedRef.current || seq !== sequenceIdRef.current) {
             return;
+          }
+
+          // Restore surface if previously assigned by KeplerVideoView
+          if (surfaceHandleRef.current && player.setSurfaceHandle) {
+            try {
+              player.setSurfaceHandle(surfaceHandleRef.current);
+            } catch (surfaceErr) {
+              console.log('[ShortsPlayback] Surface restore notice:', surfaceErr);
+            }
           }
 
           // Delay assigning src slightly to allow KeplerVideoView surface attachment
@@ -221,7 +271,7 @@ export const useShortsPlayback = (
 
     const onPlaying = () => {
       setPlaybackState('playing');
-      const current = shortRef.current;
+      const current = currentLoadedShortRef.current;
       if (current && !hasTrackedStartRef.current) {
         hasTrackedStartRef.current = true;
         analyticsService
@@ -251,7 +301,7 @@ export const useShortsPlayback = (
         playbackStateRef.current !== 'idle'
       ) {
         setPlaybackState('paused');
-        const current = shortRef.current;
+        const current = currentLoadedShortRef.current;
         if (current) {
           analyticsService
             .trackShortsPaused({
@@ -264,8 +314,10 @@ export const useShortsPlayback = (
     };
 
     const onEnded = () => {
+      if (completionHandledRef.current) return;
+      completionHandledRef.current = true;
       setPlaybackState('completed');
-      const current = shortRef.current;
+      const current = currentLoadedShortRef.current;
       if (current) {
         analyticsService
           .trackShortsCompleted({
@@ -286,7 +338,7 @@ export const useShortsPlayback = (
         'Unable to play video at this time';
       setPlaybackState('error');
       setErrorMessage(msg);
-      const current = shortRef.current;
+      const current = currentLoadedShortRef.current;
       if (current) {
         analyticsService
           .trackShortsPlaybackError({
@@ -388,6 +440,20 @@ export const useShortsPlayback = (
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
+      const current = currentLoadedShortRef.current;
+      if (
+        current &&
+        hasTrackedStartRef.current &&
+        playbackStateRef.current !== 'completed' &&
+        playbackStateRef.current !== 'error'
+      ) {
+        analyticsService
+          .trackShortsSkipped({
+            short_id: current.id,
+            watch_duration_seconds: playerRef.current?.currentTime || 0,
+          })
+          .catch(() => {});
+      }
       if (sourceTimerRef.current) {
         clearTimeout(sourceTimerRef.current);
         sourceTimerRef.current = null;
@@ -424,6 +490,7 @@ export const useShortsPlayback = (
   const replay = useCallback(() => {
     isUserPausedRef.current = false;
     hasTrackedStartRef.current = false;
+    completionHandledRef.current = false;
     if (player) {
       try {
         if (typeof player.currentTime !== 'undefined') {
@@ -431,7 +498,7 @@ export const useShortsPlayback = (
         }
         Promise.resolve(player.play?.()).catch(() => {});
         setPlaybackState('playing');
-        const current = shortRef.current;
+        const current = currentLoadedShortRef.current;
         if (current) {
           analyticsService
             .trackShortsStarted({

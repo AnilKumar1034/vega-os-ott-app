@@ -2,7 +2,6 @@ import React, {useCallback, useEffect, useRef, useState} from 'react';
 import {
   FlatList,
   Image,
-  ImageBackground,
   ScrollView,
   Text,
   TouchableOpacity,
@@ -17,12 +16,19 @@ import {ShortsLoading} from '../components/ShortsLoading';
 import {ShortsEmptyState} from '../components/ShortsEmptyState';
 import {ShortsErrorState} from '../components/ShortsErrorState';
 import {ShortsPlayer} from '../components/ShortsPlayer';
+import {ShortsActionRail} from '../components/ShortsActionRail';
 import {
   DEFAULT_SHORTS_FALLBACK_THUMBNAIL,
   SHORTS_TEST_IDS,
 } from '../constants/shorts.constants';
 import {analyticsService} from '../../../analytics';
-import {isBackEvent, isKeyDown, isSelectEvent} from '../../../utils/inputUtils';
+import {
+  isBackEvent,
+  isDownEvent,
+  isKeyDown,
+  isSelectEvent,
+  isUpEvent,
+} from '../../../utils/inputUtils';
 import {styles} from './ShortsScreen.styles';
 
 const useSafeNavigation = () => {
@@ -56,6 +62,11 @@ export const ShortsScreen = () => {
     selectShort,
     selectNext,
     selectPrevious,
+    autoPlayNext,
+    toggleLike,
+    toggleSave,
+    isLiking,
+    isSaving,
     retry,
     fetchMore,
     pagination,
@@ -105,7 +116,7 @@ export const ShortsScreen = () => {
     }
   }, [selectedShort]);
 
-  // Handle remote Back button
+  // Handle remote Back, Up, and Down D-pad buttons
   useTVEventHandler((evt) => {
     if (!evt) return;
     if (!isKeyDown(evt.eventKeyAction)) return;
@@ -113,6 +124,17 @@ export const ShortsScreen = () => {
 
     if (isBackEvent(type)) {
       navigation.goBack();
+      return;
+    }
+
+    if (isUpEvent(type)) {
+      selectPrevious();
+      return;
+    }
+
+    if (isDownEvent(type)) {
+      selectNext();
+      return;
     }
   });
 
@@ -136,21 +158,29 @@ export const ShortsScreen = () => {
   );
 
   return (
-    <ImageBackground
-      source={require('../../../assets/background.png')}
-      style={styles.background}
-      testID={SHORTS_TEST_IDS.screen}>
-      <TVFocusGuideView style={styles.container} autoFocus>
+    <View style={styles.container} testID={SHORTS_TEST_IDS.screen}>
+      {/* YouTube TV Living Room Ambient Backdrop */}
+      {selectedShort?.thumbnailUrl ? (
+        <Image
+          source={{uri: selectedShort.thumbnailUrl}}
+          style={styles.ambientBackdrop}
+          blurRadius={20}
+          resizeMode="cover"
+        />
+      ) : null}
+      <View style={styles.ambientOverlay} pointerEvents="none" />
+
+      <TVFocusGuideView style={{flex: 1}} autoFocus>
         <View style={styles.contentGuide}>
           {/* Header */}
           <View style={styles.headerRow} testID={SHORTS_TEST_IDS.header}>
             <View style={styles.headerTitleArea}>
               <View style={styles.headerBadge}>
-                <Text style={styles.headerBadgeText}>SHORTS</Text>
+                <Text style={styles.headerBadgeText}>▶ SHORTS</Text>
               </View>
               <Text style={styles.headerTitle}>LogiXstream Shorts</Text>
               <Text style={styles.headerSubtitle}>
-                Bite-sized stories, previews, and highlights
+                Trending, highlights and stories on your TV
               </Text>
             </View>
           </View>
@@ -207,19 +237,30 @@ export const ShortsScreen = () => {
             /* Main Content Area */
             <View style={{flex: 1}}>
               <View style={styles.mainStage}>
-                {/* 9:16 Portrait Video Playback Stage */}
+                {/* 9:16 Portrait Video Playback Stage with Iconic White Rounded Border */}
                 <ShortsPlayer
                   short={selectedShort}
                   isActive={!loading && !error && !isEmpty}
                   autoPlay={true}
                   showControls={true}
+                  onCompleted={autoPlayNext}
                   testID={SHORTS_TEST_IDS.preview}
                   style={styles.previewContainer}
                 />
 
-                {/* Metadata Column */}
-                <View style={styles.metadataContainer}>
+                {/* Right Info & Actions Panel (matching reference screenshot) */}
+                <View style={styles.rightSidePanel}>
+                  {/* Title ("Swinging" style), Audio Info ("ılı Original sound"), Creator */}
                   <ShortsMetadata item={selectedShort} />
+
+                  {/* Horizontal Action Buttons Row (Thumbs Up, Thumbs Down, Save, More) */}
+                  <ShortsActionRail
+                    short={selectedShort}
+                    onToggleLike={toggleLike}
+                    onToggleSave={toggleSave}
+                    isLikeLoading={isLiking}
+                    isSaveLoading={isSaving}
+                  />
 
                   {/* Previous / Next Navigation Controls */}
                   <View style={styles.navigationControlsRow}>
@@ -268,16 +309,16 @@ export const ShortsScreen = () => {
                     </TouchableOpacity>
 
                     <Text style={styles.remoteHintText}>
-                      Tip: Use Remote D-pad to browse feed
+                      💡 TV Remote: Press ▲ / ▼ to browse Shorts
                     </Text>
                   </View>
                 </View>
               </View>
 
               {/* Bottom Thumbnail Rail */}
-              <View style={styles.bottomRail} testID={SHORTS_TEST_IDS.feedRail}>
+              {/* <View style={styles.bottomRail} testID={SHORTS_TEST_IDS.feedRail}>
                 <Text style={styles.bottomRailTitle}>
-                  More in {selectedCategory} ({shorts.length})
+                  Up Next in {selectedCategory} ({shorts.length})
                 </Text>
                 <FlatList
                   ref={railListRef}
@@ -305,11 +346,11 @@ export const ShortsScreen = () => {
                     />
                   )}
                 />
-              </View>
+              </View> */}
             </View>
           )}
         </View>
       </TVFocusGuideView>
-    </ImageBackground>
+    </View>
   );
 };

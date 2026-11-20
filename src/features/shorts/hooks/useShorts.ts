@@ -8,6 +8,7 @@ import {
 import {SHORTS_API_CONFIG} from '../constants/shorts.constants';
 import {useProfile} from '../../../profiles/hooks/useProfile';
 import {canProfileAccessContent} from '../../../utils/contentAccessPolicy';
+import {analyticsService} from '../../../analytics';
 
 export interface UseShortsOptions {
   initialCategory?: string;
@@ -33,6 +34,11 @@ export interface UseShortsReturn {
   selectShort: (target: ShortsItem | number) => void;
   selectNext: () => void;
   selectPrevious: () => void;
+  autoPlayNext: () => void;
+  toggleLike: (targetId?: string) => Promise<boolean>;
+  toggleSave: (targetId?: string) => Promise<boolean>;
+  isLiking: boolean;
+  isSaving: boolean;
   retry: () => Promise<void>;
   search: (query: string) => Promise<void>;
 }
@@ -301,6 +307,165 @@ export const useShorts = (options: UseShortsOptions = {}): UseShortsReturn => {
     setSelectedIndex((prev) => Math.max(0, prev - 1));
   }, [shorts.length]);
 
+  const autoPlayNext = useCallback(() => {
+    if (shorts.length === 0) return;
+    setSelectedIndex((prev) => {
+      const next = prev + 1;
+      if (next < shorts.length) {
+        // Pre-fetch next page if approaching end
+        if (next >= shorts.length - 2 && pagination.hasNextPage) {
+          fetchMore();
+        }
+        return next;
+      } else if (pagination.hasNextPage) {
+        fetchMore();
+      }
+      return prev;
+    });
+  }, [fetchMore, pagination.hasNextPage, shorts.length]);
+
+  const [isLiking, setIsLiking] = useState<boolean>(false);
+  const [isSaving, setIsSaving] = useState<boolean>(false);
+
+  const toggleLike = useCallback(
+    async (targetId?: string) => {
+      const shortId = targetId || shorts[selectedIndex]?.id;
+      if (!shortId || isLiking) return false;
+
+      const currentIdx = shorts.findIndex((s) => s.id === shortId);
+      if (currentIdx < 0) return false;
+
+      const currentItem = shorts[currentIdx];
+      const previousLiked = currentItem.isLiked;
+      const previousCount = currentItem.likeCount;
+
+      const newLiked = !previousLiked;
+      const newCount = newLiked
+        ? previousCount + 1
+        : Math.max(0, previousCount - 1);
+
+      // Optimistic update
+      setShorts((prev) =>
+        prev.map((item, idx) =>
+          idx === currentIdx
+            ? {...item, isLiked: newLiked, likeCount: newCount}
+            : item,
+        ),
+      );
+
+      setIsLiking(true);
+      try {
+        const profileId = activeProfileRef.current?.id;
+        const updated = newLiked
+          ? await shortsApi.likeShort(shortId, profileId)
+          : await shortsApi.unlikeShort(shortId, profileId);
+
+        if (!isMountedRef.current) return true;
+
+        setShorts((prev) =>
+          prev.map((item, idx) =>
+            idx === currentIdx
+              ? {
+                  ...item,
+                  isLiked: updated.isLiked,
+                  likeCount: updated.likeCount,
+                }
+              : item,
+          ),
+        );
+
+        if (newLiked) {
+          analyticsService
+            .trackShortsLiked({short_id: shortId})
+            .catch(() => {});
+        } else {
+          analyticsService
+            .trackShortsUnliked({short_id: shortId})
+            .catch(() => {});
+        }
+        return true;
+      } catch (err) {
+        if (!isMountedRef.current) return false;
+        // Rollback optimistic update on error
+        setShorts((prev) =>
+          prev.map((item, idx) =>
+            idx === currentIdx
+              ? {...item, isLiked: previousLiked, likeCount: previousCount}
+              : item,
+          ),
+        );
+        return false;
+      } finally {
+        if (isMountedRef.current) {
+          setIsLiking(false);
+        }
+      }
+    },
+    [isLiking, selectedIndex, shorts],
+  );
+
+  const toggleSave = useCallback(
+    async (targetId?: string) => {
+      const shortId = targetId || shorts[selectedIndex]?.id;
+      if (!shortId || isSaving) return false;
+
+      const currentIdx = shorts.findIndex((s) => s.id === shortId);
+      if (currentIdx < 0) return false;
+
+      const currentItem = shorts[currentIdx];
+      const previousSaved = currentItem.isSaved;
+      const newSaved = !previousSaved;
+
+      // Optimistic update
+      setShorts((prev) =>
+        prev.map((item, idx) =>
+          idx === currentIdx ? {...item, isSaved: newSaved} : item,
+        ),
+      );
+
+      setIsSaving(true);
+      try {
+        const profileId = activeProfileRef.current?.id;
+        const updated = newSaved
+          ? await shortsApi.saveShort(shortId, profileId)
+          : await shortsApi.unsaveShort(shortId, profileId);
+
+        if (!isMountedRef.current) return true;
+
+        setShorts((prev) =>
+          prev.map((item, idx) =>
+            idx === currentIdx ? {...item, isSaved: updated.isSaved} : item,
+          ),
+        );
+
+        if (newSaved) {
+          analyticsService
+            .trackShortsSaved({short_id: shortId})
+            .catch(() => {});
+        } else {
+          analyticsService
+            .trackShortsUnsaved({short_id: shortId})
+            .catch(() => {});
+        }
+        return true;
+      } catch (err) {
+        if (!isMountedRef.current) return false;
+        // Rollback optimistic update on error
+        setShorts((prev) =>
+          prev.map((item, idx) =>
+            idx === currentIdx ? {...item, isSaved: previousSaved} : item,
+          ),
+        );
+        return false;
+      } finally {
+        if (isMountedRef.current) {
+          setIsSaving(false);
+        }
+      }
+    },
+    [isSaving, selectedIndex, shorts],
+  );
+
   // Retry action
   const retry = useCallback(async () => {
     await fetchFeed(true, selectedCategory);
@@ -335,6 +500,11 @@ export const useShorts = (options: UseShortsOptions = {}): UseShortsReturn => {
     selectShort,
     selectNext,
     selectPrevious,
+    autoPlayNext,
+    toggleLike,
+    toggleSave,
+    isLiking,
+    isSaving,
     retry,
     search,
   };

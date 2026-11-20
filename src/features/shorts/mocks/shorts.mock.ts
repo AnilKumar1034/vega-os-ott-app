@@ -2,9 +2,17 @@ import {ShortsItem} from '../types/shorts.types';
 import {DEFAULT_SHORTS_FALLBACK_THUMBNAIL} from '../constants/shorts.constants';
 
 /**
- * Realistic mock Shorts dataset for development testing on Amazon Vega OS OTT.
- * All media URLs point to royalty-free public domain / creative commons test streams.
- * Unpublished records (status === 'unpublished') are intentionally included to test feed filtering.
+ * Standard, highly compatible W3C Media & Kepler test video streams (H.264/AAC, moov atom at start).
+ * These avoid Google Cloud Storage SNI/CORS issues and play instantly on Vega OS hardware decoders.
+ */
+const STREAM_SINTEL = 'https://media.w3.org/2010/05/sintel/trailer.mp4';
+const STREAM_BUNNY = 'https://media.w3.org/2010/05/bunny/trailer.mp4';
+const STREAM_FLOWER = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4';
+
+/**
+ * Realistic, high-definition mock Shorts dataset for Amazon Vega OS OTT.
+ * Contains engaging portrait (9:16) video streams, verified creators, sound tracks,
+ * diverse categories, and published/unpublished status flags for test suites.
  */
 export const MOCK_SHORTS_DATA: ShortsItem[] = [
   {
@@ -13,8 +21,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'Step behind the green screen to see how the zero-gravity orbital stunt in interstellar rescue was composited.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=720&q=80',
-    videoUrl: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+      'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_SINTEL,
     durationSeconds: 34,
     aspectRatio: '9:16',
     creator: {
@@ -25,11 +33,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@vfxinsider',
       verified: true,
     },
+    audioTrack: 'Original sound - VFX Insider Studio',
     category: 'Behind the Scenes',
     tags: ['vfx', 'cgi', 'scifi', 'filmmaking'],
     publishedAt: '2026-11-10T10:00:00Z',
     isLiked: false,
     likeCount: 14200,
+    commentCount: 840,
     viewCount: 185000,
     isSaved: false,
     status: 'published',
@@ -43,8 +53,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'Director commentary on how practical stunt drivers coordinated the high-octane neon chase.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=720&q=80',
-    videoUrl: 'https://media.w3.org/2010/05/bunny/trailer.mp4',
+      'https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_BUNNY,
     durationSeconds: 42,
     aspectRatio: '9:16',
     creator: {
@@ -55,11 +65,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@apexaction',
       verified: true,
     },
+    audioTrack: 'Midnight Neon Pursuit (Synthwave Mix)',
     category: 'Action',
     tags: ['action', 'stunts', 'cars', 'thriller'],
     publishedAt: '2026-11-09T14:30:00Z',
     isLiked: true,
     likeCount: 28400,
+    commentCount: 1420,
     viewCount: 342000,
     isSaved: true,
     status: 'published',
@@ -69,28 +81,29 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
   },
   {
     id: 'short_003',
-    title: 'Standup Laughs: Smart Assistant Glitches',
+    title: 'Swinging',
     description:
-      'Hilarious standup routine on what happens when voice remotes take commands way too literally.',
+      'Sunny afternoon swing set adventures in the backyard! Pure childhood bliss captured on a warm summer day.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=720&q=80',
-    videoUrl:
-      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
-    durationSeconds: 28,
+      'https://images.unsplash.com/photo-1596464716127-f2a82984de30?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_FLOWER,
+    durationSeconds: 22,
     aspectRatio: '9:16',
     creator: {
       id: 'creator_003',
-      name: 'Comedy Club Live',
+      name: 'Catherine Clark',
       avatarUrl:
-        'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80',
-      handle: '@comedycentral',
+        'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&q=80',
+      handle: '@catherineclark',
       verified: true,
     },
-    category: 'Comedy',
-    tags: ['comedy', 'standup', 'humor', 'tech'],
+    audioTrack: 'Original sound',
+    category: 'Entertainment',
+    tags: ['swinging', 'backyard', 'family', 'summer'],
     publishedAt: '2026-11-08T18:15:00Z',
     isLiked: false,
     likeCount: 8900,
+    commentCount: 420,
     viewCount: 96400,
     isSaved: false,
     status: 'published',
@@ -104,8 +117,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'Exclusive high-energy movie highlight from the climax of the multi-award winning epic.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=720&q=80',
-    videoUrl: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+      'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_SINTEL,
     durationSeconds: 58,
     aspectRatio: '9:16',
     creator: {
@@ -116,11 +129,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@cinemaclassics',
       verified: true,
     },
+    audioTrack: 'Original Motion Picture Score - Epic Finale',
     category: 'Movie Highlights',
     tags: ['highlight', 'climax', 'drama', 'blockbuster'],
     publishedAt: '2026-11-07T08:00:00Z',
     isLiked: false,
     likeCount: 45000,
+    commentCount: 2900,
     viewCount: 610000,
     isSaved: false,
     status: 'published',
@@ -134,9 +149,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'Witness the live 90-piece symphony recording the signature battle theme in London.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=720&q=80',
-    videoUrl:
-      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+      'https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_FLOWER,
     durationSeconds: 45,
     aspectRatio: '9:16',
     creator: {
@@ -147,11 +161,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@soundtrackvault',
       verified: false,
     },
+    audioTrack: 'London Symphony - Thunder Suite in D Minor',
     category: 'Music',
     tags: ['music', 'orchestra', 'score', 'soundtrack'],
     publishedAt: '2026-11-06T12:00:00Z',
     isLiked: true,
     likeCount: 19500,
+    commentCount: 620,
     viewCount: 172000,
     isSaved: true,
     status: 'published',
@@ -165,8 +181,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'The wait is nearly over. The official countdown to the cyber-thriller event begins now.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1578632767115-351597cf2477?w=720&q=80',
-    videoUrl: 'https://media.w3.org/2010/05/bunny/trailer.mp4',
+      'https://images.unsplash.com/photo-1578632767115-351597cf2477?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_SINTEL,
     durationSeconds: 30,
     aspectRatio: '9:16',
     creator: {
@@ -177,11 +193,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@logixoriginals',
       verified: true,
     },
+    audioTrack: 'Cyber Nexus Main Title Bassline',
     category: 'Trailers',
     tags: ['trailer', 'teaser', 'series', 'cyberpunk'],
     publishedAt: '2026-11-05T09:45:00Z',
     isLiked: false,
     likeCount: 88000,
+    commentCount: 5400,
     viewCount: 940000,
     isSaved: false,
     status: 'published',
@@ -195,8 +213,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'Our host asks the stars their favorite improvisations from the world premiere night.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=720&q=80',
-    videoUrl: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+      'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_BUNNY,
     durationSeconds: 40,
     aspectRatio: '9:16',
     creator: {
@@ -207,11 +225,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@entpulse',
       verified: true,
     },
+    audioTrack: 'Original sound - Live Red Carpet',
     category: 'Interviews',
     tags: ['interview', 'redcarpet', 'celebrity', 'premiere'],
     publishedAt: '2026-11-04T16:20:00Z',
     isLiked: false,
     likeCount: 16400,
+    commentCount: 710,
     viewCount: 204000,
     isSaved: false,
     status: 'published',
@@ -225,8 +245,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'A lightning-fast countdown of the most unforgettable cliffhangers on TV streaming.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1485846234645-a62644f84728?w=720&q=80',
-    videoUrl: 'https://media.w3.org/2010/05/bunny/trailer.mp4',
+      'https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_SINTEL,
     durationSeconds: 52,
     aspectRatio: '9:16',
     creator: {
@@ -237,11 +257,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@bingeradar',
       verified: false,
     },
+    audioTrack: 'Countdown Beat (Trap Remix)',
     category: 'TV Moments',
     tags: ['tv', 'binge', 'cliffhanger', 'ranking'],
     publishedAt: '2026-11-03T11:10:00Z',
     isLiked: false,
     likeCount: 31200,
+    commentCount: 1800,
     viewCount: 420000,
     isSaved: false,
     status: 'published',
@@ -251,28 +273,29 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
   },
   {
     id: 'short_009',
-    title: 'Unexpected Improv Scene Blooper',
+    title: 'Standup Laughs: Smart Assistant Glitches',
     description:
-      'Watch both actors break character during an intensely emotional confession take.',
+      'Hilarious standup routine on what happens when voice remotes take commands way too literally.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?w=720&q=80',
-    videoUrl:
-      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
-    durationSeconds: 22,
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_FLOWER,
+    durationSeconds: 28,
     aspectRatio: '9:16',
     creator: {
-      id: 'creator_003',
+      id: 'creator_009',
       name: 'Comedy Club Live',
       avatarUrl:
         'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80',
       handle: '@comedycentral',
       verified: true,
     },
+    audioTrack: 'Original sound - Comedy Club Live',
     category: 'Comedy',
-    tags: ['comedy', 'blooper', 'outtakes', 'funny'],
+    tags: ['comedy', 'standup', 'humor', 'tech'],
     publishedAt: '2026-11-02T19:00:00Z',
     isLiked: true,
     likeCount: 54000,
+    commentCount: 3100,
     viewCount: 680000,
     isSaved: false,
     status: 'published',
@@ -286,8 +309,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'Fight coordinator demonstrates the step-by-step hand-to-hand combat technique.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1555597673-b21d5c935865?w=720&q=80',
-    videoUrl: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+      'https://images.unsplash.com/photo-1555597673-b21d5c935865?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_BUNNY,
     durationSeconds: 49,
     aspectRatio: '9:16',
     creator: {
@@ -298,11 +321,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@apexaction',
       verified: true,
     },
+    audioTrack: 'Hardstyle Action Beat',
     category: 'Action',
     tags: ['action', 'martialarts', 'stunts', 'choreography'],
     publishedAt: '2026-11-01T15:00:00Z',
     isLiked: false,
     likeCount: 22100,
+    commentCount: 940,
     viewCount: 290000,
     isSaved: false,
     status: 'published',
@@ -316,8 +341,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'Side-by-side comparison of the original manga panel and the groundbreaking CGI shot.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1563089145-599997674d42?w=720&q=80',
-    videoUrl: 'https://media.w3.org/2010/05/bunny/trailer.mp4',
+      'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_FLOWER,
     durationSeconds: 38,
     aspectRatio: '9:16',
     creator: {
@@ -328,11 +353,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@vfxinsider',
       verified: true,
     },
+    audioTrack: 'Anime Battle Theme Re-imagined',
     category: 'Entertainment',
     tags: ['anime', 'adaptation', 'vfx', 'comparison'],
     publishedAt: '2026-10-31T13:40:00Z',
     isLiked: false,
     likeCount: 37500,
+    commentCount: 2100,
     viewCount: 480000,
     isSaved: true,
     status: 'published',
@@ -346,9 +373,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'Foley artists reveal how blending tiger growls and creaking metal produced the alien cry.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=720&q=80',
-    videoUrl:
-      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+      'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_SINTEL,
     durationSeconds: 36,
     aspectRatio: '9:16',
     creator: {
@@ -359,11 +385,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@soundtrackvault',
       verified: false,
     },
+    audioTrack: 'Original sound - Monster Foley Sessions',
     category: 'Behind the Scenes',
     tags: ['sound', 'foley', 'audio', 'creature'],
     publishedAt: '2026-10-30T17:15:00Z',
     isLiked: false,
     likeCount: 18200,
+    commentCount: 820,
     viewCount: 195000,
     isSaved: false,
     status: 'published',
@@ -377,8 +405,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'Veteran actor shares how 14 takes culminated in the single uncut courtroom monologue.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?w=720&q=80',
-    videoUrl: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+      'https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_BUNNY,
     durationSeconds: 55,
     aspectRatio: '9:16',
     creator: {
@@ -389,11 +417,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@entpulse',
       verified: true,
     },
+    audioTrack: 'Original dialogue - Courtroom Take 14',
     category: 'Interviews',
     tags: ['interview', 'acting', 'drama', 'monologue'],
     publishedAt: '2026-10-29T10:00:00Z',
     isLiked: false,
     likeCount: 12400,
+    commentCount: 650,
     viewCount: 140000,
     isSaved: false,
     status: 'published',
@@ -407,8 +437,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'Science advisors unpack holographic interfaces and AI navigators featured in the film.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=720&q=80',
-    videoUrl: 'https://media.w3.org/2010/05/bunny/trailer.mp4',
+      'https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_FLOWER,
     durationSeconds: 47,
     aspectRatio: '9:16',
     creator: {
@@ -419,11 +449,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@logixoriginals',
       verified: true,
     },
+    audioTrack: 'Futuristic Ambient Soundscape',
     category: 'Entertainment',
     tags: ['scifi', 'technology', 'future', 'ai'],
     publishedAt: '2026-10-28T08:30:00Z',
     isLiked: true,
     likeCount: 29800,
+    commentCount: 1100,
     viewCount: 310000,
     isSaved: false,
     status: 'published',
@@ -437,8 +469,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'Pulse-pounding three-minute escape choreographed entirely in one single continuous tracking shot.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=720&q=80',
-    videoUrl: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+      'https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_SINTEL,
     durationSeconds: 60,
     aspectRatio: '9:16',
     creator: {
@@ -449,11 +481,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@cinemaclassics',
       verified: true,
     },
+    audioTrack: 'Heartbeat Chase Tension (Original Score)',
     category: 'Movie Highlights',
     tags: ['heist', 'thriller', 'oneshot', 'cinematography'],
     publishedAt: '2026-10-27T14:15:00Z',
     isLiked: false,
     likeCount: 51200,
+    commentCount: 3800,
     viewCount: 720000,
     isSaved: true,
     status: 'published',
@@ -467,7 +501,7 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'Rough workprint cut of unfinished stunts. Internal production use only.',
     thumbnailUrl: DEFAULT_SHORTS_FALLBACK_THUMBNAIL,
-    videoUrl: 'https://media.w3.org/2010/05/sintel/trailer.mp4',
+    videoUrl: STREAM_SINTEL,
     durationSeconds: 30,
     aspectRatio: '9:16',
     creator: {
@@ -477,11 +511,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
         'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80',
       handle: '@apexaction',
     },
+    audioTrack: 'Rough Audio Guide Track',
     category: 'Action',
     tags: ['draft', 'internal'],
     publishedAt: '2026-10-26T12:00:00Z',
     isLiked: false,
     likeCount: 0,
+    commentCount: 0,
     viewCount: 5,
     isSaved: false,
     status: 'unpublished', // Unfinished draft; MUST NOT be returned in published feed
@@ -495,9 +531,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'A soulful acoustic rendition of the classic 90s TV theme song that brings back pure nostalgia.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?w=720&q=80',
-    videoUrl:
-      'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4',
+      'https://images.unsplash.com/photo-1465847899084-d164df4dedc6?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_FLOWER,
     durationSeconds: 41,
     aspectRatio: '9:16',
     creator: {
@@ -508,11 +543,13 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@soundtrackvault',
       verified: false,
     },
+    audioTrack: 'Acoustic 90s Nostalgia (Fingerstyle Guitar)',
     category: 'Music',
     tags: ['music', 'acoustic', 'nostalgia', 'cover'],
     publishedAt: '2026-10-25T11:00:00Z',
     isLiked: true,
     likeCount: 16800,
+    commentCount: 790,
     viewCount: 153000,
     isSaved: false,
     status: 'published',
@@ -526,8 +563,8 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
     description:
       'Whispers in the fog. Who is watching from beyond the pine trees? Season premiere teaser.',
     thumbnailUrl:
-      'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?w=720&q=80',
-    videoUrl: 'https://media.w3.org/2010/05/bunny/trailer.mp4',
+      'https://images.unsplash.com/photo-1509114397022-ed747cca3f65?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_BUNNY,
     durationSeconds: 32,
     aspectRatio: '9:16',
     creator: {
@@ -538,16 +575,82 @@ export const MOCK_SHORTS_DATA: ShortsItem[] = [
       handle: '@logixoriginals',
       verified: true,
     },
+    audioTrack: 'Dark Woods Whispers & Strings',
     category: 'Trailers',
     tags: ['horror', 'mystery', 'teaser', 'thriller'],
     publishedAt: '2026-10-24T22:00:00Z',
     isLiked: false,
     likeCount: 41000,
+    commentCount: 2200,
     viewCount: 520000,
     isSaved: false,
     status: 'published',
     isPremium: false,
     ageRating: '16+',
     maturityRating: '16_PLUS',
+  },
+  {
+    id: 'short_019',
+    title: 'Wild Ocean Depths: Coral Reefs in 4K',
+    description:
+      'Breathtaking vertical underwater dive exploring fluorescent coral formations and tropical marine life.',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_FLOWER,
+    durationSeconds: 46,
+    aspectRatio: '9:16',
+    creator: {
+      id: 'creator_009',
+      name: 'Blue Planet 4K',
+      avatarUrl:
+        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&q=80',
+      handle: '@blueplanet4k',
+      verified: true,
+    },
+    audioTrack: 'Deep Ocean Waves & Ambient Pads',
+    category: 'Entertainment',
+    tags: ['ocean', 'nature', 'coral', '4k'],
+    publishedAt: '2026-10-23T09:00:00Z',
+    isLiked: false,
+    likeCount: 62400,
+    commentCount: 4100,
+    viewCount: 780000,
+    isSaved: true,
+    status: 'published',
+    isPremium: true,
+    ageRating: 'U',
+    maturityRating: 'ALL',
+  },
+  {
+    id: 'short_020',
+    title: 'Extreme Parkour: Rooftop Gap Jump',
+    description:
+      'First-person POV of an impossible 18-foot leap between two downtown highrises.',
+    thumbnailUrl:
+      'https://images.unsplash.com/photo-1534177616072-ef7dc120449d?auto=format&fit=crop&w=720&h=1280&q=80',
+    videoUrl: STREAM_BUNNY,
+    durationSeconds: 27,
+    aspectRatio: '9:16',
+    creator: {
+      id: 'creator_002',
+      name: 'Apex Action Reel',
+      avatarUrl:
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&q=80',
+      handle: '@apexaction',
+      verified: true,
+    },
+    audioTrack: 'Pure Adrenaline (Bass Boosted)',
+    category: 'Action',
+    tags: ['parkour', 'pov', 'extreme', 'jump'],
+    publishedAt: '2026-10-22T14:00:00Z',
+    isLiked: true,
+    likeCount: 93000,
+    commentCount: 6500,
+    viewCount: 1200000,
+    isSaved: false,
+    status: 'published',
+    isPremium: false,
+    ageRating: '13+',
+    maturityRating: '13_PLUS',
   },
 ];

@@ -10,7 +10,7 @@ import {useTVEventHandler} from '@amazon-devices/react-native-kepler';
 import {ShortsItem} from '../types/shorts.types';
 import {DEFAULT_SHORTS_FALLBACK_THUMBNAIL, SHORTS_TEST_IDS} from '../constants/shorts.constants';
 import {colors} from '../../../theme/colors';
-import {sizes, spacing} from '../../../theme/sizes';
+import {spacing} from '../../../theme/sizes';
 import {isKeyDown, isSelectEvent} from '../../../utils/inputUtils';
 
 export interface ShortsCardProps {
@@ -38,7 +38,7 @@ export const ShortsCard = ({
   onMenuEscapeLeft,
   testID,
   width = 80,
-  height = 142, // roughly 9:16 aspect ratio
+  height = 142, // 9:16 aspect ratio
 }: ShortsCardProps) => {
   const [internalFocused, setInternalFocused] = useState(false);
   const [imgError, setImgError] = useState(false);
@@ -72,11 +72,18 @@ export const ShortsCard = ({
   });
 
   const formatDuration = (seconds?: number): string => {
-    if (!seconds || seconds <= 0) return 'SHORT';
+    if (!seconds || seconds <= 0) return '0:30';
     if (seconds < 60) return `${seconds}s`;
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+  };
+
+  const formatViews = (views?: number): string => {
+    if (!views || views <= 0) return 'Shorts';
+    if (views >= 1000000) return `${(views / 1000000).toFixed(1)}M`;
+    if (views >= 1000) return `${(views / 1000).toFixed(0)}K`;
+    return `${views}`;
   };
 
   return (
@@ -106,23 +113,19 @@ export const ShortsCard = ({
 
       <View style={styles.gradientOverlay} />
 
-      {/* Top Category Badge */}
-      {item.category ? (
-        <View style={styles.topBadge}>
-          <Text style={styles.topBadgeText} numberOfLines={1}>
-            {item.category}
-          </Text>
-        </View>
-      ) : null}
+      {/* Top Left: YouTube TV Shorts Red Icon Badge */}
+      <View style={styles.shortsLogoBadge}>
+        <Text style={styles.shortsLogoText}>▶</Text>
+      </View>
 
-      {/* Premium Badge */}
+      {/* Top Right: Premium Badge if available */}
       {item.isPremium ? (
         <View style={styles.premiumBadge}>
-          <Text style={styles.premiumBadgeText}>★ PRO</Text>
+          <Text style={styles.premiumBadgeText}>★ 4K</Text>
         </View>
       ) : null}
 
-      {/* Bottom Information */}
+      {/* Bottom Information (YouTube TV Shelf Style) */}
       <View style={styles.bottomInfo}>
         <View style={styles.durationPill}>
           <Text style={styles.durationText}>
@@ -132,11 +135,9 @@ export const ShortsCard = ({
         <Text style={styles.title} numberOfLines={2}>
           {item.title}
         </Text>
-        {item.creator?.name ? (
-          <Text style={styles.creatorName} numberOfLines={1}>
-            {item.creator.name}
-          </Text>
-        ) : null}
+        <Text style={styles.creatorName} numberOfLines={1}>
+          {item.creator?.name ? `${item.creator.name} • ` : ''}{formatViews(item.viewCount)}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -144,25 +145,31 @@ export const ShortsCard = ({
 
 const styles = StyleSheet.create({
   cardContainer: {
-    borderRadius: 8,
+    borderRadius: 10,
     overflow: 'hidden',
-    backgroundColor: colors.cardBackground,
+    backgroundColor: '#141414',
     borderWidth: 2,
-    borderColor: 'transparent',
+    borderColor: 'rgba(255, 255, 255, 0.1)',
     marginRight: spacing.huge,
     justifyContent: 'space-between',
-  },
-  cardFocused: {
-    borderColor: colors.focusedTint,
-    transform: [{scale: 1.05}],
-    shadowColor: colors.focusedTint,
+    shadowColor: colors.black,
     shadowOffset: {width: 0, height: 4},
     shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 8,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  cardFocused: {
+    borderColor: colors.white,
+    transform: [{scale: 1.08}],
+    shadowColor: colors.white,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.7,
+    shadowRadius: 10,
+    elevation: 10,
   },
   cardSelected: {
-    borderColor: colors.white,
+    borderColor: colors.heroAccent,
+    borderWidth: 2.5,
   },
   thumbnail: {
     ...StyleSheet.absoluteFillObject,
@@ -171,36 +178,37 @@ const styles = StyleSheet.create({
   },
   gradientOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: 'rgba(0, 0, 0, 0.28)',
   },
-  topBadge: {
+  shortsLogoBadge: {
     position: 'absolute',
-    top: 6,
-    left: 6,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 4,
-    maxWidth: '85%',
+    top: 5,
+    left: 5,
+    backgroundColor: colors.heroAccent,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  topBadgeText: {
-    color: colors.textSecondary,
+  shortsLogoText: {
+    color: colors.white,
     fontSize: 9,
-    fontWeight: '700',
-    textTransform: 'uppercase',
+    fontWeight: '900',
+    marginLeft: 1,
   },
   premiumBadge: {
     position: 'absolute',
-    top: 6,
-    right: 6,
-    backgroundColor: colors.gold,
+    top: 5,
+    right: 5,
+    backgroundColor: 'rgba(245, 158, 11, 0.95)',
     paddingHorizontal: 4,
-    paddingVertical: 2,
-    borderRadius: 4,
+    paddingVertical: 1,
+    borderRadius: 3,
   },
   premiumBadgeText: {
     color: colors.black,
-    fontSize: 8,
+    fontSize: 7.5,
     fontWeight: '900',
   },
   bottomInfo: {
@@ -208,30 +216,32 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 6,
-    backgroundColor: 'rgba(5,5,5,0.85)',
+    padding: 5,
+    backgroundColor: 'rgba(10, 10, 10, 0.88)',
   },
   durationPill: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255,255,255,0.2)',
+    backgroundColor: 'rgba(0, 0, 0, 0.65)',
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: 3,
-    marginBottom: 3,
+    marginBottom: 2,
+    borderWidth: 0.5,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   durationText: {
     color: colors.white,
-    fontSize: 9,
-    fontWeight: '600',
+    fontSize: 8,
+    fontWeight: '700',
   },
   title: {
     color: colors.white,
-    fontSize: 10,
+    fontSize: 9.5,
     fontWeight: '700',
-    lineHeight: 13,
+    lineHeight: 12,
   },
   creatorName: {
-    color: colors.textSecondary,
+    color: 'rgba(255, 255, 255, 0.6)',
     fontSize: 8,
     marginTop: 2,
   },

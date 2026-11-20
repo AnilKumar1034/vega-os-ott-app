@@ -4,6 +4,8 @@ import {
   isBackEvent,
   isPlayPauseEvent,
   isStopEvent,
+  isUpEvent,
+  isDownEvent,
   sanitizeEmailInput,
 } from '../src/utils/inputUtils';
 
@@ -89,6 +91,38 @@ describe('inputUtils', () => {
     it('returns false for other keys', () => {
       expect(isStopEvent('select')).toBe(false);
       expect(isStopEvent(undefined)).toBe(false);
+    });
+  });
+
+  describe('isUpEvent', () => {
+    it('returns true for up, dpad_up, and pageup', () => {
+      expect(isUpEvent('up')).toBe(true);
+      expect(isUpEvent('UP')).toBe(true);
+      expect(isUpEvent('dpad_up')).toBe(true);
+      expect(isUpEvent('DPAD_UP')).toBe(true);
+      expect(isUpEvent('pageup')).toBe(true);
+    });
+
+    it('returns false for down, left, right, and other events', () => {
+      expect(isUpEvent('down')).toBe(false);
+      expect(isUpEvent('select')).toBe(false);
+      expect(isUpEvent(undefined)).toBe(false);
+    });
+  });
+
+  describe('isDownEvent', () => {
+    it('returns true for down, dpad_down, and pagedown', () => {
+      expect(isDownEvent('down')).toBe(true);
+      expect(isDownEvent('DOWN')).toBe(true);
+      expect(isDownEvent('dpad_down')).toBe(true);
+      expect(isDownEvent('DPAD_DOWN')).toBe(true);
+      expect(isDownEvent('pagedown')).toBe(true);
+    });
+
+    it('returns false for up, left, right, and other events', () => {
+      expect(isDownEvent('up')).toBe(false);
+      expect(isDownEvent('select')).toBe(false);
+      expect(isDownEvent(undefined)).toBe(false);
     });
   });
 

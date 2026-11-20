@@ -48,6 +48,47 @@ const cloneShort = (item: ShortsItem): ShortsItem => ({
 
 const cloneList = (items: ShortsItem[]): ShortsItem[] => items.map(cloneShort);
 
+// In-memory profile interaction store
+// Key: `${profileId || 'default'}:${shortId}`
+const profileInteractions = new Map<
+  string,
+  {isLiked?: boolean; isSaved?: boolean}
+>();
+
+// Delta tracking for like counts per short: shortId -> delta
+const likeCountDeltas = new Map<string, number>();
+
+/**
+ * Applies profile-specific interaction state and like-count deltas over a base short record.
+ */
+export const applyProfileInteractions = (
+  item: ShortsItem,
+  profileId?: string,
+): ShortsItem => {
+  const cloned = cloneShort(item);
+  const effectiveProfileId = profileId || 'default';
+  const key = `${effectiveProfileId}:${item.id}`;
+  const interaction = profileInteractions.get(key);
+  const delta = likeCountDeltas.get(item.id) || 0;
+
+  if (interaction) {
+    if (interaction.isLiked !== undefined) {
+      cloned.isLiked = interaction.isLiked;
+    }
+    if (interaction.isSaved !== undefined) {
+      cloned.isSaved = interaction.isSaved;
+    }
+  }
+
+  cloned.likeCount = Math.max(0, cloned.likeCount + delta);
+  return cloned;
+};
+
+export const resetMockInteractions = () => {
+  profileInteractions.clear();
+  likeCountDeltas.clear();
+};
+
 const evaluateScenario = async (): Promise<void> => {
   await delay();
   if (currentScenario === 'network_error') {
@@ -79,6 +120,7 @@ export const getMockScenario = (): MockScenarioType => currentScenario;
 export const resetMockScenario = () => {
   currentScenario = 'default';
   forcedDelayMs = null;
+  resetMockInteractions();
 };
 
 /**
@@ -143,7 +185,7 @@ export const getShortsFeed = async (
 
   return {
     success: true,
-    data: cloneList(pageData),
+    data: pageData.map((item) => applyProfileInteractions(item, profileId)),
     pagination: {
       page,
       limit,
@@ -157,7 +199,10 @@ export const getShortsFeed = async (
  * API 2: Get Shorts details
  * GET /api/v1/shorts/:shortId
  */
-export const getShortsDetails = async (shortId: string): Promise<ShortsItem> => {
+export const getShortsDetails = async (
+  shortId: string,
+  profileId?: string,
+): Promise<ShortsItem> => {
   await evaluateScenario();
 
   if (!shortId || typeof shortId !== 'string') {
@@ -186,7 +231,7 @@ export const getShortsDetails = async (shortId: string): Promise<ShortsItem> => 
     throw error;
   }
 
-  return cloneShort(record);
+  return applyProfileInteractions(record, profileId);
 };
 
 /**
@@ -342,4 +387,175 @@ export const searchShorts = async (
       hasNextPage,
     },
   };
+};
+
+/**
+ * API 7: Like Short
+ * POST /api/v1/shorts/:shortId/like
+ */
+export const likeShort = async (
+  shortId: string,
+  profileId?: string,
+): Promise<ShortsItem> => {
+  await evaluateScenario();
+
+  if (!shortId || typeof shortId !== 'string') {
+    const error: ShortsApiError = {
+      code: 'INVALID_ID',
+      message: 'Invalid Short ID provided.',
+    };
+    throw error;
+  }
+
+  const record = MOCK_SHORTS_DATA.find((item) => item.id === shortId);
+  if (!record) {
+    const error: ShortsApiError = {
+      code: 'NOT_FOUND',
+      message: `Short with ID "${shortId}" was not found.`,
+    };
+    throw error;
+  }
+
+  const effectiveProfileId = profileId || 'default';
+  const key = `${effectiveProfileId}:${shortId}`;
+  const existing = profileInteractions.get(key);
+
+  // If not already liked by this profile, mark liked and increment like count
+  if (!existing?.isLiked) {
+    profileInteractions.set(key, {
+      ...existing,
+      isLiked: true,
+    });
+    const delta = likeCountDeltas.get(shortId) || 0;
+    likeCountDeltas.set(shortId, delta + 1);
+  }
+
+  return applyProfileInteractions(record, profileId);
+};
+
+/**
+ * API 8: Unlike Short
+ * DELETE /api/v1/shorts/:shortId/like
+ */
+export const unlikeShort = async (
+  shortId: string,
+  profileId?: string,
+): Promise<ShortsItem> => {
+  await evaluateScenario();
+
+  if (!shortId || typeof shortId !== 'string') {
+    const error: ShortsApiError = {
+      code: 'INVALID_ID',
+      message: 'Invalid Short ID provided.',
+    };
+    throw error;
+  }
+
+  const record = MOCK_SHORTS_DATA.find((item) => item.id === shortId);
+  if (!record) {
+    const error: ShortsApiError = {
+      code: 'NOT_FOUND',
+      message: `Short with ID "${shortId}" was not found.`,
+    };
+    throw error;
+  }
+
+  const effectiveProfileId = profileId || 'default';
+  const key = `${effectiveProfileId}:${shortId}`;
+  const existing = profileInteractions.get(key);
+
+  // If currently liked (or undefined and default record was liked), mark unliked and decrement
+  const isCurrentlyLiked =
+    existing?.isLiked !== undefined ? existing.isLiked : record.isLiked;
+
+  if (isCurrentlyLiked) {
+    profileInteractions.set(key, {
+      ...existing,
+      isLiked: false,
+    });
+    const delta = likeCountDeltas.get(shortId) || 0;
+    if (record.likeCount + delta > 0) {
+      likeCountDeltas.set(shortId, delta - 1);
+    }
+  }
+
+  return applyProfileInteractions(record, profileId);
+};
+
+/**
+ * API 9: Save Short
+ * POST /api/v1/shorts/:shortId/save
+ */
+export const saveShort = async (
+  shortId: string,
+  profileId?: string,
+): Promise<ShortsItem> => {
+  await evaluateScenario();
+
+  if (!shortId || typeof shortId !== 'string') {
+    const error: ShortsApiError = {
+      code: 'INVALID_ID',
+      message: 'Invalid Short ID provided.',
+    };
+    throw error;
+  }
+
+  const record = MOCK_SHORTS_DATA.find((item) => item.id === shortId);
+  if (!record) {
+    const error: ShortsApiError = {
+      code: 'NOT_FOUND',
+      message: `Short with ID "${shortId}" was not found.`,
+    };
+    throw error;
+  }
+
+  const effectiveProfileId = profileId || 'default';
+  const key = `${effectiveProfileId}:${shortId}`;
+  const existing = profileInteractions.get(key);
+
+  profileInteractions.set(key, {
+    ...existing,
+    isSaved: true,
+  });
+
+  return applyProfileInteractions(record, profileId);
+};
+
+/**
+ * API 10: Unsave Short
+ * DELETE /api/v1/shorts/:shortId/save
+ */
+export const unsaveShort = async (
+  shortId: string,
+  profileId?: string,
+): Promise<ShortsItem> => {
+  await evaluateScenario();
+
+  if (!shortId || typeof shortId !== 'string') {
+    const error: ShortsApiError = {
+      code: 'INVALID_ID',
+      message: 'Invalid Short ID provided.',
+    };
+    throw error;
+  }
+
+  const record = MOCK_SHORTS_DATA.find((item) => item.id === shortId);
+  if (!record) {
+    const error: ShortsApiError = {
+      code: 'NOT_FOUND',
+      message: `Short with ID "${shortId}" was not found.`,
+    };
+    throw error;
+  }
+
+  const effectiveProfileId = profileId || 'default';
+  const key = `${effectiveProfileId}:${shortId}`;
+  const existing = profileInteractions.get(key);
+
+  profileInteractions.set(key, {
+    ...existing,
+    isSaved: false,
+  });
+
+  return applyProfileInteractions(record, profileId);
 };

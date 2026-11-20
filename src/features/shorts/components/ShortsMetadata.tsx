@@ -3,16 +3,17 @@ import {Image, StyleSheet, Text, View} from 'react-native';
 import {ShortsItem} from '../types/shorts.types';
 import {SHORTS_TEST_IDS} from '../constants/shorts.constants';
 import {colors} from '../../../theme/colors';
-import {spacing} from '../../../theme/sizes';
 
 export interface ShortsMetadataProps {
   item: ShortsItem | null;
   testID?: string;
+  children?: React.ReactNode;
 }
 
 export const ShortsMetadata = ({
   item,
   testID = SHORTS_TEST_IDS.metadata,
+  children,
 }: ShortsMetadataProps) => {
   const [avatarError, setAvatarError] = useState(false);
 
@@ -20,65 +21,22 @@ export const ShortsMetadata = ({
     return null;
   }
 
-  const formatCount = (count?: number): string => {
-    if (!count || count <= 0) return '0';
-    if (count >= 1000000) {
-      return `${(count / 1000000).toFixed(1)}M`;
-    }
-    if (count >= 1000) {
-      return `${(count / 1000).toFixed(1)}K`;
-    }
-    return count.toString();
-  };
-
-  const formatDuration = (seconds?: number): string => {
-    if (!seconds) return '0:30';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
-
   return (
     <View style={styles.container} testID={testID}>
-      {/* Category and Tags Pill Row */}
-      <View style={styles.pillRow}>
-        {item.category ? (
-          <View style={styles.categoryPill}>
-            <Text style={styles.categoryPillText}>{item.category}</Text>
-          </View>
-        ) : null}
+      {/* 1. Large Bold Title (matching reference: "Swinging") */}
+      <Text style={styles.title} numberOfLines={2}>
+        {item.title}
+      </Text>
 
-        <View style={styles.metaPill}>
-          <Text style={styles.metaPillText}>
-            ⏱ {formatDuration(item.durationSeconds)}
-          </Text>
-        </View>
-
-        <View style={styles.metaPill}>
-          <Text style={styles.metaPillText}>
-            {item.aspectRatio || '9:16'}
-          </Text>
-        </View>
-
-        {item.ageRating || item.maturityRating ? (
-          <View style={styles.agePill}>
-            <Text style={styles.agePillText}>
-              {item.ageRating || item.maturityRating}
-            </Text>
-          </View>
-        ) : null}
-
-        {item.isPremium ? (
-          <View style={styles.premiumPill}>
-            <Text style={styles.premiumPillText}>★ PRO SHORT</Text>
-          </View>
-        ) : null}
+      {/* 2. Audio Track Line (matching reference: "ılı Original sound") */}
+      <View style={styles.soundRow}>
+        <Text style={styles.soundIcon}>ılı</Text>
+        <Text style={styles.soundText} numberOfLines={1}>
+          {item.audioTrack || `Original sound${item.creator?.name ? ` • ${item.creator.name}` : ''}`}
+        </Text>
       </View>
 
-      {/* Title */}
-      <Text style={styles.title}>{item.title}</Text>
-
-      {/* Creator Info */}
+      {/* 3. Creator Row (matching reference: Circular Avatar + "Catherine Clark") */}
       {item.creator ? (
         <View style={styles.creatorRow}>
           {item.creator.avatarUrl && !avatarError ? (
@@ -95,229 +53,158 @@ export const ShortsMetadata = ({
             </View>
           )}
 
-          <View style={styles.creatorDetails}>
-            <View style={styles.creatorNameRow}>
-              <Text style={styles.creatorName}>{item.creator.name}</Text>
-              {item.creator.verified ? (
-                <Text style={styles.verifiedBadge}>✓</Text>
-              ) : null}
+          <Text style={styles.creatorName} numberOfLines={1}>
+            {item.creator.name}
+          </Text>
+
+          {item.creator.verified ? (
+            <View style={styles.verifiedBadgeContainer}>
+              <Text style={styles.verifiedBadge}>✓</Text>
             </View>
-            {item.creator.handle ? (
-              <Text style={styles.creatorHandle}>{item.creator.handle}</Text>
-            ) : null}
-          </View>
+          ) : null}
         </View>
       ) : null}
 
-      {/* Description */}
-      <Text style={styles.description} numberOfLines={3}>
-        {item.description}
-      </Text>
+      {/* 4. Category & Quality Badges */}
+      <View style={styles.badgeRow}>
+        {item.category ? (
+          <View style={styles.categoryPill}>
+            <Text style={styles.categoryPillText}>{item.category}</Text>
+          </View>
+        ) : null}
 
-      {/* Metrics Row (Views, Likes, Published Date) */}
-      <View style={styles.metricsRow}>
-        <View style={styles.metricItem}>
-          <Text style={styles.metricLabel}>Views</Text>
-          <Text style={styles.metricValue}>{formatCount(item.viewCount)}</Text>
-        </View>
+        {item.durationSeconds ? (
+          <View style={styles.metaPill}>
+            <Text style={styles.metaPillText}>
+              ⏱ {item.durationSeconds}s
+            </Text>
+          </View>
+        ) : null}
 
-        <View style={styles.metricDivider} />
-
-        <View style={styles.metricItem}>
-          <Text style={styles.metricLabel}>Likes</Text>
-          <Text style={styles.metricValue}>{formatCount(item.likeCount)}</Text>
-        </View>
-
-        <View style={styles.metricDivider} />
-
-        <View style={styles.metricItem}>
-          <Text style={styles.metricLabel}>Ratio</Text>
-          <Text style={styles.metricValue}>{item.aspectRatio}</Text>
-        </View>
+        {item.isPremium ? (
+          <View style={styles.premiumPill}>
+            <Text style={styles.premiumPillText}>★ 4K</Text>
+          </View>
+        ) : null}
       </View>
 
-      {/* Tags Chips */}
-      {item.tags && item.tags.length > 0 ? (
-        <View style={styles.tagsContainer}>
-          {item.tags.map((tag, idx) => (
-            <View key={`${tag}-${idx}`} style={styles.tagChip}>
-              <Text style={styles.tagText}>#{tag}</Text>
-            </View>
-          ))}
-        </View>
-      ) : null}
+      {/* Optional Children */}
+      {children}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-  },
-  pillRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flexWrap: 'wrap',
-    marginBottom: spacing.sm,
-  },
-  categoryPill: {
-    backgroundColor: colors.activeTint,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 4,
-    marginRight: 6,
-    marginBottom: 4,
-  },
-  categoryPillText: {
-    color: colors.white,
-    fontSize: 10,
-    fontWeight: '700',
-    textTransform: 'uppercase',
-  },
-  metaPill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 4,
-    marginRight: 6,
-    marginBottom: 4,
-  },
-  metaPillText: {
-    color: colors.textSecondary,
-    fontSize: 10,
-    fontWeight: '600',
-  },
-  agePill: {
-    backgroundColor: 'rgba(255, 255, 255, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.3)',
-    paddingHorizontal: 5,
-    paddingVertical: 2,
-    borderRadius: 3,
-    marginRight: 6,
-    marginBottom: 4,
-  },
-  agePillText: {
-    color: colors.white,
-    fontSize: 9,
-    fontWeight: '700',
-  },
-  premiumPill: {
-    backgroundColor: colors.gold,
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 4,
-    marginRight: 6,
-    marginBottom: 4,
-  },
-  premiumPillText: {
-    color: colors.black,
-    fontSize: 9,
-    fontWeight: '900',
+    paddingVertical: 4,
+    justifyContent: 'center',
   },
   title: {
     color: colors.white,
-    fontSize: 18,
+    fontSize: 26,
+    fontWeight: '700',
+    lineHeight: 32,
+    marginBottom: 4,
+    letterSpacing: 0.2,
+  },
+  soundRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  soundIcon: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
     fontWeight: '800',
-    lineHeight: 22,
-    marginBottom: spacing.xs,
+    marginRight: 6,
+    letterSpacing: -1,
+  },
+  soundText: {
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontSize: 14,
+    fontWeight: '500',
   },
   creatorRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: spacing.xs,
+    marginBottom: 14,
   },
   avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    marginRight: 8,
-    backgroundColor: colors.cardBackground,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
   avatarPlaceholder: {
-    backgroundColor: colors.heroAccent,
+    backgroundColor: 'rgba(56, 189, 248, 0.85)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   avatarLetter: {
     color: colors.white,
-    fontSize: 13,
-    fontWeight: '700',
-  },
-  creatorDetails: {
-    justifyContent: 'center',
-  },
-  creatorNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    fontSize: 16,
+    fontWeight: '800',
   },
   creatorName: {
     color: colors.white,
-    fontSize: 12,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 12,
+  },
+  verifiedBadgeContainer: {
+    marginLeft: 6,
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: '#38BDF8',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   verifiedBadge: {
-    color: colors.focusedTint,
-    fontSize: 10,
+    color: colors.black,
+    fontSize: 9,
     fontWeight: '900',
-    marginLeft: 4,
   },
-  creatorHandle: {
-    color: colors.textSecondary,
-    fontSize: 10,
-  },
-  description: {
-    color: colors.textSecondary,
-    fontSize: 11,
-    lineHeight: 15,
-    marginVertical: spacing.xs,
-  },
-  metricsRow: {
+  badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    borderRadius: 6,
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    marginVertical: spacing.xs,
+    flexWrap: 'wrap',
+    marginTop: 2,
+    gap: 6,
   },
-  metricItem: {
-    flex: 1,
-    alignItems: 'center',
+  categoryPill: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 4,
   },
-  metricLabel: {
-    color: colors.textSecondary,
-    fontSize: 9,
+  categoryPillText: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 10,
+    fontWeight: '700',
     textTransform: 'uppercase',
   },
-  metricValue: {
-    color: colors.white,
-    fontSize: 12,
-    fontWeight: '800',
-    marginTop: 1,
-  },
-  metricDivider: {
-    width: 1,
-    height: 18,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: spacing.xs,
-  },
-  tagChip: {
+  metaPill: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     paddingHorizontal: 6,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: 4,
-    marginRight: 4,
-    marginBottom: 4,
   },
-  tagText: {
-    color: colors.textSecondary,
+  metaPillText: {
+    color: 'rgba(255, 255, 255, 0.6)',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  premiumPill: {
+    backgroundColor: '#F59E0B',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 4,
+  },
+  premiumPillText: {
+    color: colors.black,
     fontSize: 9,
-    fontWeight: '500',
+    fontWeight: '900',
   },
 });

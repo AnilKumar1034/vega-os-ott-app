@@ -801,6 +801,8 @@ export interface AnalyticsEventParamsMap {
   shorts_skipped: ShortsSkippedParams;
   shorts_liked: ShortsLikedParams;
   shorts_unliked: ShortsUnlikedParams;
+  shorts_saved: ShortsSavedParams;
+  shorts_unsaved: ShortsUnsavedParams;
   shorts_playback_error: ShortsPlaybackErrorParams;
 }
 
@@ -857,6 +859,16 @@ export interface ShortsLikedParams {
 }
 
 export interface ShortsUnlikedParams {
+  short_id: string;
+  [key: string]: unknown;
+}
+
+export interface ShortsSavedParams {
+  short_id: string;
+  [key: string]: unknown;
+}
+
+export interface ShortsUnsavedParams {
   short_id: string;
   [key: string]: unknown;
 }

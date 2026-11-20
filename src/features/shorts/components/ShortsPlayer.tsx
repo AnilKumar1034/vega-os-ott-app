@@ -10,14 +10,14 @@ import {
 import {KeplerVideoViewComponent} from '../services/shortsPlaybackService';
 import {useShortsPlayback} from '../hooks/useShortsPlayback';
 import {ShortsPlayerControls} from './ShortsPlayerControls';
-import {ShortsItem, ShortsPlaybackState} from '../types/shorts.types';
+import {ShortsItem} from '../types/shorts.types';
 import {
   DEFAULT_SHORTS_FALLBACK_THUMBNAIL,
   SHORTS_TEST_IDS,
 } from '../constants/shorts.constants';
 import {colors} from '../../../theme/colors';
 import {fontSizes, fontWeights} from '../../../theme/fonts';
-import {borderRadius, spacing} from '../../../theme/sizes';
+import {spacing} from '../../../theme/sizes';
 
 export interface ShortsPlayerProps {
   short: ShortsItem | null;
@@ -153,6 +153,24 @@ export const ShortsPlayer: React.FC<ShortsPlayerProps> = ({
         </View>
       )}
 
+      {/* Signature Red Progress Bar along bottom edge */}
+      <View style={styles.progressBarTrack} pointerEvents="none">
+        <View
+          style={[
+            styles.progressBarFill,
+            {
+              width: isPlaying
+                ? '60%'
+                : isCompleted
+                ? '100%'
+                : isPaused
+                ? '35%'
+                : '10%',
+            },
+          ]}
+        />
+      </View>
+
       {/* Bottom Controls Overlay */}
       {showControls && (
         <View style={styles.bottomControlsContainer}>
@@ -172,13 +190,18 @@ const styles = StyleSheet.create({
   container: {
     width: 170,
     height: 300,
-    borderRadius: borderRadius.dialog,
+    borderRadius: 24, // Distinctive white rounded frame matching reference image
     overflow: 'hidden',
-    backgroundColor: colors.cardBackground,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.15)',
+    backgroundColor: '#0F141C',
+    borderWidth: 3.5,
+    borderColor: '#FFFFFF',
     position: 'relative',
     justifyContent: 'space-between',
+    shadowColor: colors.black,
+    shadowOffset: {width: 0, height: 10},
+    shadowOpacity: 0.8,
+    shadowRadius: 20,
+    elevation: 14,
   },
   topBadgeRow: {
     flexDirection: 'row',
@@ -190,7 +213,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.75)',
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    borderRadius: borderRadius.sm,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
@@ -203,7 +226,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(245, 158, 11, 0.9)',
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
-    borderRadius: borderRadius.sm,
+    borderRadius: 4,
   },
   premiumBadgeText: {
     color: colors.black,
@@ -256,6 +279,19 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     fontSize: fontSizes.caption,
     textAlign: 'center',
+  },
+  progressBarTrack: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 3.5,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+    zIndex: 15,
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: '#FF0000',
   },
   bottomControlsContainer: {
     paddingBottom: spacing.md,

@@ -1,9 +1,7 @@
 import React from 'react';
-import {act, fireEvent, render, waitFor} from '@testing-library/react-native';
+import {act, fireEvent, render} from '@testing-library/react-native';
 import {AppState} from 'react-native';
 import {ShortsPlayer} from '../src/features/shorts/components/ShortsPlayer';
-import {ShortsPlayerControls} from '../src/features/shorts/components/ShortsPlayerControls';
-import {useShortsPlayback} from '../src/features/shorts/hooks/useShortsPlayback';
 import {SHORTS_TEST_IDS} from '../src/features/shorts/constants/shorts.constants';
 import {analyticsService} from '../src/analytics';
 import * as profileHooks from '../src/profiles/hooks/useProfile';

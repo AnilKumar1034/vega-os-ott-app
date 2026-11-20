@@ -43,6 +43,10 @@ export const SHORTS_TEST_IDS = {
   replayButton: 'shorts-replay-button',
   playerErrorRetryButton: 'shorts-player-error-retry-button',
   playerBuffering: 'shorts-player-buffering',
+  actionRail: 'shorts-action-rail',
+  likeButton: 'shorts-like-button',
+  saveButton: 'shorts-save-button',
+  likeCount: 'shorts-like-count',
 };
 
 export const DEFAULT_SHORTS_FALLBACK_THUMBNAIL =

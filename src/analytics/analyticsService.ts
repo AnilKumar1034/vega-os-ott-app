@@ -85,6 +85,11 @@ import {
   ShortsStartedParams,
   ShortsPausedParams,
   ShortsCompletedParams,
+  ShortsSkippedParams,
+  ShortsLikedParams,
+  ShortsUnlikedParams,
+  ShortsSavedParams,
+  ShortsUnsavedParams,
   ShortsPlaybackErrorParams,
 } from './analyticsTypes';
 
@@ -2955,6 +2960,67 @@ export class AnalyticsService implements IAnalyticsService {
     } catch (err) {
       if (typeof __DEV__ !== 'undefined' && __DEV__) {
         console.warn('[Analytics] trackShortsCompleted error:', err);
+      }
+    }
+  }
+
+  public async trackShortsSkipped(params: ShortsSkippedParams): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SHORTS_SKIPPED, {
+        watch_duration_seconds: 0,
+        ...params,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackShortsSkipped error:', err);
+      }
+    }
+  }
+
+  public async trackShortsLiked(params: ShortsLikedParams): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SHORTS_LIKED, {
+        ...params,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackShortsLiked error:', err);
+      }
+    }
+  }
+
+  public async trackShortsUnliked(params: ShortsUnlikedParams): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SHORTS_UNLIKED, {
+        ...params,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackShortsUnliked error:', err);
+      }
+    }
+  }
+
+  public async trackShortsSaved(params: ShortsSavedParams): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SHORTS_SAVED, {
+        ...params,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackShortsSaved error:', err);
+      }
+    }
+  }
+
+  public async trackShortsUnsaved(params: ShortsUnsavedParams): Promise<void> {
+    try {
+      await this.track(AnalyticsEvent.SHORTS_UNSAVED, {
+        ...params,
+      });
+    } catch (err) {
+      if (typeof __DEV__ !== 'undefined' && __DEV__) {
+        console.warn('[Analytics] trackShortsUnsaved error:', err);
       }
     }
   }

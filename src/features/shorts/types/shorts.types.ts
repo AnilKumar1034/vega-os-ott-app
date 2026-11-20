@@ -24,6 +24,8 @@ export interface ShortsItem {
 
   creator?: ShortsCreator;
 
+  audioTrack?: string;
+
   category?: string;
   tags?: string[];
 
@@ -31,6 +33,7 @@ export interface ShortsItem {
 
   isLiked: boolean;
   likeCount: number;
+  commentCount?: number;
   viewCount: number;
 
   isSaved: boolean;
@@ -115,4 +118,22 @@ export interface ShortsPlayerProps {
   onCompleted?: (short: ShortsItem) => void;
   onError?: (short: ShortsItem, error: string) => void;
   showControls?: boolean;
+}
+
+export interface ShortsInteractionResponse {
+  success: boolean;
+  shortId: string;
+  isLiked: boolean;
+  likeCount: number;
+  isSaved: boolean;
+  message?: string;
+}
+
+export interface ShortsActionRailProps {
+  short: ShortsItem | null;
+  onToggleLike: () => void;
+  onToggleSave: () => void;
+  isLikeLoading?: boolean;
+  isSaveLoading?: boolean;
+  disabled?: boolean;
 }

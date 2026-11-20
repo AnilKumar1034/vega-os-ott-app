@@ -105,6 +105,34 @@ export const shortsApi = {
     }
     return prodClient.search(params);
   },
+
+  likeShort: async (shortId: string, profileId?: string): Promise<ShortsItem> => {
+    if (SHORTS_API_CONFIG.USE_MOCK_API) {
+      return mockApi.likeShort(shortId, profileId);
+    }
+    throw new Error('Production Shorts backend API is not yet configured.');
+  },
+
+  unlikeShort: async (shortId: string, profileId?: string): Promise<ShortsItem> => {
+    if (SHORTS_API_CONFIG.USE_MOCK_API) {
+      return mockApi.unlikeShort(shortId, profileId);
+    }
+    throw new Error('Production Shorts backend API is not yet configured.');
+  },
+
+  saveShort: async (shortId: string, profileId?: string): Promise<ShortsItem> => {
+    if (SHORTS_API_CONFIG.USE_MOCK_API) {
+      return mockApi.saveShort(shortId, profileId);
+    }
+    throw new Error('Production Shorts backend API is not yet configured.');
+  },
+
+  unsaveShort: async (shortId: string, profileId?: string): Promise<ShortsItem> => {
+    if (SHORTS_API_CONFIG.USE_MOCK_API) {
+      return mockApi.unsaveShort(shortId, profileId);
+    }
+    throw new Error('Production Shorts backend API is not yet configured.');
+  },
 };
 
 export {SHORTS_API_CONFIG};

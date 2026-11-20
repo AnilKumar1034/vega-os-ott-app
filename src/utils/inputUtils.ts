@@ -90,3 +90,22 @@ export const isStopEvent = (eventType?: string): boolean => {
   return type === 'stop';
 };
 
+/**
+ * Determines whether a TV hardware event corresponds to a D-pad Up action.
+ */
+export const isUpEvent = (eventType?: string): boolean => {
+  if (!eventType) return false;
+  const type = eventType.toLowerCase();
+  return type === 'up' || type === 'dpad_up' || type === 'pageup';
+};
+
+/**
+ * Determines whether a TV hardware event corresponds to a D-pad Down action.
+ */
+export const isDownEvent = (eventType?: string): boolean => {
+  if (!eventType) return false;
+  const type = eventType.toLowerCase();
+  return type === 'down' || type === 'dpad_down' || type === 'pagedown';
+};
+
+

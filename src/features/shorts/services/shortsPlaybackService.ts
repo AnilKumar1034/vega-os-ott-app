@@ -47,9 +47,6 @@ export const releasePlayerResourcesSync = (player: any): void => {
   if (!player) return;
   try {
     player.pause?.();
-    if (player.clearSurfaceHandle) {
-      player.clearSurfaceHandle?.('');
-    }
     player.deinitializeSync?.(1000);
   } catch (err) {
     console.log('[ShortsPlaybackService] Synchronous media release notice:', err);
