@@ -12,12 +12,13 @@ export interface MenuOptionItem {
   title: string;
   name:
     | 'Home'
+    | 'Search'
+    | 'Shorts'
     | 'Movies'
     | 'LiveTV'
     | 'MyList'
     | 'Details'
-    | 'Settings'
-    | 'Search';
+    | 'Settings';
   icon: ImageSourcePropType;
 }
 

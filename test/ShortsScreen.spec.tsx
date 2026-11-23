@@ -12,6 +12,7 @@ import {UserProfile} from '../src/profiles/types/Profile';
 
 const mockGoBack = jest.fn();
 const mockNavigate = jest.fn();
+let mockRouteParams: any = {};
 
 jest.mock('@react-navigation/native', () => ({
   ...jest.requireActual('@react-navigation/native'),
@@ -20,7 +21,7 @@ jest.mock('@react-navigation/native', () => ({
     navigate: mockNavigate,
   }),
   useRoute: () => ({
-    params: {},
+    params: mockRouteParams,
   }),
 }));
 
@@ -37,6 +38,7 @@ describe('ShortsScreen UI & TV Experience', () => {
   beforeEach(() => {
     resetMockScenario();
     jest.clearAllMocks();
+    mockRouteParams = {};
     jest.spyOn(profileHooks, 'useProfile').mockReturnValue({
       activeProfile: adultProfile,
       profiles: [adultProfile],
@@ -174,5 +176,70 @@ describe('ShortsScreen UI & TV Experience', () => {
     });
 
     expect(mockGoBack).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders separate Shorts browse screen with SideMenu and catalog grid when in browse mode', async () => {
+    mockRouteParams = {browseMode: true};
+    const screen = render(<ShortsScreen />);
+    await act(async () => {});
+
+    await waitFor(() => {
+      expect(screen.getByTestId(SHORTS_TEST_IDS.browseGrid)).toBeTruthy();
+      expect(screen.getByTestId(SHORTS_TEST_IDS.header)).toBeTruthy();
+      expect(screen.getByTestId(SHORTS_TEST_IDS.categoryTabs)).toBeTruthy();
+    });
+    expect(screen.getByText('LogiXstream Shorts')).toBeTruthy();
+  });
+
+  it('clicking on any short card in browse grid opens full screen player with close button', async () => {
+    mockRouteParams = {browseMode: true};
+    const screen = render(<ShortsScreen />);
+    await act(async () => {});
+
+    await waitFor(() => {
+      expect(screen.getByTestId(SHORTS_TEST_IDS.browseGrid)).toBeTruthy();
+    });
+
+    const firstCard = screen.getByTestId(SHORTS_TEST_IDS.card('short_001'));
+    expect(firstCard).toBeTruthy();
+
+    await act(async () => {
+      fireEvent.press(firstCard);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId(SHORTS_TEST_IDS.fullScreenPlayer)).toBeTruthy();
+      expect(screen.getByTestId(SHORTS_TEST_IDS.preview)).toBeTruthy();
+      expect(screen.getByTestId(SHORTS_TEST_IDS.closeButton)).toBeTruthy();
+    });
+  });
+
+  it('clicking close button closes full screen player and returns to browse grid', async () => {
+    mockRouteParams = {browseMode: true};
+    const screen = render(<ShortsScreen />);
+    await act(async () => {});
+
+    await waitFor(() => {
+      expect(screen.getByTestId(SHORTS_TEST_IDS.browseGrid)).toBeTruthy();
+    });
+
+    // Click card to open full screen player
+    await act(async () => {
+      fireEvent.press(screen.getByTestId(SHORTS_TEST_IDS.card('short_001')));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId(SHORTS_TEST_IDS.closeButton)).toBeTruthy();
+    });
+
+    // Click close button
+    await act(async () => {
+      fireEvent.press(screen.getByTestId(SHORTS_TEST_IDS.closeButton));
+    });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId(SHORTS_TEST_IDS.fullScreenPlayer)).toBeNull();
+      expect(screen.getByTestId(SHORTS_TEST_IDS.browseGrid)).toBeTruthy();
+    });
   });
 });

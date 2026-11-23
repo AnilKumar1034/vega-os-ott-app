@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: colors.white,
-    fontSize: 26,
+    fontSize: 20,
     fontWeight: '700',
     lineHeight: 32,
     marginBottom: 4,
@@ -114,14 +114,14 @@ const styles = StyleSheet.create({
   },
   soundIcon: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '800',
     marginRight: 6,
     letterSpacing: -1,
   },
   soundText: {
     color: 'rgba(255, 255, 255, 0.7)',
-    fontSize: 14,
+    fontSize: 12,
     fontWeight: '500',
   },
   creatorRow: {
@@ -148,15 +148,15 @@ const styles = StyleSheet.create({
   },
   creatorName: {
     color: colors.white,
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     marginLeft: 12,
   },
   verifiedBadgeContainer: {
     marginLeft: 6,
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: '#38BDF8',
     alignItems: 'center',
     justifyContent: 'center',

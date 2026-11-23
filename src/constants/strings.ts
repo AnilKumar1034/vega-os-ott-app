@@ -39,7 +39,8 @@ export const strings = {
   shorts: {
     title: 'Shorts • Quick Stories',
     screenTitle: 'LogiXstream Shorts',
-    screenSubtitle: 'Bite-sized stories, previews, and highlights',
+    screenSubtitle: 'Trending vertical stories, highlights, and clips',
+    closePlayer: 'Go Back',
     loading: 'Loading Shorts feed…',
     noShortsFound: 'No Shorts Found',
     noShortsMessage:
@@ -90,13 +91,14 @@ export const strings = {
   // Side Menu Options
   sideMenu: {
     home: 'Home',
+    search: 'Search',
+    shorts: 'Shorts',
     movies: 'Movies',
     liveTV: 'Live TV',
     myList: 'My List',
     series: 'Series',
     categories: 'Categories',
     details: 'Details',
-    search: 'Search',
     settings: 'Settings',
   },
 

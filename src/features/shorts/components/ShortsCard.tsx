@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
   },
   cardFocused: {
     borderColor: colors.white,
-    transform: [{scale: 1.08}],
+    transform: [{scale: 1.01}],
     shadowColor: colors.white,
     shadowOffset: {width: 0, height: 0},
     shadowOpacity: 0.7,

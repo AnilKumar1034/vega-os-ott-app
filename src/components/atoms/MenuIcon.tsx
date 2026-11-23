@@ -12,6 +12,7 @@ export type MenuIconName =
   | 'Home'
   | 'Movies'
   | 'LiveTV'
+  | 'Shorts'
   | 'MyList'
   | 'Details'
   | 'Settings'
@@ -36,6 +37,8 @@ const iconSources: Record<string, ImageSourcePropType> = {
   LiveTV: require('../../assets/livetv.png'),
   livetv: require('../../assets/livetv.png'),
   'Live TV': require('../../assets/livetv.png'),
+  Shorts: require('../../assets/shorts.png'),
+  shorts: require('../../assets/shorts.png'),
   MyList: require('../../assets/mylist.png'),
   mylist: require('../../assets/mylist.png'),
   'My List': require('../../assets/mylist.png'),

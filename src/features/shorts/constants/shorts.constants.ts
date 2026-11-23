@@ -47,6 +47,9 @@ export const SHORTS_TEST_IDS = {
   likeButton: 'shorts-like-button',
   saveButton: 'shorts-save-button',
   likeCount: 'shorts-like-count',
+  closeButton: 'shorts-player-close-button',
+  browseGrid: 'shorts-browse-grid',
+  fullScreenPlayer: 'shorts-fullscreen-player',
 };
 
 export const DEFAULT_SHORTS_FALLBACK_THUMBNAIL =

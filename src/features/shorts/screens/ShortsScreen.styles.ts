@@ -7,6 +7,73 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1B232A', // Dark slate/navy matte matching reference screenshot
   },
+  browseContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    backgroundColor: '#0F1014',
+  },
+  browseContent: {
+    flex: 1,
+    paddingHorizontal: spacing.extraHuge,
+    paddingLeft: spacing.headerLogoWidth,
+    paddingTop: spacing.large,
+    paddingBottom: spacing.large,
+  },
+  browseGrid: {
+    paddingBottom: 40,
+    paddingTop: spacing.xs,
+  },
+  browseGridRow: {
+    justifyContent: 'flex-start',
+    marginBottom: 20,
+  },
+  browseCardWrapper: {
+    marginRight: 20,
+  },
+  playerTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  closeButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 20,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
+  },
+  closeButtonFocused: {
+    backgroundColor: colors.white,
+    borderColor: colors.white,
+    transform: [{scale: 1.08}],
+    shadowColor: colors.white,
+    shadowOffset: {width: 0, height: 0},
+    shadowOpacity: 0.6,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  closeButtonIcon: {
+    color: colors.white,
+    fontSize: 14,
+    fontWeight: '800',
+    marginRight: 6,
+  },
+  closeButtonIconFocused: {
+    color: colors.black,
+  },
+  closeButtonText: {
+    color: colors.white,
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 0.5,
+  },
+  closeButtonTextFocused: {
+    color: colors.black,
+  },
   background: {
     flex: 1,
     width: '100%',
@@ -30,7 +97,7 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.md,
+    marginBottom: spacing.extraHuge,
   },
   headerTitleArea: {
     flexDirection: 'row',
@@ -62,7 +129,7 @@ export const styles = StyleSheet.create({
   },
   categoryScroll: {
     maxHeight: 34,
-    marginBottom: spacing.md,
+    marginBottom: spacing.extraHuge,
   },
   categoryList: {
     flexDirection: 'row',
@@ -105,8 +172,8 @@ export const styles = StyleSheet.create({
   previewContainer: {
     // width: 170,
     // height: 300, // 9:16 aspect ratio
-    width: 230,
-    height: 430,
+    width: 280,
+    height: 480,
     borderRadius: 24, // Distinctive white rounded frame matching reference image
     overflow: 'hidden',
     backgroundColor: '#0F141C',
@@ -136,8 +203,9 @@ export const styles = StyleSheet.create({
   },
   rightSidePanel: {
     marginLeft: 36,
-    maxWidth: 400,
-    justifyContent: 'center',
+    // maxWidth: 200,
+    // justifyContent: 'center',
+    justifyContent: 'flex-end',
   },
   metadataContainer: {
     justifyContent: 'center',
@@ -174,7 +242,7 @@ export const styles = StyleSheet.create({
   remoteHintText: {
     color: 'rgba(255, 255, 255, 0.55)',
     fontSize: 10,
-    marginLeft: 6,
+    margin: 16,
   },
   bottomRail: {
     height: 116,

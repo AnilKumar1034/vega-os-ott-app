@@ -22,6 +22,12 @@ const menuOptions: MenuOptionItem[] = [
     icon: require('../../assets/search.png'),
   },
   {
+    route: Routes.Shorts,
+    title: strings.sideMenu.shorts,
+    name: 'Shorts',
+    icon: require('../../assets/learn-more.png'),
+  },
+  {
     route: Routes.Movies,
     title: strings.sideMenu.movies,
     name: 'Movies',
