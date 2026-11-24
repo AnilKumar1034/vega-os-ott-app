@@ -129,4 +129,17 @@ describe('SideMenu component', () => {
 
     expect(screen.getByTestId('side-menu-Home')).toBeTruthy();
   });
+
+  it('renders Watch Party menu item with dedicated watchparty icon', () => {
+    const screen = render(
+      <SideMenu
+        activeRoute={Routes.Home}
+        isExpanded={true}
+        onMenuFocus={mockOnMenuFocus}
+      />,
+    );
+
+    expect(screen.getByTestId('side-menu-label-WatchPartyJoin')).toBeTruthy();
+    expect(screen.getByTestId('menu-icon-watchparty')).toBeTruthy();
+  });
 });

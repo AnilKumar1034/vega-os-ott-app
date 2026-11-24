@@ -22,6 +22,11 @@ import {SubscriptionScreen} from '../screens/SubscriptionScreen';
 import {MyListScreen} from '../screens/MyListScreen';
 import {LiveTVScreen} from '../features/live-tv/screens/LiveTVScreen';
 import {ShortsScreen} from '../features/shorts/screens/ShortsScreen';
+import {
+  WatchPartyCreateScreen,
+  WatchPartyJoinScreen,
+  WatchPartyLobbyScreen,
+} from '../features/watchParty';
 import {LiveChannelDrmConfig} from '../features/live-tv/models/LiveChannel';
 import {createStackNavigator} from './StackNavigator';
 import {AuthProvider} from '../context/AuthProvider';
@@ -68,6 +73,11 @@ export type RootStackParamList = {
   [Routes.Register]: undefined;
   [Routes.Subscription]: {sourceScreen?: string} | undefined;
   [Routes.Shorts]: {shortId?: string} | undefined;
+  [Routes.WatchPartyCreate]:
+    | {movie?: any; contentId?: string; contentType?: 'movie' | 'episode'}
+    | undefined;
+  [Routes.WatchPartyJoin]: {initialCode?: string} | undefined;
+  [Routes.WatchPartyLobby]: {roomId?: string; room?: any} | undefined;
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -146,6 +156,9 @@ const linking: LinkingOptions<RootStackParamList> = {
       [Routes.Register]: 'register',
       [Routes.Subscription]: DeeplinkRoutes.Subscription,
       [Routes.Shorts]: DeeplinkRoutes.Shorts,
+      [Routes.WatchPartyCreate]: 'watch-party/create',
+      [Routes.WatchPartyJoin]: 'watch-party/join',
+      [Routes.WatchPartyLobby]: 'watch-party/lobby',
     },
   },
 };
@@ -233,6 +246,18 @@ const AppNavigatorInner = () => {
           component={SubscriptionScreen}
         />
         <Stack.Screen name={Routes.Shorts} component={ShortsScreen} />
+        <Stack.Screen
+          name={Routes.WatchPartyCreate}
+          component={WatchPartyCreateScreen}
+        />
+        <Stack.Screen
+          name={Routes.WatchPartyJoin}
+          component={WatchPartyJoinScreen}
+        />
+        <Stack.Screen
+          name={Routes.WatchPartyLobby}
+          component={WatchPartyLobbyScreen}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -1,0 +1,165 @@
+import {StyleSheet} from 'react-native';
+import {colors} from '../../../theme/colors';
+
+export const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.screenBackground,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    paddingBottom: 48,
+    alignItems: 'center',
+  },
+  contentGuide: {
+    width: '100%',
+    alignItems: 'center',
+    paddingHorizontal: 48,
+    paddingVertical: 16,
+  },
+  mainCard: {
+    backgroundColor: colors.cardBackground,
+    borderRadius: 20,
+    padding: 24,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+    width: '100%',
+    maxWidth: 780,
+    alignItems: 'center',
+  },
+  title: {
+    color: colors.textPrimary,
+    fontSize: 22,
+    fontWeight: '800',
+    marginBottom: 6,
+  },
+  subtitle: {
+    color: colors.textSecondary,
+    fontSize: 14,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  codeSlotsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  codeSlot: {
+    width: 48,
+    height: 58,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 2,
+    borderColor: colors.cardBorderSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  codeSlotFilled: {
+    borderColor: colors.heroAccent,
+    backgroundColor: 'rgba(229, 9, 20, 0.1)',
+  },
+  codeSlotText: {
+    color: colors.white,
+    fontSize: 26,
+    fontWeight: '900',
+  },
+  keypadContainer: {
+    alignItems: 'center',
+    marginVertical: 8,
+    gap: 8,
+  },
+  keypadRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  keypadKey: {
+    width: 42,
+    height: 42,
+    borderRadius: 8,
+    backgroundColor: colors.cardBackgroundSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  keypadKeyFocused: {
+    borderColor: colors.focusRing,
+    backgroundColor: colors.heroAccent,
+    transform: [{scale: 1.1}],
+  },
+  keypadKeyText: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  keypadActionKey: {
+    width: 60,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: 16,
+    marginTop: 16,
+    width: '100%',
+    justifyContent: 'center',
+  },
+  joinButton: {
+    backgroundColor: colors.heroAccent,
+    paddingHorizontal: 40,
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: 'transparent',
+    alignItems: 'center',
+  },
+  joinButtonDisabled: {
+    opacity: 0.5,
+  },
+  joinButtonFocused: {
+    borderColor: colors.focusRing,
+    transform: [{scale: 1.05}],
+  },
+  joinButtonText: {
+    color: colors.white,
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+  },
+  clearButton: {
+    backgroundColor: colors.cardBackgroundSubtle,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: colors.cardBorderSubtle,
+    alignItems: 'center',
+  },
+  clearButtonFocused: {
+    borderColor: colors.focusRing,
+    transform: [{scale: 1.05}],
+  },
+  clearButtonText: {
+    color: colors.textSecondary,
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  errorBanner: {
+    backgroundColor: colors.errorBackground,
+    borderWidth: 1,
+    borderColor: colors.errorBorder,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginTop: 14,
+    width: '100%',
+  },
+  errorBannerText: {
+    color: colors.errorText,
+    fontSize: 14,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});

@@ -94,6 +94,14 @@ export const AnalyticsEvent = {
   SHORTS_SAVED: 'shorts_saved',
   SHORTS_UNSAVED: 'shorts_unsaved',
   SHORTS_PLAYBACK_ERROR: 'shorts_playback_error',
+  WATCH_PARTY_OPENED: 'watch_party_opened',
+  WATCH_PARTY_CREATE_STARTED: 'watch_party_create_started',
+  WATCH_PARTY_CREATED: 'watch_party_created',
+  WATCH_PARTY_JOIN_STARTED: 'watch_party_join_started',
+  WATCH_PARTY_JOINED: 'watch_party_joined',
+  WATCH_PARTY_ROOM_VIEWED: 'watch_party_room_viewed',
+  WATCH_PARTY_LEFT: 'watch_party_left',
+  WATCH_PARTY_ERROR: 'watch_party_error',
 } as const;
 
 export type AnalyticsEventName =

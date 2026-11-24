@@ -52,6 +52,12 @@ const menuOptions: MenuOptionItem[] = [
     icon: require('../../assets/details.png'),
   },
   {
+    route: Routes.WatchPartyJoin,
+    title: strings.sideMenu.watchParty,
+    name: 'WatchParty',
+    icon: require('../../assets/watchparty.png'),
+  },
+  {
     route: Routes.Settings,
     title: strings.sideMenu.settings,
     name: 'Settings',

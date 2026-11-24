@@ -99,6 +99,7 @@ export const strings = {
     series: 'Series',
     categories: 'Categories',
     details: 'Details',
+    watchParty: 'Watch Party',
     settings: 'Settings',
   },
 

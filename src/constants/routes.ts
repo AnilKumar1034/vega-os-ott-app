@@ -18,6 +18,9 @@ export const Routes = {
   MyList: 'MyList',
   Subscription: 'Subscription',
   Shorts: 'Shorts',
+  WatchPartyCreate: 'WatchPartyCreate',
+  WatchPartyJoin: 'WatchPartyJoin',
+  WatchPartyLobby: 'WatchPartyLobby',
 } as const;
 
 export type RouteName = (typeof Routes)[keyof typeof Routes];

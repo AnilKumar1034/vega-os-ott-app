@@ -83,6 +83,7 @@ export const MovieDetailScreen = () => {
     | 'continueWatch'
     | 'trailer'
     | 'subscribe'
+    | 'watchParty'
     | null
   >(null);
 
@@ -517,6 +518,14 @@ export const MovieDetailScreen = () => {
       (selectedMovie.videoUrl && selectedMovie.videoUrl.includes('trailer')),
   );
 
+  const handleWatchPartyPress = useCallback(() => {
+    navigation.navigate(Routes.WatchPartyCreate, {
+      movie: selectedMovie,
+      contentId: selectedMovie?.id,
+      contentType: isSeries ? 'episode' : 'movie',
+    });
+  }, [isSeries, navigation, selectedMovie]);
+
   const entitlementBadge = !entitlementAccess.isEntitled && user
     ? entitlementAccess.reason === 'upgrade_required'
       ? 'PREMIUM 4K REQUIRED'
@@ -646,6 +655,7 @@ export const MovieDetailScreen = () => {
                   }}
                   onBlurAction={() => setFocusedAction(null)}
                   onWatchPress={() => handlePlayAction()}
+                  onWatchPartyPress={handleWatchPartyPress}
                   onCardFocus={() => {
                     setLastFocusedArea('recommendations');
                     setIsMenuExpanded(false);

@@ -18,6 +18,7 @@ export interface MenuOptionItem {
     | 'LiveTV'
     | 'MyList'
     | 'Details'
+    | 'WatchParty'
     | 'Settings';
   icon: ImageSourcePropType;
 }

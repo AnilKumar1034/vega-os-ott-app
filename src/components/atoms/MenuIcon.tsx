@@ -15,6 +15,7 @@ export type MenuIconName =
   | 'Shorts'
   | 'MyList'
   | 'Details'
+  | 'WatchParty'
   | 'Settings'
   | 'Search'
   | 'Close';
@@ -44,6 +45,9 @@ const iconSources: Record<string, ImageSourcePropType> = {
   'My List': require('../../assets/mylist.png'),
   Details: require('../../assets/details.png'),
   details: require('../../assets/details.png'),
+  WatchParty: require('../../assets/watchparty.png'),
+  watchparty: require('../../assets/watchparty.png'),
+  'Watch Party': require('../../assets/watchparty.png'),
   Settings: require('../../assets/settings.png'),
   settings: require('../../assets/settings.png'),
   Search: require('../../assets/search.png'),

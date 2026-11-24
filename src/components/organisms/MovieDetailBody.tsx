@@ -29,6 +29,7 @@ export interface MovieDetailBodyProps {
     | 'continueWatch'
     | 'trailer'
     | 'subscribe'
+    | 'watchParty'
     | null;
   continueWatchProgress: number | null;
   isFavourite?: boolean;
@@ -45,7 +46,8 @@ export interface MovieDetailBodyProps {
       | 'favourites'
       | 'continueWatch'
       | 'trailer'
-      | 'subscribe',
+      | 'subscribe'
+      | 'watchParty',
   ) => void;
   onBlurAction: () => void;
   onCardFocus: () => void;
@@ -55,6 +57,7 @@ export interface MovieDetailBodyProps {
   onRemoveContinueWatch: () => void;
   selectionSource?: string;
   onWatchPress?: () => void;
+  onWatchPartyPress?: () => void;
 
   // Rich series extensions
   isSeries?: boolean;
@@ -115,6 +118,7 @@ export const MovieDetailBody = ({
   hasTrailer = false,
   onTrailerPress,
   primaryActionLabel,
+  onWatchPartyPress,
 }: MovieDetailBodyProps) => {
   const navigation = useNavigation<any>();
   const inList = isInWatchlist || isFavourite;
@@ -446,6 +450,24 @@ export const MovieDetailBody = ({
                   style={[styles.secondaryButtonText, styles.addFavouriteText]}>
                   {strings.actions.addToMyList}
                 </Text>
+              </TouchableOpacity>
+            )}
+
+            {/* Watch Party Action */}
+            {onWatchPartyPress && (
+              <TouchableOpacity
+                style={[
+                  styles.secondaryButton,
+                  focusedAction === 'watchParty' && styles.focusedAction,
+                ]}
+                onFocus={() => onFocusAction('watchParty')}
+                onBlur={onBlurAction}
+                onPress={onWatchPartyPress}
+                activeOpacity={1}
+                accessibilityRole="button"
+                accessibilityLabel={`Watch Party ${selectedMovie.title}`}
+                testID="detail-watch-party-button">
+                <Text style={styles.secondaryButtonText}>Watch Party</Text>
               </TouchableOpacity>
             )}
 
