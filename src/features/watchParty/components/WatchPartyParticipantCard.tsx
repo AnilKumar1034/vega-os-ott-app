@@ -9,9 +9,11 @@ import {Image, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 import {colors} from '../../../theme/colors';
 import {WATCH_PARTY_TEST_IDS} from '../constants/watchParty.constants';
 import {WatchPartyParticipant} from '../types/watchParty.types';
+import {WatchPartyHostBadge} from './WatchPartyHostBadge';
 
 export interface WatchPartyParticipantCardProps {
   participant: WatchPartyParticipant;
+  isCurrentUser?: boolean;
   focusable?: boolean;
   onFocus?: () => void;
   onPress?: () => void;
@@ -19,8 +21,15 @@ export interface WatchPartyParticipantCardProps {
 
 export const WatchPartyParticipantCard: React.FC<
   WatchPartyParticipantCardProps
-> = ({participant, focusable = false, onFocus, onPress}) => {
+> = ({
+  participant,
+  isCurrentUser = false,
+  focusable = false,
+  onFocus,
+  onPress,
+}) => {
   const [isFocused, setIsFocused] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   const getStatusColor = () => {
     switch (participant.status) {
@@ -34,8 +43,20 @@ export const WatchPartyParticipantCard: React.FC<
     }
   };
 
-  const getInitials = (name: string) => {
-    if (!name) return '?';
+  const getStatusLabel = () => {
+    switch (participant.status) {
+      case 'connected':
+        return 'Connected';
+      case 'reconnecting':
+        return 'Reconnecting';
+      case 'disconnected':
+      default:
+        return 'Disconnected';
+    }
+  };
+
+  const getInitials = (name?: string) => {
+    if (!name || !name.trim()) return '?';
     const parts = name.trim().split(' ');
     if (parts.length >= 2) {
       return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
@@ -43,26 +64,34 @@ export const WatchPartyParticipantCard: React.FC<
     return name.slice(0, 2).toUpperCase();
   };
 
+  const effectiveName = participant.displayName?.trim() || 'Participant';
+
   const content = (
     <View
       style={[
         styles.card,
         isFocused && styles.cardFocused,
         participant.isHost && styles.hostCardBorder,
+        isCurrentUser && styles.currentUserCardBorder,
       ]}
       testID={WATCH_PARTY_TEST_IDS.participantCard(participant.id)}>
       {/* Avatar or Initials */}
       <View style={styles.avatarWrapper}>
-        {participant.avatarUrl ? (
+        {participant.avatarUrl && !imageError ? (
           <Image
             source={{uri: participant.avatarUrl}}
             style={styles.avatarImage}
             resizeMode="cover"
+            onError={() => setImageError(true)}
           />
         ) : (
-          <View style={styles.avatarFallback}>
+          <View
+            style={[
+              styles.avatarFallback,
+              participant.isHost && styles.avatarFallbackHost,
+            ]}>
             <Text style={styles.avatarInitials}>
-              {getInitials(participant.displayName)}
+              {getInitials(effectiveName)}
             </Text>
           </View>
         )}
@@ -74,19 +103,23 @@ export const WatchPartyParticipantCard: React.FC<
       {/* Name and Badges */}
       <View style={styles.infoArea}>
         <Text style={styles.displayName} numberOfLines={1}>
-          {participant.displayName}
+          {effectiveName}
         </Text>
 
         <View style={styles.badgeRow}>
           {participant.isHost ? (
-            <View
-              style={styles.hostBadge}
-              testID={WATCH_PARTY_TEST_IDS.hostBadge}>
-              <Text style={styles.hostBadgeText}>HOST</Text>
-            </View>
+            <WatchPartyHostBadge size="small" />
           ) : (
             <Text style={styles.memberText}>Guest</Text>
           )}
+
+          {isCurrentUser ? (
+            <View
+              style={styles.youBadge}
+              testID={WATCH_PARTY_TEST_IDS.currentUserBadge}>
+              <Text style={styles.youBadgeText}>YOU</Text>
+            </View>
+          ) : null}
         </View>
       </View>
     </View>
@@ -103,7 +136,9 @@ export const WatchPartyParticipantCard: React.FC<
         onBlur={() => setIsFocused(false)}
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={`${participant.displayName}, ${participant.isHost ? 'Host' : 'Participant'}`}>
+        accessibilityLabel={`${effectiveName}, ${
+          participant.isHost ? 'Host' : 'Participant'
+        }, ${getStatusLabel()}${isCurrentUser ? ', You' : ''}`}>
         {content}
       </TouchableOpacity>
     );
@@ -132,6 +167,9 @@ const styles = StyleSheet.create({
   hostCardBorder: {
     borderColor: 'rgba(229, 9, 20, 0.4)',
   },
+  currentUserCardBorder: {
+    borderColor: 'rgba(59, 130, 246, 0.4)',
+  },
   avatarWrapper: {
     position: 'relative',
   },
@@ -148,6 +186,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.actionSecondary,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  avatarFallbackHost: {
+    backgroundColor: colors.heroAccent,
   },
   avatarInitials: {
     color: colors.white,
@@ -177,22 +218,25 @@ const styles = StyleSheet.create({
   badgeRow: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  hostBadge: {
-    backgroundColor: colors.heroAccent,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  hostBadgeText: {
-    color: colors.white,
-    fontSize: 10,
-    fontWeight: '800',
-    letterSpacing: 0.5,
+    gap: 6,
   },
   memberText: {
     color: colors.textSecondary,
     fontSize: 12,
     fontWeight: '500',
+  },
+  youBadge: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    borderWidth: 1,
+    borderColor: '#3B82F6',
+    borderRadius: 4,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+  },
+  youBadgeText: {
+    color: '#93C5FD',
+    fontSize: 9,
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
 });

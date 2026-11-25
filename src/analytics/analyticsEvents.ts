@@ -102,6 +102,14 @@ export const AnalyticsEvent = {
   WATCH_PARTY_ROOM_VIEWED: 'watch_party_room_viewed',
   WATCH_PARTY_LEFT: 'watch_party_left',
   WATCH_PARTY_ERROR: 'watch_party_error',
+  WATCH_PARTY_LOBBY_VIEWED: 'watch_party_lobby_viewed',
+  WATCH_PARTY_PARTICIPANT_LIST_VIEWED: 'watch_party_participant_list_viewed',
+  WATCH_PARTY_ROOM_REFRESH: 'watch_party_room_refresh',
+  WATCH_PARTY_LEAVE_CONFIRMATION_OPENED: 'watch_party_leave_confirmation_opened',
+  WATCH_PARTY_LEAVE_CONFIRMED: 'watch_party_leave_confirmed',
+  WATCH_PARTY_LEAVE_CANCELLED: 'watch_party_leave_cancelled',
+  WATCH_PARTY_ROOM_EXPIRED: 'watch_party_room_expired',
+  WATCH_PARTY_SHARE_CODE_PRESSED: 'watch_party_share_code_pressed',
 } as const;
 
 export type AnalyticsEventName =

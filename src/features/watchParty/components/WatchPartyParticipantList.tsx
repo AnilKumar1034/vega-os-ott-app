@@ -10,16 +10,38 @@ import {colors} from '../../../theme/colors';
 import {WATCH_PARTY_TEST_IDS} from '../constants/watchParty.constants';
 import {WatchPartyParticipant} from '../types/watchParty.types';
 import {WatchPartyParticipantCard} from './WatchPartyParticipantCard';
+import {WatchPartyEmptyParticipants} from './WatchPartyEmptyParticipants';
 
 export interface WatchPartyParticipantListProps {
   participants: WatchPartyParticipant[];
   maxParticipants?: number;
+  currentUserId?: string;
+  currentProfileId?: string;
+  roomCode?: string;
+  isHost?: boolean;
   enableItemFocus?: boolean;
 }
 
 export const WatchPartyParticipantList: React.FC<
   WatchPartyParticipantListProps
-> = ({participants, maxParticipants, enableItemFocus = false}) => {
+> = ({
+  participants,
+  maxParticipants,
+  currentUserId,
+  currentProfileId,
+  roomCode,
+  isHost = false,
+  enableItemFocus = false,
+}) => {
+  const isParticipantCurrentUser = (p: WatchPartyParticipant): boolean => {
+    return Boolean(
+      (currentProfileId && p.profileId === currentProfileId) ||
+        (currentUserId && p.userId === currentUserId),
+    );
+  };
+
+  const hasOnlyHostOrNone = participants.length <= 1;
+
   return (
     <View
       style={styles.container}
@@ -35,18 +57,23 @@ export const WatchPartyParticipantList: React.FC<
       </View>
 
       {participants.length === 0 ? (
-        <View style={styles.emptyContainer}>
-          <Text style={styles.emptyText}>No participants in the room.</Text>
-        </View>
+        <WatchPartyEmptyParticipants roomCode={roomCode} isHost={isHost} />
       ) : (
-        <View style={styles.grid}>
-          {participants.map((participant) => (
-            <WatchPartyParticipantCard
-              key={participant.id}
-              participant={participant}
-              focusable={enableItemFocus}
-            />
-          ))}
+        <View style={styles.participantContent}>
+          <View style={styles.grid}>
+            {participants.map((participant) => (
+              <WatchPartyParticipantCard
+                key={participant.id}
+                participant={participant}
+                isCurrentUser={isParticipantCurrentUser(participant)}
+                focusable={enableItemFocus}
+              />
+            ))}
+          </View>
+
+          {hasOnlyHostOrNone && (
+            <WatchPartyEmptyParticipants roomCode={roomCode} isHost={isHost} />
+          )}
         </View>
       )}
     </View>
@@ -73,6 +100,9 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 14,
     fontWeight: '700',
+  },
+  participantContent: {
+    gap: 12,
   },
   grid: {
     flexDirection: 'row',

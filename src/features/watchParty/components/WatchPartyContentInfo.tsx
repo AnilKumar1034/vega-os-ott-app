@@ -4,7 +4,7 @@
  * LogiXstream Amazon Vega OS React Native Application
  */
 
-import React from 'react';
+import React, {useState} from 'react';
 import {Image, StyleSheet, Text, View} from 'react-native';
 import {colors} from '../../../theme/colors';
 import {
@@ -20,6 +20,10 @@ export interface WatchPartyContentInfoProps {
   description?: string;
   metadata?: string[];
   badge?: string;
+  releaseYear?: number;
+  duration?: string;
+  season?: number;
+  episode?: number;
 }
 
 export const WatchPartyContentInfo: React.FC<WatchPartyContentInfoProps> = ({
@@ -29,10 +33,29 @@ export const WatchPartyContentInfo: React.FC<WatchPartyContentInfoProps> = ({
   description,
   metadata = [],
   badge,
+  releaseYear,
+  duration,
+  season,
+  episode,
 }) => {
-  const imageSource = thumbnailUrl
-    ? {uri: thumbnailUrl}
-    : {uri: DEFAULT_WATCH_PARTY_FALLBACK_THUMBNAIL};
+  const [imageFailed, setImageFailed] = useState(false);
+
+  const imageSource =
+    thumbnailUrl && !imageFailed
+      ? {uri: thumbnailUrl}
+      : {uri: DEFAULT_WATCH_PARTY_FALLBACK_THUMBNAIL};
+
+  // Combine explicit extra fields with provided metadata items
+  const combinedMetadata = [...metadata];
+  if (season && episode) {
+    combinedMetadata.unshift(`S${season} E${episode}`);
+  }
+  if (releaseYear && !combinedMetadata.some((m) => m.includes(String(releaseYear)))) {
+    combinedMetadata.push(String(releaseYear));
+  }
+  if (duration && !combinedMetadata.some((m) => m.includes(duration))) {
+    combinedMetadata.push(duration);
+  }
 
   return (
     <View
@@ -42,6 +65,7 @@ export const WatchPartyContentInfo: React.FC<WatchPartyContentInfoProps> = ({
         source={imageSource}
         style={styles.thumbnail}
         resizeMode="cover"
+        onError={() => setImageFailed(true)}
       />
 
       <View style={styles.detailsContainer}>
@@ -62,12 +86,12 @@ export const WatchPartyContentInfo: React.FC<WatchPartyContentInfoProps> = ({
           {title}
         </Text>
 
-        {metadata.length > 0 ? (
+        {combinedMetadata.length > 0 ? (
           <View style={styles.metaRow}>
-            {metadata.map((item, index) => (
+            {combinedMetadata.map((item, index) => (
               <React.Fragment key={index}>
                 <Text style={styles.metaItem}>{item}</Text>
-                {index < metadata.length - 1 ? (
+                {index < combinedMetadata.length - 1 ? (
                   <Text style={styles.metaDot}>•</Text>
                 ) : null}
               </React.Fragment>

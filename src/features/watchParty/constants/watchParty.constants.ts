@@ -55,9 +55,22 @@ export const WATCH_PARTY_TEST_IDS = {
 
   // Status & Badges
   hostBadge: 'watch-party-host-badge',
+  currentUserBadge: 'watch-party-current-user-badge',
   roomStatusBadge: 'watch-party-room-status-badge',
+  roomStatusDisplay: 'watch-party-room-status-display',
   participantCountText: 'watch-party-participant-count',
   roomExpiryText: 'watch-party-room-expiry',
+
+  // Leave Confirmation Modal
+  leaveConfirmModal: 'watch-party-leave-confirm-modal',
+  leaveConfirmButton: 'watch-party-leave-confirm-button',
+  leaveCancelButton: 'watch-party-leave-cancel-button',
+
+  // Lobby Specific
+  lobbyActions: 'watch-party-lobby-actions',
+  shareCodeButton: 'watch-party-share-code-button',
+  shareCodeFeedback: 'watch-party-share-code-feedback',
+  emptyParticipants: 'watch-party-empty-participants',
 };
 
 export const WATCH_PARTY_ERROR_MESSAGES: Record<WatchPartyErrorCode, string> = {
