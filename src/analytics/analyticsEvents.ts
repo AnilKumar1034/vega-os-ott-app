@@ -110,6 +110,15 @@ export const AnalyticsEvent = {
   WATCH_PARTY_LEAVE_CANCELLED: 'watch_party_leave_cancelled',
   WATCH_PARTY_ROOM_EXPIRED: 'watch_party_room_expired',
   WATCH_PARTY_SHARE_CODE_PRESSED: 'watch_party_share_code_pressed',
+  WATCH_PARTY_START_PLAYBACK_PRESSED: 'watch_party_start_playback_pressed',
+  WATCH_PARTY_PLAYBACK_STARTED: 'watch_party_playback_started',
+  WATCH_PARTY_PLAYBACK_PAUSED: 'watch_party_playback_paused',
+  WATCH_PARTY_PLAYBACK_RESUMED: 'watch_party_playback_resumed',
+  WATCH_PARTY_PLAYBACK_SEEKED: 'watch_party_playback_seeked',
+  WATCH_PARTY_PLAYBACK_COMPLETED: 'watch_party_playback_completed',
+  WATCH_PARTY_PLAYBACK_ERROR: 'watch_party_playback_error',
+  WATCH_PARTY_HOST_CONTROL_USED: 'watch_party_host_control_used',
+  WATCH_PARTY_PARTICIPANT_PLAYBACK_ENTERED: 'watch_party_participant_playback_entered',
 } as const;
 
 export type AnalyticsEventName =

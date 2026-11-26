@@ -6,14 +6,17 @@
 
 import {
   CreateWatchPartyRequest,
+  InitializePlaybackRequest,
   JoinWatchPartyRequest,
   LeaveWatchPartyRequest,
   MockScenarioType,
+  UpdatePlaybackStateRequest,
   WatchPartyApiError,
   WatchPartyErrorCode,
   WatchPartyParticipant,
   WatchPartyPlaybackState,
   WatchPartyRoom,
+  canControlWatchPartyPlayback,
 } from '../types/watchParty.types';
 import {
   DEFAULT_WATCH_PARTY_FALLBACK_THUMBNAIL,
@@ -594,6 +597,189 @@ export const getWatchPartyPlaybackState = async (
   }
 
   return clonePlayback(state);
+};
+
+/**
+ * Mock API: Initialize Room Playback State (Host Only)
+ * Contract: POST /api/v1/watch-party/rooms/:roomId/playback/initialize
+ */
+export const initializeWatchPartyPlayback = async (
+  request: InitializePlaybackRequest,
+): Promise<WatchPartyPlaybackState> => {
+  await evaluateFailureScenario();
+
+  if (!request.roomId || !request.roomId.trim()) {
+    throw createApiError('ROOM_NOT_FOUND', 'Invalid room ID.');
+  }
+
+  ensureStoreInitialized();
+  const room = roomsStore.get(request.roomId.trim());
+  if (!room) {
+    throw createApiError('ROOM_NOT_FOUND');
+  }
+
+  if (checkAndApplyRoomExpiration(room) || currentScenario === 'expired') {
+    throw createApiError('ROOM_EXPIRED');
+  }
+
+  if (room.status === 'ended' || currentScenario === 'ended') {
+    throw createApiError('ROOM_ENDED');
+  }
+
+  // Permission Check: Only the host may initialize playback
+  if (!canControlWatchPartyPlayback(room, request.participantId)) {
+    throw createApiError(
+      'UNAUTHORIZED',
+      'Only the room host can initialize Watch Party playback.',
+    );
+  }
+
+  // Validate content association
+  if (request.contentId && request.contentId.trim() !== room.contentId) {
+    throw createApiError(
+      'CONTENT_NOT_SUPPORTED',
+      'Requested content does not match the room content.',
+    );
+  }
+
+  const existing = playbackStateStore.get(room.id);
+  const nowIso = new Date().toISOString();
+
+  // Transition room status to active if waiting
+  if (room.status === 'waiting') {
+    room.status = 'active';
+  }
+
+  const initializedState: WatchPartyPlaybackState = {
+    roomId: room.id,
+    sessionId: `session_${room.id}_${Date.now()}`,
+    contentId: room.contentId,
+    contentType: request.contentType || room.contentType,
+    status: 'playing',
+    positionSeconds: 0,
+    positionMs: 0,
+    lastAction: 'play',
+    updatedAt: nowIso,
+    updatedByParticipantId: request.participantId,
+    hostId: room.hostId,
+    sequenceNumber: (existing?.sequenceNumber || 0) + 1,
+    version: (existing?.version || 0) + 1,
+  };
+
+  playbackStateStore.set(room.id, initializedState);
+  return clonePlayback(initializedState);
+};
+
+/**
+ * Mock API: Update Room Playback State (Host Only)
+ * Contract: PATCH /api/v1/watch-party/rooms/:roomId/playback
+ */
+export const updateWatchPartyPlaybackState = async (
+  request: UpdatePlaybackStateRequest,
+): Promise<WatchPartyPlaybackState> => {
+  await evaluateFailureScenario();
+
+  if (!request.roomId || !request.roomId.trim()) {
+    throw createApiError('ROOM_NOT_FOUND', 'Invalid room ID.');
+  }
+
+  ensureStoreInitialized();
+  const room = roomsStore.get(request.roomId.trim());
+  if (!room) {
+    throw createApiError('ROOM_NOT_FOUND');
+  }
+
+  if (checkAndApplyRoomExpiration(room) || currentScenario === 'expired') {
+    throw createApiError('ROOM_EXPIRED');
+  }
+
+  if (room.status === 'ended' || currentScenario === 'ended') {
+    throw createApiError('ROOM_ENDED');
+  }
+
+  // Permission Check: Only the host may control playback
+  if (!canControlWatchPartyPlayback(room, request.participantId)) {
+    throw createApiError(
+      'UNAUTHORIZED',
+      'Only the room host has permission to update Watch Party playback.',
+    );
+  }
+
+  const current = playbackStateStore.get(room.id);
+  if (!current) {
+    throw createApiError(
+      'PLAYBACK_NOT_INITIALIZED',
+      'Room playback has not been initialized.',
+    );
+  }
+
+  const update = request.update;
+
+  // Validate Position
+  if (update.positionSeconds !== undefined) {
+    if (
+      typeof update.positionSeconds !== 'number' ||
+      !Number.isFinite(update.positionSeconds) ||
+      update.positionSeconds < 0
+    ) {
+      throw createApiError(
+        'SERVER_ERROR',
+        'Playback position must be a non-negative finite number.',
+      );
+    }
+  }
+
+  // Validate Status
+  if (update.status !== undefined) {
+    const validStatuses = ['idle', 'loading', 'playing', 'paused', 'ended', 'error'];
+    if (!validStatuses.includes(update.status)) {
+      throw createApiError('SERVER_ERROR', 'Invalid playback status.');
+    }
+  }
+
+  const newPositionSeconds =
+    update.positionSeconds !== undefined
+      ? update.positionSeconds
+      : current.positionSeconds;
+
+  const nowIso = new Date().toISOString();
+  const updatedState: WatchPartyPlaybackState = {
+    ...current,
+    status: update.status ?? current.status,
+    positionSeconds: newPositionSeconds,
+    positionMs:
+      update.positionMs !== undefined
+        ? update.positionMs
+        : Math.round(newPositionSeconds * 1000),
+    durationSeconds: update.durationSeconds ?? current.durationSeconds,
+    durationMs: update.durationMs ?? current.durationMs,
+    lastAction: update.lastAction ?? current.lastAction,
+    updatedAt: nowIso,
+    updatedByParticipantId: request.participantId,
+    sequenceNumber: (current.sequenceNumber || 0) + 1,
+    version: (current.version || 0) + 1,
+  };
+
+  playbackStateStore.set(room.id, updatedState);
+  return clonePlayback(updatedState);
+};
+
+/**
+ * Mock API: Stop or Reset Room Playback State (Host Only)
+ */
+export const stopOrResetWatchPartyPlayback = async (
+  roomId: string,
+  participantId: string,
+): Promise<WatchPartyPlaybackState> => {
+  return updateWatchPartyPlaybackState({
+    roomId,
+    participantId,
+    update: {
+      status: 'ended',
+      positionSeconds: 0,
+      lastAction: 'stop',
+    },
+  });
 };
 
 /**

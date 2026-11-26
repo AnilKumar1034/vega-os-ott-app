@@ -62,6 +62,11 @@ export type RootStackParamList = {
     streamType?: 'hls' | 'dash';
     isVideoOnly?: boolean;
     drm?: LiveChannelDrmConfig;
+    watchPartyRoomId?: string;
+    watchPartyRoom?: any;
+    isWatchParty?: boolean;
+    isHost?: boolean;
+    participantId?: string;
   };
   [Routes.PlayerTest]: undefined;
   [Routes.Login]: {

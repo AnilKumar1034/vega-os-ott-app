@@ -13,6 +13,11 @@ import {analyticsService} from '../../../analytics';
 import {useWatchPartyRoom} from './useWatchPartyRoom';
 import {findContentById} from '../../../utils/deeplink';
 import {WatchPartyRoom} from '../types/watchParty.types';
+import {
+  recordParticipantPlaybackEntry,
+  startHostWatchPartyPlayback,
+  validateWatchPartyContentEligibility,
+} from '../services/watchPartyPlaybackService';
 
 export interface UseWatchPartyLobbyOptions {
   roomId?: string;
@@ -26,7 +31,7 @@ export const useWatchPartyLobby = ({
   onNavigateBack,
 }: UseWatchPartyLobbyOptions) => {
   const navigation = useNavigation<any>();
-  const {user} = useAuth();
+  const {user, userProfile} = useAuth();
   const {activeProfile} = useProfile();
 
   const userId = user?.uid || 'user_guest';
@@ -58,6 +63,9 @@ export const useWatchPartyLobby = ({
   const [isLeaveModalVisible, setIsLeaveModalVisible] = useState<boolean>(false);
   const [showCodeFeedback, setShowCodeFeedback] = useState<boolean>(false);
   const [resolvedContent, setResolvedContent] = useState<any>(null);
+  const [isStartingPlayback, setIsStartingPlayback] = useState<boolean>(false);
+  const [isJoiningPlayback, setIsJoiningPlayback] = useState<boolean>(false);
+  const [playbackLaunchError, setPlaybackLaunchError] = useState<string | null>(null);
 
   // Resolve content details from catalog when room loads
   useEffect(() => {
@@ -177,6 +185,133 @@ export const useWatchPartyLobby = ({
       .catch(() => {});
   }, [room?.id, room?.roomCode]);
 
+  const handleStartPlayback = useCallback(async () => {
+    if (!room) {
+      return;
+    }
+    setPlaybackLaunchError(null);
+
+    const eligibility = validateWatchPartyContentEligibility({
+      room,
+      user,
+      userProfile,
+      activeProfile,
+      resolvedContent,
+    });
+
+    if (!eligibility.isEligible) {
+      setPlaybackLaunchError(
+        eligibility.error || 'Content is not eligible for playback.',
+      );
+      if (eligibility.errorCode === 'ENTITLEMENT_REQUIRED') {
+        navigation.navigate(Routes.Subscription, {
+          sourceScreen: 'WatchPartyLobby',
+        });
+      }
+      return;
+    }
+
+    setIsStartingPlayback(true);
+    try {
+      const participantId =
+        currentUserParticipant?.userId ||
+        currentUserParticipant?.profileId ||
+        userId ||
+        currentUserParticipant?.id ||
+        room.hostId ||
+        'anonymous';
+      await startHostWatchPartyPlayback(
+        room,
+        participantId,
+        room.contentType,
+      );
+
+      navigation.navigate(Routes.VideoPlayer, {
+        movie: eligibility.content,
+        videoUrl: eligibility.content.videoUrl,
+        watchPartyRoomId: room.id,
+        watchPartyRoom: room,
+        isWatchParty: true,
+        isHost: true,
+        participantId,
+      });
+    } catch (err: any) {
+      setPlaybackLaunchError(err.message || 'Failed to start Watch Party playback.');
+    } finally {
+      setIsStartingPlayback(false);
+    }
+  }, [
+    activeProfile,
+    currentUserParticipant?.id,
+    navigation,
+    resolvedContent,
+    room,
+    user,
+    userId,
+    userProfile,
+  ]);
+
+  const handleJoinPlayback = useCallback(async () => {
+    if (!room) {
+      return;
+    }
+    setPlaybackLaunchError(null);
+
+    const eligibility = validateWatchPartyContentEligibility({
+      room,
+      user,
+      userProfile,
+      activeProfile,
+      resolvedContent,
+    });
+
+    if (!eligibility.isEligible) {
+      setPlaybackLaunchError(
+        eligibility.error || 'Content is not eligible for playback.',
+      );
+      if (eligibility.errorCode === 'ENTITLEMENT_REQUIRED') {
+        navigation.navigate(Routes.Subscription, {
+          sourceScreen: 'WatchPartyLobby',
+        });
+      }
+      return;
+    }
+
+    setIsJoiningPlayback(true);
+    try {
+      const participantId =
+        currentUserParticipant?.userId ||
+        currentUserParticipant?.profileId ||
+        userId ||
+        currentUserParticipant?.id ||
+        'participant';
+      recordParticipantPlaybackEntry(room, participantId);
+
+      navigation.navigate(Routes.VideoPlayer, {
+        movie: eligibility.content,
+        videoUrl: eligibility.content.videoUrl,
+        watchPartyRoomId: room.id,
+        watchPartyRoom: room,
+        isWatchParty: true,
+        isHost: false,
+        participantId,
+      });
+    } catch (err: any) {
+      setPlaybackLaunchError(err.message || 'Failed to join Watch Party playback.');
+    } finally {
+      setIsJoiningPlayback(false);
+    }
+  }, [
+    activeProfile,
+    currentUserParticipant?.id,
+    navigation,
+    resolvedContent,
+    room,
+    user,
+    userId,
+    userProfile,
+  ]);
+
   return {
     room,
     participants,
@@ -185,6 +320,9 @@ export const useWatchPartyLobby = ({
     isLoading,
     isRefreshing,
     isLeaving,
+    isStartingPlayback,
+    isJoiningPlayback,
+    playbackLaunchError,
     error,
     refreshError,
     isExpired,
@@ -199,5 +337,7 @@ export const useWatchPartyLobby = ({
     handleConfirmLeave,
     handleManualRefresh,
     handleShareCodeAction,
+    handleStartPlayback,
+    handleJoinPlayback,
   };
 };

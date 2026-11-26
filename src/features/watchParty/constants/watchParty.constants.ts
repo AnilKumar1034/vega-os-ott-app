@@ -52,6 +52,11 @@ export const WATCH_PARTY_TEST_IDS = {
   keypadKey: (key: string) => `watch-party-keypad-${key}`,
   keypadBackspace: 'watch-party-keypad-backspace',
   keypadClear: 'watch-party-keypad-clear',
+  startPlaybackButton: 'watch-party-start-playback-button',
+  joinPlaybackButton: 'watch-party-join-playback-button',
+  waitingForHostIndicator: 'watch-party-waiting-for-host',
+  hostControls: 'watch-party-host-controls',
+  playbackStatusBadge: 'watch-party-playback-status-badge',
 
   // Status & Badges
   hostBadge: 'watch-party-host-badge',
@@ -84,6 +89,9 @@ export const WATCH_PARTY_ERROR_MESSAGES: Record<WatchPartyErrorCode, string> = {
   CONTENT_UNAVAILABLE: 'The requested content is unavailable for Watch Party.',
   CONTENT_NOT_SUPPORTED: 'This type of content does not support Watch Party.',
   PROFILE_RESTRICTED: 'This profile is restricted from joining this Watch Party.',
+  ENTITLEMENT_REQUIRED: 'An active subscription is required to watch this content.',
+  PLAYBACK_NOT_INITIALIZED: 'Watch Party playback has not been started by the host yet.',
+  PLAYBACK_ALREADY_STARTED: 'Watch Party playback is already in progress.',
   NETWORK_ERROR: 'Network error. Please check your connection and try again.',
   SERVER_ERROR: 'Server error. Please try again later.',
   INVALID_CONTENT_ID: 'A valid movie or episode is required to create a Watch Party.',

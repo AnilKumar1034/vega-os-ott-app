@@ -89,6 +89,21 @@ export const styles = StyleSheet.create({
     marginTop: 2,
     letterSpacing: 0.2,
   },
+  watchPartyBadge: {
+    backgroundColor: 'rgba(0, 229, 255, 0.25)',
+    borderColor: '#00E5FF',
+    borderWidth: 1,
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    marginRight: spacing.sm,
+  },
+  watchPartyBadgeText: {
+    color: '#00E5FF',
+    fontSize: 10.5,
+    fontWeight: fontWeights.extraBold,
+    letterSpacing: 0.5,
+  },
   qualityBadge: {
     backgroundColor: colors.heroAccent,
     paddingHorizontal: spacing.sm,

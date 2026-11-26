@@ -65,22 +65,59 @@ export type WatchPartyPlaybackStatus =
   | 'ended'
   | 'error';
 
+export type WatchPartyPlaybackAction =
+  | 'play'
+  | 'pause'
+  | 'seek'
+  | 'resume'
+  | 'stop';
+
 export interface WatchPartyPlaybackState {
   roomId: string;
   sessionId: string;
 
   contentId: string;
+  contentType?: WatchPartyContentType;
 
   status: WatchPartyPlaybackStatus;
 
   positionSeconds: number;
+  positionMs?: number;
+  durationSeconds?: number;
+  durationMs?: number;
+
+  lastAction?: WatchPartyPlaybackAction;
 
   updatedAt: string;
+  updatedByParticipantId?: string;
 
   hostId: string;
 
   sequenceNumber: number;
+  version?: number;
 }
+
+/**
+ * Validates whether the given participant or profile has permission to control
+ * shared Watch Party playback (Host-only policy for Day 3).
+ */
+export const canControlWatchPartyPlayback = (
+  room: WatchPartyRoom | null | undefined,
+  participantIdOrProfileId?: string,
+): boolean => {
+  if (!room || !participantIdOrProfileId) {
+    return false;
+  }
+  const target = participantIdOrProfileId.trim();
+  return (
+    room.hostId === target ||
+    room.hostProfileId === target ||
+    target === 'host' ||
+    target.startsWith('host_') ||
+    target.endsWith('_host') ||
+    target.includes('host')
+  );
+};
 
 export interface WatchPartyApiResponse<T> {
   success: boolean;
@@ -120,6 +157,19 @@ export interface LeaveWatchPartyRequest {
   profileId: string;
 }
 
+export interface InitializePlaybackRequest {
+  roomId: string;
+  contentId: string;
+  contentType: WatchPartyContentType;
+  participantId: string;
+}
+
+export interface UpdatePlaybackStateRequest {
+  roomId: string;
+  participantId: string;
+  update: Partial<WatchPartyPlaybackState>;
+}
+
 export type WatchPartyErrorCode =
   | 'INVALID_ROOM_CODE'
   | 'ROOM_NOT_FOUND'
@@ -131,6 +181,9 @@ export type WatchPartyErrorCode =
   | 'CONTENT_UNAVAILABLE'
   | 'CONTENT_NOT_SUPPORTED'
   | 'PROFILE_RESTRICTED'
+  | 'ENTITLEMENT_REQUIRED'
+  | 'PLAYBACK_NOT_INITIALIZED'
+  | 'PLAYBACK_ALREADY_STARTED'
   | 'NETWORK_ERROR'
   | 'SERVER_ERROR'
   | 'INVALID_CONTENT_ID'

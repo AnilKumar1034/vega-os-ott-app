@@ -5,7 +5,7 @@
  */
 
 import React from 'react';
-import {ScrollView, View} from 'react-native';
+import {ScrollView, Text, View} from 'react-native';
 import {useRoute} from '@react-navigation/native';
 import {TVFocusGuideView} from '@amazon-devices/react-native-kepler';
 import {useWatchPartyLobby} from '../hooks/useWatchPartyLobby';
@@ -30,10 +30,14 @@ export const WatchPartyLobbyScreen: React.FC = () => {
   const {
     room,
     participants,
+    playbackState,
     resolvedContent,
     isLoading,
     isRefreshing,
     isLeaving,
+    isStartingPlayback,
+    isJoiningPlayback,
+    playbackLaunchError,
     error,
     isExpired,
     isEnded,
@@ -47,6 +51,8 @@ export const WatchPartyLobbyScreen: React.FC = () => {
     handleConfirmLeave,
     handleManualRefresh,
     handleShareCodeAction,
+    handleStartPlayback,
+    handleJoinPlayback,
   } = useWatchPartyLobby({
     roomId: routeRoomId || initialRoom?.id,
     initialRoom,
@@ -199,12 +205,24 @@ export const WatchPartyLobbyScreen: React.FC = () => {
                 enableItemFocus={true}
               />
 
+              {playbackLaunchError ? (
+                <View style={styles.errorBanner}>
+                  <Text style={styles.errorBannerText}>{playbackLaunchError}</Text>
+                </View>
+              ) : null}
+
               <WatchPartyLobbyActions
                 onRefresh={handleManualRefresh}
                 onLeave={handleOpenLeaveModal}
+                onStartPlayback={handleStartPlayback}
+                onJoinPlayback={handleJoinPlayback}
                 isRefreshing={isRefreshing}
                 isLeaving={isLeaving}
+                isStartingPlayback={isStartingPlayback}
+                isJoiningPlayback={isJoiningPlayback}
                 isHost={isHost}
+                roomStatus={room?.status}
+                playbackStatus={playbackState?.status}
               />
             </View>
           </View>

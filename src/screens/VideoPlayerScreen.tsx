@@ -102,6 +102,7 @@ import {
 } from '../services/playerFeatureService';
 import {SkipIntervalPrompt} from '../components/molecules/SkipIntervalPrompt';
 import {PlaybackSpeedModal} from '../components/molecules/PlaybackSpeedModal';
+import {useWatchPartyPlayback} from '../features/watchParty';
 
 let KeplerVideoViewComponent: any = View;
 let VideoPlayerClass: any = null;
@@ -127,6 +128,22 @@ export const VideoPlayerScreen = () => {
   const {user, userProfile, loading} = useAuth();
   const {activeProfile} = useProfile();
   const isLive = Boolean(route.params?.isLive);
+  const isWatchParty = Boolean(route.params?.isWatchParty);
+  const watchPartyRoomId = route.params?.watchPartyRoomId as string | undefined;
+  const isWatchPartyHost = Boolean(route.params?.isHost);
+  const watchPartyParticipantId = route.params?.participantId as string | undefined;
+
+  const {
+    reportPlay: reportWatchPartyPlay,
+    reportPause: reportWatchPartyPause,
+    reportSeek: reportWatchPartySeek,
+    reportComplete: reportWatchPartyComplete,
+    reportError: reportWatchPartyError,
+  } = useWatchPartyPlayback({
+    roomId: watchPartyRoomId,
+    isHost: isWatchPartyHost,
+    participantId: watchPartyParticipantId,
+  });
 
   const screenDimensions = Dimensions.get('window');
   const screenWidth = screenDimensions.width || 960;
@@ -331,6 +348,12 @@ export const VideoPlayerScreen = () => {
   isPlaybackPausedRef.current = isPlaybackPaused;
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (videoError && isWatchParty && isWatchPartyHost) {
+      reportWatchPartyError(videoError);
+    }
+  }, [isWatchParty, isWatchPartyHost, reportWatchPartyError, videoError]);
   const [isPlayerInitialized, setIsPlayerInitialized] = useState(false);
   const [resumeTime, setResumeTime] = useState<number>(0);
   const lastSavedTimeRef = useRef<number>(0);
@@ -2297,11 +2320,14 @@ export const VideoPlayerScreen = () => {
         player.currentTime = clampedSeek;
         setPlaybackTime(clampedSeek);
         void persistProgress();
+        if (isWatchParty && isWatchPartyHost) {
+          reportWatchPartySeek(clampedSeek, duration);
+        }
       } catch (err) {
         console.log('Player seek error:', err);
       }
     },
-    [isLive, persistProgress, player, resetHideTimer],
+    [isLive, isWatchParty, isWatchPartyHost, persistProgress, player, reportWatchPartySeek, resetHideTimer],
   );
 
   const handleSkipIntroInterval = useCallback(() => {
@@ -2349,6 +2375,9 @@ export const VideoPlayerScreen = () => {
 
     const onPause = () => {
       setIsPlaybackPaused(true);
+      if (isWatchParty && isWatchPartyHost) {
+        reportWatchPartyPause(player?.currentTime || 0, player?.duration);
+      }
       playbackSessionManager
         .recordPause(player?.currentTime || 0)
         .catch(() => {});
@@ -2362,6 +2391,9 @@ export const VideoPlayerScreen = () => {
     };
 
     const onSeeked = () => {
+      if (isWatchParty && isWatchPartyHost) {
+        reportWatchPartySeek(player?.currentTime || 0, player?.duration);
+      }
       playbackSessionManager
         .recordSeekCompleted(player?.currentTime)
         .catch(() => {});
@@ -2388,6 +2420,9 @@ export const VideoPlayerScreen = () => {
           .catch(() => {});
       }
       setIsPlaybackPaused(false);
+      if (isWatchParty && isWatchPartyHost) {
+        reportWatchPartyPlay(player?.currentTime || 0, player?.duration);
+      }
       playbackSessionManager.recordBufferEnded().catch(() => {});
       playbackSessionManager
         .recordResume(player?.currentTime || 0)
@@ -2443,6 +2478,9 @@ export const VideoPlayerScreen = () => {
         return;
       }
       hasTriggeredEpisodeEndRef.current = true;
+      if (isWatchParty && isWatchPartyHost) {
+        reportWatchPartyComplete(player?.duration);
+      }
       playbackSessionManager
         .recordComplete({
           duration: player?.duration || 0,
@@ -2497,7 +2535,20 @@ export const VideoPlayerScreen = () => {
         void persistProgress();
       }
     };
-  }, [activeProfile?.id, isLive, movie, movieId, persistProgress, player]);
+  }, [
+    activeProfile?.id,
+    isLive,
+    isWatchParty,
+    isWatchPartyHost,
+    movie,
+    movieId,
+    persistProgress,
+    player,
+    reportWatchPartyComplete,
+    reportWatchPartyPause,
+    reportWatchPartyPlay,
+    reportWatchPartySeek,
+  ]);
 
   // Vega OS lifecycle: Synchronously release media resources when the application
   // transitions to background or inactive state, preventing ReclaimMediaResource terminations.
@@ -2629,12 +2680,28 @@ export const VideoPlayerScreen = () => {
         stopReason: 'navigation',
       })
       .catch(() => {});
+    if (isWatchParty && watchPartyRoomId) {
+      navigation.navigate(Routes.WatchPartyLobby, {
+        roomId: watchPartyRoomId,
+        room: route.params?.watchPartyRoom,
+      });
+      return;
+    }
     if (isLive && navigation.canGoBack?.()) {
       navigation.goBack();
       return;
     }
     navigation.navigate(Routes.Home);
-  }, [isLive, navigation, persistProgress, player, resetHideTimer]);
+  }, [
+    isLive,
+    isWatchParty,
+    navigation,
+    persistProgress,
+    player,
+    resetHideTimer,
+    route.params?.watchPartyRoom,
+    watchPartyRoomId,
+  ]);
 
   const togglePlayback = useCallback(async () => {
     resetHideTimer();
@@ -2931,6 +2998,20 @@ export const VideoPlayerScreen = () => {
                 </Text>
               )}
             </View>
+
+            {/* Watch Party Indicator Badge */}
+            {isWatchParty ? (
+              <View
+                style={styles.watchPartyBadge}
+                testID="player-watch-party-badge">
+                <Text style={styles.watchPartyBadgeText}>
+                  WATCH PARTY • {isWatchPartyHost ? 'HOST' : 'GUEST'}
+                  {route.params?.watchPartyRoom?.roomCode
+                    ? ` • ${route.params.watchPartyRoom.roomCode}`
+                    : ''}
+                </Text>
+              </View>
+            ) : null}
 
             {/* Top Subtitles Status Badge - Shows selected language or On / Off */}
             <TouchableOpacity accessibilityHint="TODO"

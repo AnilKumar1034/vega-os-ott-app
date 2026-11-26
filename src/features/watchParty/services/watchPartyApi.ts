@@ -9,8 +9,10 @@ import {WATCH_PARTY_API_CONFIG} from '../constants/watchParty.constants';
 import * as mockApi from './watchPartyMockApi';
 import {
   CreateWatchPartyRequest,
+  InitializePlaybackRequest,
   JoinWatchPartyRequest,
   LeaveWatchPartyRequest,
+  UpdatePlaybackStateRequest,
   WatchPartyApiResponse,
   WatchPartyParticipant,
   WatchPartyPlaybackState,
@@ -49,6 +51,18 @@ class ProductionWatchPartyApiClient {
   }
 
   async getPlaybackState(_roomId: string): Promise<WatchPartyPlaybackState> {
+    throw new Error('Production Watch Party backend API is not yet configured.');
+  }
+
+  async initializePlayback(
+    _request: InitializePlaybackRequest,
+  ): Promise<WatchPartyPlaybackState> {
+    throw new Error('Production Watch Party backend API is not yet configured.');
+  }
+
+  async updatePlaybackState(
+    _request: UpdatePlaybackStateRequest,
+  ): Promise<WatchPartyPlaybackState> {
     throw new Error('Production Watch Party backend API is not yet configured.');
   }
 
@@ -153,6 +167,59 @@ export const watchPartyApi = {
       success: true,
       data,
     };
+  },
+
+  initializePlayback: async (
+    request: InitializePlaybackRequest,
+  ): Promise<WatchPartyApiResponse<WatchPartyPlaybackState>> => {
+    if (WATCH_PARTY_API_CONFIG.USE_MOCK_API) {
+      const data = await mockApi.initializeWatchPartyPlayback(request);
+      return {
+        success: true,
+        data,
+        message: 'Watch Party playback initialized successfully.',
+      };
+    }
+    const data = await prodClient.initializePlayback(request);
+    return {
+      success: true,
+      data,
+      message: 'Watch Party playback initialized successfully.',
+    };
+  },
+
+  updatePlaybackState: async (
+    request: UpdatePlaybackStateRequest,
+  ): Promise<WatchPartyApiResponse<WatchPartyPlaybackState>> => {
+    if (WATCH_PARTY_API_CONFIG.USE_MOCK_API) {
+      const data = await mockApi.updateWatchPartyPlaybackState(request);
+      return {
+        success: true,
+        data,
+      };
+    }
+    const data = await prodClient.updatePlaybackState(request);
+    return {
+      success: true,
+      data,
+    };
+  },
+
+  stopOrResetPlayback: async (
+    roomId: string,
+    participantId: string,
+  ): Promise<WatchPartyApiResponse<WatchPartyPlaybackState>> => {
+    if (WATCH_PARTY_API_CONFIG.USE_MOCK_API) {
+      const data = await mockApi.stopOrResetWatchPartyPlayback(
+        roomId,
+        participantId,
+      );
+      return {
+        success: true,
+        data,
+      };
+    }
+    throw new Error('Production Watch Party backend API is not yet configured.');
   },
 
   leaveRoom: async (

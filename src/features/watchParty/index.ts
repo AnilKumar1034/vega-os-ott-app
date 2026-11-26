@@ -8,9 +8,11 @@ export * from './constants/watchParty.constants';
 export * from './mocks/watchParty.mock';
 export * from './services/watchPartyApi';
 export * from './services/watchPartyMockApi';
+export * from './services/watchPartyPlaybackService';
 export * from './hooks/useWatchParty';
 export * from './hooks/useWatchPartyRoom';
 export * from './hooks/useWatchPartyLobby';
+export * from './hooks/useWatchPartyPlayback';
 
 export {WatchPartyRoomHeader} from './components/WatchPartyRoomHeader';
 export {WatchPartyContentInfo} from './components/WatchPartyContentInfo';

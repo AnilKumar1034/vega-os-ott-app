@@ -29,4 +29,18 @@ export const styles = StyleSheet.create({
     flex: 1.3,
     gap: 16,
   },
+  errorBanner: {
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderColor: 'rgba(239, 68, 68, 0.5)',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    marginTop: 8,
+  },
+  errorBannerText: {
+    color: '#EF4444',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
