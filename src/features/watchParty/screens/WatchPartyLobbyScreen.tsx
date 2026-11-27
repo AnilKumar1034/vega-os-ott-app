@@ -53,6 +53,7 @@ export const WatchPartyLobbyScreen: React.FC = () => {
     handleShareCodeAction,
     handleStartPlayback,
     handleJoinPlayback,
+    handleSimulateFriendJoin,
   } = useWatchPartyLobby({
     roomId: routeRoomId || initialRoom?.id,
     initialRoom,
@@ -216,6 +217,7 @@ export const WatchPartyLobbyScreen: React.FC = () => {
                 onLeave={handleOpenLeaveModal}
                 onStartPlayback={handleStartPlayback}
                 onJoinPlayback={handleJoinPlayback}
+                onSimulateJoin={handleSimulateFriendJoin}
                 isRefreshing={isRefreshing}
                 isLeaving={isLeaving}
                 isStartingPlayback={isStartingPlayback}

@@ -90,6 +90,9 @@ export const styles = StyleSheet.create({
     letterSpacing: 0.2,
   },
   watchPartyBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
     backgroundColor: 'rgba(0, 229, 255, 0.25)',
     borderColor: '#00E5FF',
     borderWidth: 1,

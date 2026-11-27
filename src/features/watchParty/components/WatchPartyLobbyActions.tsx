@@ -20,6 +20,7 @@ export interface WatchPartyLobbyActionsProps {
   onLeave: () => void;
   onStartPlayback?: () => void;
   onJoinPlayback?: () => void;
+  onSimulateJoin?: () => void;
   isRefreshing?: boolean;
   isLeaving?: boolean;
   isStartingPlayback?: boolean;
@@ -34,6 +35,7 @@ export const WatchPartyLobbyActions: React.FC<WatchPartyLobbyActionsProps> = ({
   onLeave,
   onStartPlayback,
   onJoinPlayback,
+  onSimulateJoin,
   isRefreshing = false,
   isLeaving = false,
   isStartingPlayback = false,
@@ -43,7 +45,7 @@ export const WatchPartyLobbyActions: React.FC<WatchPartyLobbyActionsProps> = ({
   playbackStatus = 'idle',
 }) => {
   const [focusedAction, setFocusedAction] = useState<
-    'start' | 'join' | 'refresh' | 'leave' | null
+    'start' | 'join' | 'refresh' | 'simulate' | 'leave' | null
   >(null);
 
   const isPlaybackActive =
@@ -144,6 +146,26 @@ export const WatchPartyLobbyActions: React.FC<WatchPartyLobbyActionsProps> = ({
         )}
       </TouchableOpacity>
 
+      {/* Dev / Host Simulation Action: Simulate Friend Joining */}
+      {isHost && onSimulateJoin ? (
+        <TouchableOpacity
+          style={[
+            styles.actionButton,
+            styles.simulateButton,
+            focusedAction === 'simulate' && styles.simulateButtonFocused,
+          ]}
+          onFocus={() => setFocusedAction('simulate')}
+          onBlur={() => setFocusedAction(null)}
+          onPress={onSimulateJoin}
+          disabled={isRefreshing || isLeaving || isStartingPlayback}
+          activeOpacity={0.8}
+          accessibilityRole="button"
+          accessibilityLabel="Simulate a friend joining the party"
+          testID="watch-party-simulate-friend-button">
+          <Text style={styles.simulateButtonText}>+ Add Friend</Text>
+        </TouchableOpacity>
+      ) : null}
+
       {/* Leave Button */}
       <TouchableOpacity
         style={[
@@ -227,6 +249,20 @@ const styles = StyleSheet.create({
   },
   refreshButtonText: {
     color: colors.textPrimary,
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  simulateButton: {
+    backgroundColor: 'rgba(99, 102, 241, 0.25)',
+    borderColor: '#818CF8',
+  },
+  simulateButtonFocused: {
+    backgroundColor: '#6366F1',
+    borderColor: '#C7D2FE',
+    transform: [{scale: 1.05}],
+  },
+  simulateButtonText: {
+    color: '#E0E7FF',
     fontSize: 15,
     fontWeight: '700',
   },

@@ -119,6 +119,15 @@ export const AnalyticsEvent = {
   WATCH_PARTY_PLAYBACK_ERROR: 'watch_party_playback_error',
   WATCH_PARTY_HOST_CONTROL_USED: 'watch_party_host_control_used',
   WATCH_PARTY_PARTICIPANT_PLAYBACK_ENTERED: 'watch_party_participant_playback_entered',
+  WATCH_PARTY_SYNC_STARTED: 'watch_party_sync_started',
+  WATCH_PARTY_SYNC_COMPLETED: 'watch_party_sync_completed',
+  WATCH_PARTY_SYNC_FAILED: 'watch_party_sync_failed',
+  WATCH_PARTY_SYNC_RECONNECTED: 'watch_party_sync_reconnected',
+  WATCH_PARTY_SYNC_CORRECTION: 'watch_party_sync_correction',
+  WATCH_PARTY_SYNC_DRIFT_DETECTED: 'watch_party_sync_drift_detected',
+  WATCH_PARTY_SYNC_LATE_JOIN: 'watch_party_sync_late_join',
+  WATCH_PARTY_SYNC_RECOVERY_STARTED: 'watch_party_sync_recovery_started',
+  WATCH_PARTY_SYNC_RECOVERY_COMPLETED: 'watch_party_sync_recovery_completed',
 } as const;
 
 export type AnalyticsEventName =

@@ -60,9 +60,11 @@ export interface WatchPartyParticipant {
 export type WatchPartyPlaybackStatus =
   | 'idle'
   | 'loading'
+  | 'buffering'
   | 'playing'
   | 'paused'
   | 'ended'
+  | 'completed'
   | 'error';
 
 export type WatchPartyPlaybackAction =

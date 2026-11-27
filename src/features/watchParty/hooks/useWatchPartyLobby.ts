@@ -13,6 +13,7 @@ import {analyticsService} from '../../../analytics';
 import {useWatchPartyRoom} from './useWatchPartyRoom';
 import {findContentById} from '../../../utils/deeplink';
 import {WatchPartyRoom} from '../types/watchParty.types';
+import {watchPartyApi} from '../services/watchPartyApi';
 import {
   recordParticipantPlaybackEntry,
   startHostWatchPartyPlayback,
@@ -312,6 +313,29 @@ export const useWatchPartyLobby = ({
     userProfile,
   ]);
 
+  const handleSimulateFriendJoin = useCallback(async () => {
+    if (!room) return;
+    try {
+      const mockFriends = [
+        {name: 'Sarah Jenkins', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&q=80'},
+        {name: 'Marcus Chen', avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?w=150&q=80'},
+        {name: 'Elena Rostova', avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&q=80'},
+      ];
+      const friendIndex = (participants?.length || 1) % mockFriends.length;
+      const friend = mockFriends[friendIndex];
+      const now = Date.now();
+      await watchPartyApi.joinRoom({
+        roomCode: room.roomCode,
+        userId: `user_sim_${now}`,
+        profileId: `profile_sim_${now}`,
+        displayName: friend.name,
+      });
+      await refreshRoom();
+    } catch (e) {
+      console.warn('[WatchParty] Failed to simulate friend join:', e);
+    }
+  }, [participants?.length, refreshRoom, room]);
+
   return {
     room,
     participants,
@@ -339,5 +363,6 @@ export const useWatchPartyLobby = ({
     handleShareCodeAction,
     handleStartPlayback,
     handleJoinPlayback,
+    handleSimulateFriendJoin,
   };
 };

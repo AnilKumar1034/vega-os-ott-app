@@ -102,7 +102,7 @@ import {
 } from '../services/playerFeatureService';
 import {SkipIntervalPrompt} from '../components/molecules/SkipIntervalPrompt';
 import {PlaybackSpeedModal} from '../components/molecules/PlaybackSpeedModal';
-import {useWatchPartyPlayback} from '../features/watchParty';
+import {useWatchPartyPlayback, WatchPartySyncStatus} from '../features/watchParty';
 
 let KeplerVideoViewComponent: any = View;
 let VideoPlayerClass: any = null;
@@ -132,18 +132,6 @@ export const VideoPlayerScreen = () => {
   const watchPartyRoomId = route.params?.watchPartyRoomId as string | undefined;
   const isWatchPartyHost = Boolean(route.params?.isHost);
   const watchPartyParticipantId = route.params?.participantId as string | undefined;
-
-  const {
-    reportPlay: reportWatchPartyPlay,
-    reportPause: reportWatchPartyPause,
-    reportSeek: reportWatchPartySeek,
-    reportComplete: reportWatchPartyComplete,
-    reportError: reportWatchPartyError,
-  } = useWatchPartyPlayback({
-    roomId: watchPartyRoomId,
-    isHost: isWatchPartyHost,
-    participantId: watchPartyParticipantId,
-  });
 
   const screenDimensions = Dimensions.get('window');
   const screenWidth = screenDimensions.width || 960;
@@ -349,11 +337,6 @@ export const VideoPlayerScreen = () => {
   const [showControls, setShowControls] = useState(true);
   const [videoError, setVideoError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (videoError && isWatchParty && isWatchPartyHost) {
-      reportWatchPartyError(videoError);
-    }
-  }, [isWatchParty, isWatchPartyHost, reportWatchPartyError, videoError]);
   const [isPlayerInitialized, setIsPlayerInitialized] = useState(false);
   const [resumeTime, setResumeTime] = useState<number>(0);
   const lastSavedTimeRef = useRef<number>(0);
@@ -368,6 +351,90 @@ export const VideoPlayerScreen = () => {
 
   const [playbackTime, setPlaybackTime] = useState(0);
   const [playbackDuration, setPlaybackDuration] = useState(0);
+
+  const handleSyncSeekRequested = useCallback((targetSeconds: number) => {
+    const target = Math.max(0, targetSeconds);
+    const p = playerRef.current;
+    if (p && p.currentTime !== undefined) {
+      try {
+        p.currentTime = target;
+        setPlaybackTime(target);
+      } catch (e) {
+        console.warn('[WatchParty] Failed to execute sync seek:', e);
+      }
+    }
+  }, []);
+
+  const handleSyncPlayRequested = useCallback((targetSeconds?: number) => {
+    const p = playerRef.current;
+    if (p) {
+      try {
+        if (typeof targetSeconds === 'number' && targetSeconds >= 0) {
+          if (Math.abs((p.currentTime || 0) - targetSeconds) > 1) {
+            p.currentTime = targetSeconds;
+            setPlaybackTime(targetSeconds);
+          }
+        }
+        Promise.resolve(p.play?.()).catch(() => {});
+      } catch (e) {
+        console.warn('[WatchParty] Failed to execute sync play:', e);
+      }
+    }
+  }, []);
+
+  const handleSyncPauseRequested = useCallback((targetSeconds?: number) => {
+    const p = playerRef.current;
+    if (p) {
+      try {
+        if (typeof targetSeconds === 'number' && targetSeconds >= 0) {
+          p.currentTime = targetSeconds;
+          setPlaybackTime(targetSeconds);
+        }
+        p.pause?.();
+      } catch (e) {
+        console.warn('[WatchParty] Failed to execute sync pause:', e);
+      }
+    }
+  }, []);
+
+  const handleSyncStopRequested = useCallback(() => {
+    const p = playerRef.current;
+    if (p) {
+      try {
+        p.pause?.();
+      } catch (e) {
+        console.warn('[WatchParty] Failed to execute sync stop:', e);
+      }
+    }
+  }, []);
+
+  const {
+    reportPlay: reportWatchPartyPlay,
+    reportPause: reportWatchPartyPause,
+    reportSeek: reportWatchPartySeek,
+    reportComplete: reportWatchPartyComplete,
+    reportError: reportWatchPartyError,
+    syncStatus,
+    lastDriftResult,
+    recordSeekOrigin,
+  } = useWatchPartyPlayback({
+    roomId: watchPartyRoomId,
+    room: route.params?.watchPartyRoom,
+    isHost: isWatchPartyHost,
+    participantId: watchPartyParticipantId,
+    isPlayerReady: isPlayerInitialized,
+    currentPositionSeconds: playbackTime,
+    onSeekRequested: handleSyncSeekRequested,
+    onPlayRequested: handleSyncPlayRequested,
+    onPauseRequested: handleSyncPauseRequested,
+    onStopRequested: handleSyncStopRequested,
+  });
+
+  useEffect(() => {
+    if (videoError && isWatchParty && isWatchPartyHost) {
+      reportWatchPartyError(videoError);
+    }
+  }, [isWatchParty, isWatchPartyHost, reportWatchPartyError, videoError]);
   const [activeSeekbarType, setActiveSeekbarType] = useState<SeekbarType>(
     () => {
       return route.params?.seekbarType || getSeekbarTypeForContent(movie);
@@ -2321,13 +2388,16 @@ export const VideoPlayerScreen = () => {
         setPlaybackTime(clampedSeek);
         void persistProgress();
         if (isWatchParty && isWatchPartyHost) {
+          recordSeekOrigin?.('host_seek', clampedSeek);
           reportWatchPartySeek(clampedSeek, duration);
+        } else if (isWatchParty && !isWatchPartyHost) {
+          recordSeekOrigin?.('user_seek', clampedSeek);
         }
       } catch (err) {
         console.log('Player seek error:', err);
       }
     },
-    [isLive, isWatchParty, isWatchPartyHost, persistProgress, player, reportWatchPartySeek, resetHideTimer],
+    [isLive, isWatchParty, isWatchPartyHost, persistProgress, player, recordSeekOrigin, reportWatchPartySeek, resetHideTimer],
   );
 
   const handleSkipIntroInterval = useCallback(() => {
@@ -2999,7 +3069,7 @@ export const VideoPlayerScreen = () => {
               )}
             </View>
 
-            {/* Watch Party Indicator Badge */}
+            {/* Watch Party Indicator Badge & Day 4 Sync Status */}
             {isWatchParty ? (
               <View
                 style={styles.watchPartyBadge}
@@ -3010,6 +3080,11 @@ export const VideoPlayerScreen = () => {
                     ? ` • ${route.params.watchPartyRoom.roomCode}`
                     : ''}
                 </Text>
+                <WatchPartySyncStatus
+                  status={syncStatus}
+                  isHost={isWatchPartyHost}
+                  driftMs={lastDriftResult?.driftMs}
+                />
               </View>
             ) : null}
 

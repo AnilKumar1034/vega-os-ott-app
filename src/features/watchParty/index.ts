@@ -4,15 +4,27 @@
  */
 
 export * from './types/watchParty.types';
+export * from './types/watchPartySync.types';
 export * from './constants/watchParty.constants';
+export * from './constants/watchPartySync.constants';
 export * from './mocks/watchParty.mock';
 export * from './services/watchPartyApi';
 export * from './services/watchPartyMockApi';
 export * from './services/watchPartyPlaybackService';
+export * from './services/watchPartySyncTransport';
+export * from './services/watchPartyMockSyncTransport';
+export * from './services/watchPartySyncEngine';
+export * from './services/watchPartySyncRecovery';
+export * from './utils/watchPartyDrift';
+export * from './utils/watchPartySyncValidation';
 export * from './hooks/useWatchParty';
 export * from './hooks/useWatchPartyRoom';
 export * from './hooks/useWatchPartyLobby';
 export * from './hooks/useWatchPartyPlayback';
+export * from './hooks/useWatchPartySync';
+
+export {WatchPartySyncStatus} from './components/WatchPartySyncStatus';
+export {WatchPartySyncOverlay} from './components/WatchPartySyncOverlay';
 
 export {WatchPartyRoomHeader} from './components/WatchPartyRoomHeader';
 export {WatchPartyContentInfo} from './components/WatchPartyContentInfo';
